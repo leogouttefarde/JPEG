@@ -1,6 +1,11 @@
 
 #include "bitstream.h"
 
+struct bitstream {
+        FILE *file;
+        FILE *file;
+};
+
 
 struct bitstream *create_bitstream(const char *filename)
 {
