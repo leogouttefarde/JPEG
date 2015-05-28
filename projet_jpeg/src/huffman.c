@@ -104,10 +104,8 @@ struct huff_table *load_huffman_table(
         memset(table, 0, sizeof(struct huff_table));
 
         for (uint8_t i = 0; i < 16; i++) {
-                int32_t prev = size_read;
                 size_read += read_bitstream(stream, 8, &dest, false);
                 code_sizes[i] = dest & 0xFF;
-                assert((size_read - prev) == 8);
         }
 
         for (uint8_t i = 0; i < sizeof(code_sizes); ++i)
@@ -119,10 +117,8 @@ struct huff_table *load_huffman_table(
 
         for (uint8_t i = 0; i < sizeof(code_sizes); ++i) {
                 for (uint8_t j = 0; j < code_sizes[i]; ++j) {
-                        int32_t prev = size_read;
                         size_read += read_bitstream(stream, 8, &dest, false);
                         add_huffman_code(dest & 0xFF, i, table);
-                        assert((size_read - prev) == 8);
                 }
         }
 
