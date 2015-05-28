@@ -35,9 +35,8 @@ struct huff_table* create_node(int8_t val, enum node_type type)
                         node->u.node.left = NULL;
                         node->u.node.right = NULL;
                 }
-                else {
+                else
                         node->u.val = val;
-                }
         }
 
         return node;
@@ -168,7 +167,6 @@ void free_huffman_table(struct huff_table *table)
                 if (table->type == NODE) {
                         free_huffman_table(table->u.node.left);
                         free_huffman_table(table->u.node.right);
-
                 }
 
                 SAFE_FREE(table);

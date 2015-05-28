@@ -28,7 +28,6 @@ void swap(double **a, double **b)
 
 void loeffler(double vect[8])
 {
-        const double SQRT_2 = sqrt(2);
         double next_buf[8];
         double *next = next_buf;
 
@@ -42,8 +41,8 @@ void loeffler(double vect[8])
 
         butterfly(vect[1], vect[7], &next[7], &next[4]);
 
-        next[5] = SQRT_2 * vect[3];
-        next[6] = SQRT_2 * vect[5];
+        next[5] = M_SQRT2 * vect[3];
+        next[6] = M_SQRT2 * vect[5];
 
         swap(&vect, &next);
 
@@ -54,7 +53,7 @@ void loeffler(double vect[8])
         butterfly(vect[4], vect[6], &next[4], &next[6]);
         butterfly(vect[7], vect[5], &next[7], &next[5]);
 
-        rotation(vect[2], vect[3], &next[2], &next[3], SQRT_2, 6);
+        rotation(vect[2], vect[3], &next[2], &next[3], M_SQRT2, 6);
 
         swap(&vect, &next);
 
