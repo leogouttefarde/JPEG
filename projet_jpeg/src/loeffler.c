@@ -80,7 +80,7 @@ void loeffler(double vect[BLOCK_DIM])
         //swap(&vect, &next);
 }
 
-void idct_block(int32_t in[BLOCK_SIZE], uint8_t out[BLOCK_SIZE])
+void idct_block(int32_t in[64], uint8_t out[64])
 {
         double vector[BLOCK_DIM];
         double matrix[BLOCK_SIZE];
