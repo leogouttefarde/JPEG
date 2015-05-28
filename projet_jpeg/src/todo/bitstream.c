@@ -3,7 +3,6 @@
 
 struct bitstream {
         FILE *file;
-        FILE *file;
 };
 
 

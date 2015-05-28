@@ -3,22 +3,6 @@
 #include "common.h"
 
 
-uint8_t double2uint8(double x)
-{
-        uint8_t res;
-
-        if (x > 255)
-                res = 255;
-
-        else if (x < 0)
-                res = 0;
-
-        else
-                res = (uint8_t)x;
-
-        return res;
-}
-
 void rotation(double i0, double i1, double *out0, double *out1, uint8_t k, uint8_t n)
 {
         const double COS = cos((n * M_PI)/16);

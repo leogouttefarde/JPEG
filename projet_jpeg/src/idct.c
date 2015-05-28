@@ -13,23 +13,6 @@ double C(const uint8_t x)
         return res;
 }
 
-
-uint8_t double2uint8(double x)
-{
-        uint8_t res;
-
-        if (x > 255)
-                res = 255;
-
-        else if (x < 0)
-                res = 0;
-
-        else
-                res = (uint8_t)x;
-
-        return res;
-}
-
 uint8_t S(const uint8_t x, const uint8_t y, int32_t *input)
 {
         const uint8_t N = 8;

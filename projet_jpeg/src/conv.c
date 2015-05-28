@@ -2,17 +2,6 @@
 #include "conv.h"
 
 
-uint32_t truncate(int32_t s)
-{
-        if (s > 255)
-                s = 255;
-
-        else if (s < 0)
-                s = 0;
-
-        return (uint32_t)s;
-}
-
 void YCbCr_to_ARGB(uint8_t  *mcu_YCbCr[3], uint32_t *mcu_RGB,
                 uint32_t nb_blocks_h, uint32_t nb_blocks_v)
 {
