@@ -93,15 +93,11 @@ struct huff_table *load_huffman_table(
         uint16_t nb_codes = 0;
         int32_t size_read = 0;
         uint32_t dest;
-        struct huff_table *table = malloc(sizeof(struct huff_table));
+        struct huff_table *table = NULL;
 
-        if (table == NULL || nb_byte_read == NULL)
-                return -1;
+        if (nb_byte_read == NULL)
+                return NULL;
 
-        *nb_byte_read = 0;
-
-
-        memset(table, 0, sizeof(struct huff_table));
 
         for (uint8_t i = 0; i < 16; i++) {
                 size_read += read_bitstream(stream, 8, &dest, false);
@@ -111,9 +107,23 @@ struct huff_table *load_huffman_table(
         for (uint8_t i = 0; i < sizeof(code_sizes); ++i)
                 nb_codes += code_sizes[i];
 
+
+        *nb_byte_read = size_read / 8;
+
         /* There must be less than 256 different codes */
         if (nb_codes >= 256)
-                return -2;
+                return NULL;
+
+        else {
+                table = malloc(sizeof(struct huff_table));
+
+                if (table == NULL)
+                        return NULL;
+        }
+
+
+
+        memset(table, 0, sizeof(struct huff_table));
 
         for (uint8_t i = 0; i < sizeof(code_sizes); ++i) {
                 for (uint8_t j = 0; j < code_sizes[i]; ++j) {
@@ -154,9 +164,12 @@ int8_t next_huffman_value(struct huff_table *table,
 
 void free_huffman_table(struct huff_table *table)
 {
-        if (table != NULL && table->type == NODE) {
-                free_huffman_table(table->u.node.left);
-                free_huffman_table(table->u.node.right);
+        if (table != NULL) {
+                if (table->type == NODE) {
+                        free_huffman_table(table->u.node.left);
+                        free_huffman_table(table->u.node.right);
+
+                }
 
                 SAFE_FREE(table);
         }
