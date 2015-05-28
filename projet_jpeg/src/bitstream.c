@@ -44,7 +44,7 @@ bool end_of_bitstream(struct bitstream *stream)
         return end;
 }
 
-int8_t read_bit(struct bitstream *stream, bool byte_stuffing)
+int8_t next_bit(struct bitstream *stream, bool byte_stuffing)
 {
         uint32_t size = 0;
         int8_t bit;
@@ -88,7 +88,7 @@ uint8_t read_bitstream(struct bitstream *stream,
                 return 0;
 
         for (uint8_t i = 0; i < nb_bits; i++) {
-                bit = read_bit(stream, byte_stuffing);
+                bit = next_bit(stream, byte_stuffing);
 
                 if (bit >= 0)
                         out = (out << 1) | bit, nb_bit_read++;
