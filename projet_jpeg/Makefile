@@ -21,9 +21,9 @@ OBJ_FILES += $(OBJ_DIR)/tiff.o $(OBJ_DIR)/library.o
 # Liste des objets realises
 NEW_OBJ_FILES = $(OBJ_DIR)/iqzz.o $(OBJ_DIR)/conv.o $(OBJ_DIR)/idct.o
 NEW_OBJ_FILES += $(OBJ_DIR)/library.o $(OBJ_DIR)/huffman.o #$(OBJ_DIR)/loeffler.o
-NEW_OBJ_FILES += $(OBJ_DIR)/unpack.o
+NEW_OBJ_FILES += $(OBJ_DIR)/unpack.o $(OBJ_DIR)/upsampler.o
 
-all : jpeg2tiff 
+all : jpeg2tiff
 
 # Edition de lien des executables
 jpeg2tiff : $(OBJ_FILES)
