@@ -6,7 +6,7 @@
 void YCbCr_to_ARGB(uint8_t  *mcu_YCbCr[3], uint32_t *mcu_RGB,
                 uint32_t nb_blocks_h, uint32_t nb_blocks_v)
 {
-        const uint32_t SIZE = 8*nb_blocks_h * 8*nb_blocks_v;
+        const uint32_t SIZE = BLOCK_DIM*nb_blocks_h * BLOCK_DIM*nb_blocks_v;
 
         uint8_t *Y = mcu_YCbCr[0];
         uint8_t *Cb = mcu_YCbCr[1];

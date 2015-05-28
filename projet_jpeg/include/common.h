@@ -28,6 +28,9 @@
 #define M_SQRT1_2 0.70710678118654752440
 #endif
 
+#define BLOCK_DIM 8
+#define BLOCK_SIZE 64
+
 
 // Log
 #define LOG_LEVEL 3

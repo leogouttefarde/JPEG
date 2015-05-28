@@ -26,9 +26,9 @@ void swap(double **a, double **b)
         *b = temp;
 }
 
-void loeffler(double vect[8])
+void loeffler(double vect[BLOCK_DIM])
 {
-        double next_buf[8];
+        double next_buf[BLOCK_DIM];
         double *next = next_buf;
 
 
@@ -80,38 +80,37 @@ void loeffler(double vect[8])
         //swap(&vect, &next);
 }
 
-void idct_block(int32_t in[64], uint8_t out[64])
+void idct_block(int32_t in[BLOCK_SIZE], uint8_t out[BLOCK_SIZE])
 {
-        const uint8_t N = 8;
-        double vector[N];
-        double matrix[N*N];
+        double vector[BLOCK_DIM];
+        double matrix[BLOCK_SIZE];
 
         /* Application sur les lignes de la matrice */
-        for (uint8_t x = 0; x < N; ++x) {
+        for (uint8_t x = 0; x < BLOCK_DIM; ++x) {
 
-                for (uint8_t y = 0; y < N; ++y)
-                        vector[y] = in[x*N + y];
+                for (uint8_t y = 0; y < BLOCK_DIM; ++y)
+                        vector[y] = in[x*BLOCK_DIM + y];
 
                 loeffler(vector);
 
-                for (uint8_t y = 0; y < N; ++y)
-                        matrix[x*N + y] = vector[y];
+                for (uint8_t y = 0; y < BLOCK_DIM; ++y)
+                        matrix[x*BLOCK_DIM + y] = vector[y];
         }
 
         /* Application sur les lignes de sa transposée */
-        for (uint8_t y = 0; y < N; ++y) {
+        for (uint8_t y = 0; y < BLOCK_DIM; ++y) {
 
-                for (uint8_t x = 0; x < N; ++x)
-                        vector[x] = matrix[x*N + y];
+                for (uint8_t x = 0; x < BLOCK_DIM; ++x)
+                        vector[x] = matrix[x*BLOCK_DIM + y];
 
                 loeffler(vector);
 
                 /* Avec Loeffler on multiplie par sqrt(2) donc
                  * après chaque application il faut diviser par
-                 * sqrt(N) au lieu de sqrt(2N), et donc vu qu'on
-                 * l'applique 2 fois içi il faut diviser par sqrt(N)^2 = N */
-                for (uint8_t x = 0; x < N; ++x)
-                        out[x*N + y] = double2uint8( vector[x]/N + 128. );
+                 * sqrt(BLOCK_DIM) au lieu de sqrt(2 * BLOCK_DIM), et donc vu qu'on
+                 * l'applique 2 fois içi il faut diviser par sqrt(BLOCK_DIM)^2 = BLOCK_DIM */
+                for (uint8_t x = 0; x < BLOCK_DIM; ++x)
+                        out[x*BLOCK_DIM + y] = double2uint8( vector[x]/BLOCK_DIM + 128. );
         }
 }
 

@@ -37,7 +37,6 @@ void unpack_block(struct bitstream *stream,
                 struct huff_table *table_AC,
                 int32_t bloc[64])
 {
-        const uint8_t BLOCK_SIZE = 8 * 8;
         int8_t nb_bits, zeros, symbol;
         uint8_t n = 0;
         int16_t diff;
