@@ -97,6 +97,8 @@ struct huff_table *load_huffman_table(
         if (nb_byte_read == NULL)
                 return NULL;
 
+        *nb_byte_read = -1;
+
 
         for (uint8_t i = 0; i < 16; i++) {
                 size_read += read_bitstream(stream, 8, &dest, false);
@@ -106,8 +108,6 @@ struct huff_table *load_huffman_table(
         for (uint8_t i = 0; i < sizeof(code_sizes); ++i)
                 nb_codes += code_sizes[i];
 
-
-        *nb_byte_read = size_read / 8;
 
         /* There must be less than 256 different codes */
         if (nb_codes >= 256)
