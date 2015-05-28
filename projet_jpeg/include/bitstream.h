@@ -15,8 +15,7 @@ extern uint8_t read_bitstream(struct bitstream *stream,
 		uint8_t nb_bits, uint32_t *dest,
 		bool byte_stuffing);
 
-extern void skip_bitstream_until(struct bitstream *stream,
-		uint8_t byte);
+extern bool skip_bitstream_until(struct bitstream *stream, uint8_t byte);
 
 extern void free_bitstream(struct bitstream *stream);
 
