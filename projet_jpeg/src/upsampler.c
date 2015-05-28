@@ -4,14 +4,12 @@
 
 /*
  * Optimized equations :
- *      us = h + v * 8 * nb_block_H + i * h_factor + j * v_factor * 8 * nb_block_H + x * 8 * h_factor + y * v_factor * 8 * nb_block_H * 8;
- *      ds = i + j * 8 + x * 64 + y * 64 * nb_block_H / h_factor;
+ *      out_pos = h + v * 8 * nb_blocks_out_h + i * nb_blocks_h + j * nb_blocks_v * 8 * nb_blocks_out_h + x * 8 * nb_blocks_h + y * nb_blocks_v * 8 * nb_blocks_out_h * 8;
+ *      int_pos = i + j * 8 + x * 64 + y * 64 * nb_blocks_out_h / nb_blocks_h;
  */
-// memcpy
-static inline void upsample_pixel(uint8_t *in, uint8_t *out,
-                    uint32_t in_pos, uint32_t out_index,
-                    uint8_t nb_blocks_h, uint8_t nb_blocks_v,
-                    uint16_t nb_blocks_out_h)
+static inline void upsample_pixel(uint8_t *in, uint32_t in_pos,
+                    uint8_t *out, uint32_t out_index, uint16_t nb_blocks_out_h,
+                    uint8_t nb_blocks_h, uint8_t nb_blocks_v)
 {
         const uint32_t LINE = 8 * nb_blocks_out_h;
         uint32_t out_pos;
@@ -20,19 +18,26 @@ static inline void upsample_pixel(uint8_t *in, uint8_t *out,
 
                 out_pos = out_index;
 
-                for (uint16_t h = 0; h < nb_blocks_h; ++h) {
 
-                        out[out_pos++] = in[in_pos];
-                }
+                /*
+                 * Copie optimale
+                 */
+                memset(&out[out_index], in[in_pos], sizeof(uint8_t) * nb_blocks_h);
+
+                /*
+                 * Copie non optimale
+                 */
+                /*for (uint16_t h = 0; h < nb_blocks_h; ++h)
+                        out[out_pos++] = in[in_pos];*/
+
 
                 out_index += LINE;
         }
 }
 
-static inline void upsample_block(uint8_t *in, uint8_t *out,
-                    uint32_t in_index, uint32_t out_index,
-                    uint8_t nb_blocks_h, uint8_t nb_blocks_v,
-                    uint16_t nb_blocks_out_h)
+static inline void upsample_block(uint8_t *in, uint32_t in_index,
+                    uint8_t *out, uint32_t out_index, uint16_t nb_blocks_out_h,
+                    uint8_t nb_blocks_h, uint8_t nb_blocks_v)
 {
         const uint32_t LINE = nb_blocks_v * 8 * nb_blocks_out_h;
         uint32_t in_pos, out_pos;
@@ -44,7 +49,8 @@ static inline void upsample_block(uint8_t *in, uint8_t *out,
 
                 for (uint16_t i = 0; i < 8; ++i) {
 
-                        upsample_pixel(in, out, in_pos++, out_pos, nb_blocks_h, nb_blocks_v, nb_blocks_out_h);
+                        upsample_pixel(in, in_pos++, out, out_pos, nb_blocks_out_h,
+                                        nb_blocks_h, nb_blocks_v);
                         out_pos += nb_blocks_h;
                 }
 
@@ -76,7 +82,8 @@ void upsampler(uint8_t *in,
 
                 for (uint16_t x = 0; x < nb_blocks_in_h; ++x) {
 
-                        upsample_block(in, out, in_pos, out_pos, nb_blocks_h, nb_blocks_v, nb_blocks_out_h);
+                        upsample_block(in, in_pos, out, out_pos, nb_blocks_out_h,
+                                        nb_blocks_h, nb_blocks_v);
 
                         in_pos += 64;
                         out_pos += H_SIZE;
