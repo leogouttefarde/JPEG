@@ -19,7 +19,8 @@ OBJ_FILES += $(OBJ_DIR)/upsampler.o $(OBJ_DIR)/huffman.o $(OBJ_DIR)/unpack.o $(O
 OBJ_FILES += $(OBJ_DIR)/tiff.o
 
 # Liste des objets realises
-NEW_OBJ_FILES =
+NEW_OBJ_FILES = $(OBJ_DIR)/iqzz.o $(OBJ_DIR)/conv.o $(OBJ_DIR)/idct.o
+NEW_OBJ_FILES += $(OBJ_DIR)/loeffler.o
 
 all : jpeg2tiff 
 
@@ -29,5 +30,13 @@ jpeg2tiff : $(OBJ_FILES)
 
 # Compilation des sources
 
+${OBJ_DIR}/%.o: ${SRC_DIR}/%.c 
+	$(CC) $(CFLAGS) ${INC} $< -o $@ -c
+
 clean:
 	rm -f jpeg2tiff $(NEW_OBJ_FILES)
+
+run: all
+	./jpeg2tiff tests/shaun_the_sheep.jpeg
+	display tests/shaun_the_sheep.tiff
+	rm -f tests/shaun_the_sheep.tiff
