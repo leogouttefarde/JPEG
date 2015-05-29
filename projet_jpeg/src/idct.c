@@ -13,7 +13,7 @@ double C(const uint8_t x)
         return res;
 }
 
-uint8_t S(const uint8_t x, const uint8_t y, int32_t *input)
+uint8_t S(const uint8_t x, const uint8_t y, int32_t *in)
 {
         const uint8_t SQRT_16 = 4;
         double sum = 0;
@@ -23,7 +23,7 @@ uint8_t S(const uint8_t x, const uint8_t y, int32_t *input)
                         sum += C(l) * C(u) *
                                cos(((2*x + 1) * l * M_PI)/ (2*BLOCK_DIM)) *
                                cos(((2*y + 1) * u * M_PI)/ (2*BLOCK_DIM)) *
-                               input[l*BLOCK_DIM + u];
+                               in[l*BLOCK_DIM + u];
                 }
         }
 
