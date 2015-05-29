@@ -43,5 +43,9 @@ clean:
 
 run: all
 	./jpeg2tiff tests/shaun_the_sheep.jpeg
-	display tests/shaun_the_sheep.tiff
-	rm -f tests/shaun_the_sheep.tiff
+
+	if [ -a tests/shaun_the_sheep.tiff ]; \
+	then \
+		display tests/shaun_the_sheep.tiff; \
+		rm -f tests/shaun_the_sheep.tiff; \
+	fi;
