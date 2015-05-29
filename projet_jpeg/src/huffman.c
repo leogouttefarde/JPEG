@@ -24,7 +24,7 @@ struct huff_table {
 };
 
 
-struct huff_table* create_node(int8_t val, enum node_type type)
+struct huff_table* create_node(enum node_type type, int8_t val)
 {
         struct huff_table *node = malloc(sizeof(struct huff_table));
 
@@ -59,23 +59,23 @@ int8_t add_huffman_code(int8_t value, uint8_t code_size, struct huff_table *pare
 
                 if (code_size == 0) {
                         if (*left == NULL)
-                                *left = create_node(value, LEAF);
+                                *left = create_node(LEAF, value);
 
                         else if (*right == NULL)
-                                *right = create_node(value, LEAF);
+                                *right = create_node(LEAF, value);
 
                         else
                                 error = -1;
                 }
                 else {
                         if (*left == NULL)
-                                *left = create_node(0, NODE);
+                                *left = create_node(NODE, 0);
 
                         error = add_huffman_code(value, code_size - 1, *left);
 
                         if (error) {
                                 if (*right == NULL)
-                                        *right = create_node(0, NODE);
+                                        *right = create_node(NODE, 0);
 
                                 error = add_huffman_code(value, code_size - 1, *right);
                         }

@@ -3,14 +3,14 @@
 #include "common.h"
 
 
-int16_t extract_dpcm(struct bitstream *stream, uint8_t nb_bits)
+int16_t extract_dpcm(struct bitstream *stream, uint8_t class)
 {
         bool negative = false;
         int8_t bit;
         int16_t value = 0;
         uint32_t dest;
 
-        if (nb_bits > 0) {
+        if (class > 0) {
                 read_bitstream(stream, 1, &dest, true);
                 bit = dest & 1;
                 value = bit;
@@ -18,7 +18,7 @@ int16_t extract_dpcm(struct bitstream *stream, uint8_t nb_bits)
                 if (value == 0)
                         negative = true;
 
-                for (uint8_t k = 1; k < nb_bits; ++k) {
+                for (uint8_t k = 1; k < class; ++k) {
                         read_bitstream(stream, 1, &dest, true);
                         bit = (dest & 1);
 
@@ -26,7 +26,7 @@ int16_t extract_dpcm(struct bitstream *stream, uint8_t nb_bits)
                 }
 
                 if (negative)
-                        value = -1 * ((1 << nb_bits) - 1 - value);
+                        value = -1 * ((1 << class) - 1 - value);
         }
 
         return value;
@@ -37,7 +37,7 @@ void unpack_block(struct bitstream *stream,
                 struct huff_table *table_AC,
                 int32_t bloc[64])
 {
-        int8_t nb_bits, zeros, symbol;
+        int8_t class, zeros, huffman_value;
         uint8_t n = 0;
         int16_t diff;
 
@@ -46,8 +46,8 @@ void unpack_block(struct bitstream *stream,
                 return;
 
 
-        nb_bits = next_huffman_value(table_DC, stream);
-        diff = extract_dpcm(stream, nb_bits);
+        class = next_huffman_value(table_DC, stream);
+        diff = extract_dpcm(stream, class);
 
         bloc[n] = *pred_DC + diff;
         *pred_DC = bloc[n];
@@ -55,9 +55,9 @@ void unpack_block(struct bitstream *stream,
 
 
         while (n < BLOCK_SIZE) {
-                symbol = next_huffman_value(table_AC, stream);
+                huffman_value = next_huffman_value(table_AC, stream);
 
-                switch ((uint8_t)symbol) {
+                switch ((uint8_t)huffman_value) {
                 case 0xF0:
                         for (uint8_t i = 0; i < 16; i++)
                                 bloc[n + i] = 0;
@@ -71,15 +71,15 @@ void unpack_block(struct bitstream *stream,
                         break;
 
                 default:
-                        nb_bits = symbol & 0xF;
-                        zeros = ((uint8_t)symbol) >> 4;
+                        class = huffman_value & 0xF;
+                        zeros = ((uint8_t)huffman_value) >> 4;
 
                         for (uint8_t i = 0; i < zeros; i++)
                                 bloc[n + i] = 0;
 
                         n += zeros;
 
-                        bloc[n++] = extract_dpcm(stream, nb_bits);
+                        bloc[n++] = extract_dpcm(stream, class);
                 }
         }
 }

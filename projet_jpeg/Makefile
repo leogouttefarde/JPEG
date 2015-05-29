@@ -25,7 +25,7 @@ NEW_OBJ_FILES = $(OBJ_DIR)/iqzz.o $(OBJ_DIR)/conv.o
 NEW_OBJ_FILES += $(OBJ_DIR)/library.o $(OBJ_DIR)/huffman.o
 NEW_OBJ_FILES += $(OBJ_DIR)/unpack.o $(OBJ_DIR)/upsampler.o $(OBJ_DIR)/bitstream.o
 NEW_OBJ_FILES += $(OBJ_DIR)/idct.o
-#NEW_OBJ_FILES += $(OBJ_DIR)/loeffler.o
+NEW_OBJ_FILES += $(OBJ_DIR)/loeffler.o
 
 all : jpeg2tiff
 
