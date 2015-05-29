@@ -13,11 +13,11 @@ static inline void upsample_pixel(uint8_t *in, uint32_t in_pos,
                     uint8_t nb_blocks_h, uint8_t nb_blocks_v)
 {
         const uint32_t LINE = BLOCK_DIM * nb_blocks_out_h;
-        uint32_t out_pos;
+        //uint32_t out_pos;
 
         for (uint16_t v = 0; v < nb_blocks_v; ++v) {
 
-                out_pos = out_index;
+                //out_pos = out_index;
 
 
                 /*
