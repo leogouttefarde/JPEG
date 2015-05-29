@@ -65,8 +65,8 @@ void upsampler(uint8_t *in,
                 uint8_t *out,
                 uint8_t nb_blocks_out_h, uint8_t nb_blocks_out_v)
 {
-        const uint8_t nb_blocks_v = nb_blocks_out_v / nb_blocks_in_v;
         const uint8_t nb_blocks_h = nb_blocks_out_h / nb_blocks_in_h;
+        const uint8_t nb_blocks_v = nb_blocks_out_v / nb_blocks_in_v;
 
         /* Optimizations */
         const uint32_t IN_LINE = BLOCK_SIZE * nb_blocks_in_h;

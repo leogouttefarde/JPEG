@@ -56,11 +56,8 @@ int8_t next_bit(struct bitstream *stream, bool byte_stuffing)
                 size = fread(byte, 1, 1, stream->file);
 
                 if (byte_stuffing && last == 0xFF) {
-                        if (*byte != 0x00) {
-                                printf("Error : corrupted JPEG file\n");
-
+                        if (*byte != 0x00)
                                 return -1;
-                        }
 
                         size = fread(byte, 1, 1, stream->file);
                 }
