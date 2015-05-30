@@ -9,6 +9,8 @@
 #include "upsampler.h"
 
 
+static inline uint16_t mcu_per_dim(uint8_t mcu, uint16_t dim);
+
 /* Read a section */
 uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                         struct jpeg_data *jpeg, bool *error)
@@ -279,16 +281,6 @@ void read_header(struct bitstream *stream, struct jpeg_data *jpeg, bool *error)
         }
 }
 
-static uint16_t mcu_per_dim(uint8_t mcu, uint16_t dim)
-{
-        uint16_t nb = dim / mcu;
-
-        if (dim % mcu)
-                nb++;
-
-        return nb;
-}
-
 char* create_tiff_name(char *path)
 {
         if (path == NULL)
@@ -454,6 +446,16 @@ void free_jpeg_data(struct jpeg_data *jpeg)
         for (uint8_t i = 0; i < 2; i++)
                 for (uint8_t j = 0; j < MAX_HTABLES; j++)
                         free_huffman_table(jpeg->htables[i][j]);
+}
+
+static inline uint16_t mcu_per_dim(uint8_t mcu, uint16_t dim)
+{
+        uint16_t nb = dim / mcu;
+
+        if (dim % mcu)
+                nb++;
+
+        return nb;
 }
 
 
