@@ -83,4 +83,20 @@ bool print_block(int32_t *block)
         return error;
 }
 
+bool is_valid_ext(char *path)
+{
+        bool result = false;
+
+        if (path != NULL) {
+                char *dot = strrchr(path, '.') + 1;
+
+                if (dot != NULL) {
+                        if (!strcasecmp(dot, "jpg") || !strcasecmp(dot, "jpeg"))
+                                result = true;
+                }
+        }
+
+        return result;
+}
+
 

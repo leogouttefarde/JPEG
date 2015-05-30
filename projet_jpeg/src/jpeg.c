@@ -265,15 +265,14 @@ void read_header(struct bitstream *stream, struct jpeg_data *jpeg, bool *error)
         /* SOI check */
         marker = read_section(stream, SOI, NULL, error);
 
-        if (marker != SOI) {
+        if (marker != SOI)
                 printf("ERROR : all JPEG files must start with an SOI section\n");
-        }
 
         while (!*error && marker != SOS && !end_of_bitstream(stream)) {
 
                 marker = read_section(stream, ANY, jpeg, error);
 
-                printf("Section : 0x%02X\n", marker);
+                // printf("Section : 0x%02X\n", marker);
 
                 // printf("end_of_bitstream(stream) : %d\n", end_of_bitstream(stream));
                 // printf("error : %d\n", error);
@@ -295,27 +294,30 @@ char* create_tiff_name(char *path)
         if (path == NULL)
                 return NULL;
 
-        char *name = NULL;
-        uint32_t len = strlen(path);
-
+        char *name, *dot;
         uint32_t len_cpy;
         uint32_t len_tiff;
-        char *dot = strchr(path, '.');
+
+
+        dot = strrchr(path, '.');
 
         if (dot != NULL)
                 len_cpy = (uint32_t)(dot - path);
         else
-                len_cpy = len;
+                len_cpy = strlen(path);
 
         len_tiff = len_cpy + 5 + 1;
 
         // printf("len_cpy = %d\n", len_tiff);
         // printf("len_tiff = %d\n", len_tiff);
         name = malloc(len_tiff);
-        strncpy(name, path, len_cpy);
-        name[len_cpy] = 0;
 
-        strcat(name, ".tiff");
+        if (name != NULL) {
+                strncpy(name, path, len_cpy);
+                name[len_cpy] = 0;
+
+                strcat(name, ".tiff");
+        }
         // printf("name = %s\n", name);
 
         return name;
