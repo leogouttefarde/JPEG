@@ -29,4 +29,20 @@ uint8_t double2uint8(double x)
         return res;
 }
 
+bool print_block(int32_t *block)
+{
+        bool error = true;
+
+        for (uint8_t i = 0; i < BLOCK_DIM; i++) {
+                for (uint8_t j = 0; j < BLOCK_DIM; j++)
+                        printf("%u ", block[i * BLOCK_DIM + j]);
+
+                printf("\n");
+        }
+        
+        printf("\n\n");
+
+        return error;
+}
+
 

@@ -60,11 +60,21 @@ static inline void upsample_block(uint8_t *in, uint32_t in_index,
         }
 }
 
+static uint32_t calls = 0;
+
 void upsampler(uint8_t *in,
                 uint8_t nb_blocks_in_h, uint8_t nb_blocks_in_v,
                 uint8_t *out,
                 uint8_t nb_blocks_out_h, uint8_t nb_blocks_out_v)
 {
+        // printf("upsampler %d\n", ++calls);
+        // printf("upsampler :\n");
+        // printf("nb_blocks_in_h = %d\n", nb_blocks_in_h);
+        // printf("nb_blocks_in_v = %d\n", nb_blocks_in_v);
+
+        // printf("nb_blocks_out_h = %d\n", nb_blocks_out_h);
+        // printf("nb_blocks_out_v = %d\n\n", nb_blocks_out_v);
+
         const uint8_t nb_blocks_h = nb_blocks_out_h / nb_blocks_in_h;
         const uint8_t nb_blocks_v = nb_blocks_out_v / nb_blocks_in_v;
 

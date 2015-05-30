@@ -31,12 +31,14 @@ int16_t extract_dpcm(struct bitstream *stream, uint8_t class)
 
         return value;
 }
-
+static uint32_t calls = 0;
 void unpack_block(struct bitstream *stream,
                 struct huff_table *table_DC, int32_t *pred_DC,
                 struct huff_table *table_AC,
                 int32_t bloc[64])
 {
+        // printf("unpack_block %d\n", ++calls);
+        // printf("pred %d\n", *pred_DC);
         int8_t class, zeros, huffman_value;
         uint8_t n = 0;
         int16_t diff;
@@ -51,6 +53,7 @@ void unpack_block(struct bitstream *stream,
 
         bloc[n] = *pred_DC + diff;
         *pred_DC = bloc[n];
+        // printf("new_pred %d\n", *pred_DC);
         n++;
 
 
@@ -82,5 +85,6 @@ void unpack_block(struct bitstream *stream,
                         bloc[n++] = extract_dpcm(stream, class);
                 }
         }
+        // print_block(bloc);
 }
 

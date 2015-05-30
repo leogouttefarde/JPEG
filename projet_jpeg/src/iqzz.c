@@ -9,8 +9,15 @@
 #define TURN if ((down = !down)) { DOWN; } else { UP; }
 
 
+static uint32_t calls = 0;
+
 void iqzz_block (int32_t in[64], int32_t out[64], uint8_t quantif[64])
 {
+        // printf("iqzz_block %d\n", ++calls);
+        // printf("iqzz_block :\n");
+        // printf("in[17] = %d\n", in[17]);
+        // printf("in[42] = %d\n\n", in[42]);
+
         bool down = false;
         uint8_t x = 0;
         uint8_t y = 0;

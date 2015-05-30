@@ -428,7 +428,7 @@ int main(int argc, char **argv)
 
                                                                 // printf("nb = %d\n", nb);
                                                                 for (uint8_t n = 0; n < nb; n++) {
-                                                                        unpack_block(stream, huff_tables[0][h_dc], &pred_DC[h_dc],
+                                                                        unpack_block(stream, huff_tables[0][h_dc], &pred_DC[i_c],
                                                                                              huff_tables[1][h_ac], block);
 
                                                                         iqzz_block(block, iqzz, (uint8_t*)&quantif_tables[i_q]);
@@ -436,9 +436,10 @@ int main(int argc, char **argv)
                                                                         idct_block(iqzz, (uint8_t*)&idct[n]);
                                                                 }
 
-                                                                upsampled = malloc(mcu_h * mcu_v * BLOCK_SIZE * sizeof(uint8_t));
+                                                                upsampled = calloc(1, mcu_h * mcu_v * sizeof(uint8_t));
                                                                 // printf("up = %d\n", nb * BLOCK_SIZE);
 
+                                                                // printf("i_c = %d\n", i_c);
                                                                 // printf("nb_h = %d\n", nb_h);
                                                                 // printf("nb_v = %d\n", nb_v);
                                                                 upsampler((uint8_t*)idct, nb_h, nb_v, upsampled, mcu_h_dim, mcu_v_dim);
@@ -452,16 +453,16 @@ int main(int argc, char **argv)
 
                                                         // printf("mcu_h = %d\n", mcu_h);
                                                         // printf("mcu_v = %d\n", mcu_v);
-                                                        YCbCr_to_ARGB(mcu_YCbCr, mcu_RGB, mcu_h, mcu_v);
+                                                        YCbCr_to_ARGB(mcu_YCbCr, mcu_RGB, mcu_h_dim, mcu_v_dim);
 
 
 
-                                                        printf("tfd = %x\n", tfd);
-                                                        printf("mcu_RGB = %x\n", mcu_RGB);
-                                                        printf("mcu_h = %d\n", mcu_h);
-                                                        printf("mcu_v = %d\n", mcu_v);
-                                                        printf("nb_blocks_h = %d\n", mcu_h_dim);
-                                                        printf("nb_blocks_v = %d\n", mcu_v_dim);
+                                                        // printf("tfd = %x\n", tfd);
+                                                        // printf("mcu_RGB = %x\n", mcu_RGB);
+                                                        // printf("mcu_h = %d\n", mcu_h);
+                                                        // printf("mcu_v = %d\n", mcu_v);
+                                                        // printf("nb_blocks_h = %d\n", mcu_h_dim);
+                                                        // printf("nb_blocks_v = %d\n", mcu_v_dim);
 
                                                         /* Ecrit le contenu de la MCU passée en paramètre dans le fichier TIFF
                                                          * représenté par la structure tiff_file_desc tfd. nb_blocks_h et
