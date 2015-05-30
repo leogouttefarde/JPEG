@@ -42,11 +42,17 @@ ${OBJ_DIR}/%.o: ${SRC_DIR}/%.c
 clean:
 	rm -f jpeg2tiff $(NEW_OBJ_FILES)
 
-run: all
-	./jpeg2tiff tests/shaun_the_sheep.jpeg
 
-	if [ -a tests/shaun_the_sheep.tiff ]; \
+# IMAGE=tests/shaun_the_sheep.tiff
+IMAGE=tests/ice_age
+JPEG=${IMAGE}.jpeg
+TIFF=${IMAGE}.tiff
+
+run: all
+	./jpeg2tiff ${JPEG}
+
+	if [ -a ${TIFF} ]; \
 	then \
-		display tests/shaun_the_sheep.tiff; \
-		rm -f tests/shaun_the_sheep.tiff; \
+		display ${TIFF}; \
+		rm -f ${TIFF}; \
 	fi;

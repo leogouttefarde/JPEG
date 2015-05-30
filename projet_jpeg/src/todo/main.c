@@ -83,9 +83,11 @@ int main(int argc, char **argv)
 
 
                                 uint16_t height, width;
+                                int32_t pred_DC[4];
                                 struct huff_table *huff_tables[2][4];
                                 uint8_t quantif_tables[0x10][BLOCK_SIZE];
 
+                                memset(pred_DC, 0, sizeof(pred_DC));
                                 memset(&comp_list, 0, sizeof(comp_list));
                                 memset(comps, 0, sizeof(comps));
                                 memset(huff_tables, 0, sizeof(huff_tables));
@@ -140,17 +142,18 @@ int main(int argc, char **argv)
 
                                         /* DQT */
                                         case 0xDB:
-                                                read_byte(stream, &byte);
-                                                unread--;
-
                                                 /* Read all quantification tables */
                                                 do {
+                                                        read_byte(stream, &byte);
+                                                        unread--;
+
                                                         bool accuracy = ((uint8_t)byte) >> 4;
 
                                                         if (accuracy)
                                                                 error = true;
 
                                                         else {
+                                                                // printf("unread = %d\n", unread);
                                                                 uint8_t i_q = byte & 0xF;
                                                                 uint8_t *quantif_table = (uint8_t*)&quantif_tables[i_q];
 
@@ -211,6 +214,8 @@ int main(int argc, char **argv)
                                                                         comps[i_c].nb_blocks_h = h_sampling_factor;
                                                                         comps[i_c].nb_blocks_v = v_sampling_factor;
                                                                         comps[i_c].i_q = i_q;
+                                                                        //printf("nb_blocks_h = %d\n", h_sampling_factor);
+                                                                        //printf("nb_blocks_v = %d\n", v_sampling_factor);
                                                                 }
                                                         }
                                                 }
@@ -253,6 +258,7 @@ int main(int argc, char **argv)
                                                                 huff_tables[type][index] = table;
 
                                                         unread -= nb_byte_read;
+                                                        // printf("unread = %i\n", unread);
                                                 }
 
                                                 skip_bitstream_until(stream, 0xFF);
@@ -299,37 +305,60 @@ int main(int argc, char **argv)
 
                                                 // Calcul du nombre de MCU à faire
                                                 // (+ reconstitution de l'image)
+                                                uint8_t mcu_h = 1;
+                                                uint8_t mcu_v = 1;
+
+
                                                 while (cur_comp) {
 
-                                                        // comps[cur_comp->i_c].nb_blocks_h
-                                                        // comps[cur_comp->i_c].nb_blocks_v
-                                                        // comps[cur_comp->i_c].i_q
-
-                                                        // cur_comp->h_dc
-                                                        // cur_comp->h_ac
-                                                        uint8_t nb = comps[cur_comp->i_c].nb_blocks_h * comps[cur_comp->i_c].nb_blocks_v;
-
-                                                        // printf("nb = %d\n", nb);
-                                                        /* Y */
-                                                        for (uint8_t n = 0; n < nb; n++)
-                                                                for (uint8_t i = 0; i < BLOCK_SIZE; i++)
-                                                                        read_byte(stream, &byte);
-
-                                                        /* Cb */
-                                                        for (uint8_t i = 0; i < BLOCK_SIZE; i++)
-                                                                read_byte(stream, &byte);
-
-                                                        /* Cr */
-                                                        for (uint8_t i = 0; i < BLOCK_SIZE; i++)
-                                                                read_byte(stream, &byte);
-
+                                                        uint8_t nb_h = comps[cur_comp->i_c].nb_blocks_h;
+                                                        uint8_t nb_v = comps[cur_comp->i_c].nb_blocks_v;
+                                                        mcu_h = mcu_h < nb_h ? nb_h : mcu_h;
+                                                        mcu_v = mcu_v < nb_v ? nb_v : mcu_v;
 
                                                         cur_comp = cur_comp->suiv;
                                                 }
 
+                                                mcu_h *= BLOCK_DIM;
+                                                mcu_v *= BLOCK_DIM;
 
-                                                printf("Section SOS à finir\n");
-                                                error = 1;
+
+
+                                                uint32_t nb_mcu_h = width / mcu_h + (width % mcu_h != 0);
+                                                uint32_t nb_mcu_v = height / mcu_v + (height % mcu_v != 0);
+                                                uint32_t nb_mcu = nb_mcu_h * nb_mcu_v;
+                                                // printf("width = %d\n", width);
+                                                // printf("height = %d\n", height);
+                                                // printf("nb_mcu = %d\n", nb_mcu);
+
+                                                for (uint32_t i = 0; i < nb_mcu; i++) {
+
+                                                        cur_comp = &comp_list;
+
+
+                                                        while (cur_comp) {
+
+                                                                // comps[cur_comp->i_c].nb_blocks_h
+                                                                // comps[cur_comp->i_c].nb_blocks_v
+                                                                // comps[cur_comp->i_c].i_q
+
+                                                                // cur_comp->h_dc
+                                                                // cur_comp->h_ac
+                                                                uint8_t nb = comps[cur_comp->i_c].nb_blocks_h * comps[cur_comp->i_c].nb_blocks_v;
+                                                                int32_t block[BLOCK_SIZE];
+
+                                                                // printf("nb = %d\n", nb);
+                                                                for (uint8_t n = 0; n < nb; n++)
+                                                                        unpack_block(stream, huff_tables[0][cur_comp->h_dc], &pred_DC[cur_comp->h_dc],
+                                                                                             huff_tables[1][cur_comp->h_ac], block);
+
+
+                                                                cur_comp = cur_comp->suiv;
+                                                                // printf("i = %d\n", i);
+                                                        }
+                                                }
+
+                                                skip_bitstream_until(stream, 0xFF);
                                                 break;
 
                                         /* EOI */
