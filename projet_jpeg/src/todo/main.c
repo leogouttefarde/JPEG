@@ -2,6 +2,12 @@
 #include "common.h"
 #include "bitstream.h"
 #include "huffman.h"
+#include "unpack.h"
+#include "iqzz.h"
+#include "idct.h"
+#include "tiff.h"
+#include "conv.h"
+#include "upsampler.h"
 
 
 bool read_short_BE(struct bitstream *stream, uint16_t *value)
@@ -79,7 +85,7 @@ int main(int argc, char **argv)
                                         uint8_t i_q;
                                 };
 
-                                struct color_comp comps[0x100];
+                                struct color_comp comps[3];
 
 
                                 uint16_t height, width;
@@ -205,15 +211,23 @@ int main(int argc, char **argv)
 
                                                                         read_byte(stream, &i_c);
 
+                                                                        if (i_c < 1 || i_c > 3)
+                                                                                error = true;
+
+                                                                        else
+                                                                                --i_c;
+
                                                                         read_byte(stream, &byte);
                                                                         h_sampling_factor = byte >> 4;
                                                                         v_sampling_factor = byte & 0xF;
 
                                                                         read_byte(stream, &i_q);
 
-                                                                        comps[i_c].nb_blocks_h = h_sampling_factor;
-                                                                        comps[i_c].nb_blocks_v = v_sampling_factor;
-                                                                        comps[i_c].i_q = i_q;
+                                                                        if (!error) {
+                                                                                comps[i_c].nb_blocks_h = h_sampling_factor;
+                                                                                comps[i_c].nb_blocks_v = v_sampling_factor;
+                                                                                comps[i_c].i_q = i_q;
+                                                                        }
                                                                         //printf("nb_blocks_h = %d\n", h_sampling_factor);
                                                                         //printf("nb_blocks_v = %d\n", v_sampling_factor);
                                                                 }
@@ -267,60 +281,74 @@ int main(int argc, char **argv)
                                         /* SOS : Start Of Scan */
                                         case 0xDA:
                                                 {
-                                                        uint8_t nb_comps;
-                                                        read_byte(stream, &nb_comps);
+                                                uint8_t nb_comps;
+                                                read_byte(stream, &nb_comps);
 
 
-                                                        struct comp_list *c_comp = &comp_list, *prev = NULL;
+                                                struct comp_list *c_comp = &comp_list, *prev = NULL;
 
-                                                        for (uint8_t i = 0; i < nb_comps; i++) {
+                                                for (uint8_t i = 0; i < nb_comps; i++) {
 
-                                                                if (prev)
-                                                                        c_comp = calloc(1, sizeof(struct comp_list));
+                                                        if (prev)
+                                                                c_comp = calloc(1, sizeof(struct comp_list));
 
-                                                                assert(c_comp);
+                                                        assert(c_comp);
 
-
-                                                                read_byte(stream, &byte);
-                                                                c_comp->i_c = byte;
-                                                                // printf("i_c = %i\n", byte);
-
-                                                                read_byte(stream, &byte);
-                                                                c_comp->h_dc = byte >> 4;
-                                                                c_comp->h_ac = byte & 0xF;
-
-                                                                if (prev)
-                                                                        prev->suiv = c_comp;
-
-                                                                prev = c_comp;
-                                                        }
 
                                                         read_byte(stream, &byte);
+                                                        c_comp->i_c = --byte;
+                                                        // printf("i_c = %i\n", byte);
+
                                                         read_byte(stream, &byte);
-                                                        read_byte(stream, &byte);
+                                                        c_comp->h_dc = byte >> 4;
+                                                        c_comp->h_ac = byte & 0xF;
+
+                                                        if (prev)
+                                                                prev->suiv = c_comp;
+
+                                                        prev = c_comp;
                                                 }
+
+                                                read_byte(stream, &byte);
+                                                read_byte(stream, &byte);
+                                                read_byte(stream, &byte);
+
 
                                                 /* Lecture flux principal */
                                                 struct comp_list *cur_comp = &comp_list;
 
+
+
                                                 // Calcul du nombre de MCU à faire
                                                 // (+ reconstitution de l'image)
-                                                uint8_t mcu_h = 1;
-                                                uint8_t mcu_v = 1;
+                                                // uint8_t rdm[0x100];
+                                                uint8_t mcu_h = BLOCK_DIM;
+                                                uint8_t mcu_v = BLOCK_DIM;
+                                                // uint8_t rdm2[0x100];
+                                                // uint8_t mcu_h = 1;
+                                                // uint8_t mcu_v = 1;
 
 
                                                 while (cur_comp) {
 
                                                         uint8_t nb_h = comps[cur_comp->i_c].nb_blocks_h;
                                                         uint8_t nb_v = comps[cur_comp->i_c].nb_blocks_v;
-                                                        mcu_h = mcu_h < nb_h ? nb_h : mcu_h;
-                                                        mcu_v = mcu_v < nb_v ? nb_v : mcu_v;
+                                                        // mcu_h = mcu_h < nb_h ? nb_h : mcu_h;
+                                                        // mcu_v = mcu_v < nb_v ? nb_v : mcu_v;
+                                                        mcu_h *= nb_h;
+                                                        mcu_v *= nb_v;
 
                                                         cur_comp = cur_comp->suiv;
                                                 }
+                                                        printf("mcu_h = %d\n", mcu_h);
+                                                        printf("mcu_v = %d\n", mcu_v);
 
-                                                mcu_h *= BLOCK_DIM;
-                                                mcu_v *= BLOCK_DIM;
+
+                                                uint8_t *mcu_YCbCr[3] = { NULL, NULL, NULL };
+                                                uint32_t mcu_RGB[BLOCK_DIM*mcu_h * BLOCK_DIM*mcu_v];
+
+                                                // mcu_h *= BLOCK_DIM;
+                                                // mcu_v *= BLOCK_DIM;
 
 
 
@@ -331,32 +359,125 @@ int main(int argc, char **argv)
                                                 // printf("height = %d\n", height);
                                                 // printf("nb_mcu = %d\n", nb_mcu);
 
+
+
+                                                /* Initialisation du fichier TIFF résultat, avec les paramètres suivants:
+                                                   - width: la largeur de l'image ;
+                                                   - height: la hauteur de l'image ;
+                                                   - row_per_strip: le nombre de lignes de pixels par bande.
+                                                 */
+                                                struct tiff_file_desc *tfd = NULL;
+
+                                                uint32_t len = strlen(path);
+                                                uint32_t len_plus = len + 1;
+
+                                                uint32_t len_cpy;
+                                                uint32_t len_tiff;
+                                                char *dot = strchr(path, '.');
+
+                                                if (dot) {
+                                                        len_cpy = (uint32_t)(dot - path);
+                                                        // printf("path = %x\n", path);
+                                                        // printf("dot = %x\n", dot);
+                                                        // printf("len_cpy = %d\n", len_cpy);
+                                                }
+
+                                                else {
+                                                        len_cpy = len;
+                                                }
+                                                len_tiff = len_cpy + 5 + 1;
+
+                                                // printf("len_cpy = %d\n", len_tiff);
+                                                // printf("len_tiff = %d\n", len_tiff);
+                                                char tiff_name[len_tiff];
+                                                strncpy(tiff_name, path, len_cpy);
+                                                tiff_name[len_cpy] = 0;
+
+                                                strcat(tiff_name, ".tiff");
+
+                                                // printf("tiff_name = %s\n", tiff_name);
+                                                // exit(0);
+
+
+                                                // tfd = init_tiff_file ("out.tiff", width, height, mcu_v);
+                                                tfd = init_tiff_file (tiff_name, width, height, mcu_v);
+
+                                                if (!tfd)
+                                                        error = 1, exit(1);
+
+
                                                 for (uint32_t i = 0; i < nb_mcu; i++) {
 
                                                         cur_comp = &comp_list;
 
 
+
                                                         while (cur_comp) {
 
-                                                                // comps[cur_comp->i_c].nb_blocks_h
-                                                                // comps[cur_comp->i_c].nb_blocks_v
-                                                                // comps[cur_comp->i_c].i_q
+                                                                uint8_t i_c = cur_comp->i_c;
+                                                                uint8_t nb_h = comps[i_c].nb_blocks_h;
+                                                                uint8_t nb_v = comps[i_c].nb_blocks_v;
 
-                                                                // cur_comp->h_dc
-                                                                // cur_comp->h_ac
-                                                                uint8_t nb = comps[cur_comp->i_c].nb_blocks_h * comps[cur_comp->i_c].nb_blocks_v;
+                                                                uint8_t h_dc = cur_comp->h_dc;
+                                                                uint8_t h_ac = cur_comp->h_ac;
+                                                                uint8_t i_q = comps[i_c].i_q;
+
+                                                                uint8_t nb = nb_h * nb_v;
                                                                 int32_t block[BLOCK_SIZE];
+                                                                int32_t iqzz[BLOCK_SIZE];
+                                                                uint8_t idct[BLOCK_SIZE];
+                                                                uint8_t *upsampled = NULL;
+
+
+                                                                // uint8_t nb_blocks_in_h, uint8_t nb_blocks_in_v,
+                                                                // uint8_t *out,
+                                                                // uint8_t nb_blocks_out_h, uint8_t nb_blocks_out_v)
+
 
                                                                 // printf("nb = %d\n", nb);
-                                                                for (uint8_t n = 0; n < nb; n++)
-                                                                        unpack_block(stream, huff_tables[0][cur_comp->h_dc], &pred_DC[cur_comp->h_dc],
-                                                                                             huff_tables[1][cur_comp->h_ac], block);
+                                                                for (uint8_t n = 0; n < nb; n++) {
+                                                                        unpack_block(stream, huff_tables[0][h_dc], &pred_DC[h_dc],
+                                                                                             huff_tables[1][h_ac], block);
+
+                                                                        iqzz_block(block, iqzz, (uint8_t*)&quantif_tables[i_q]);
+
+                                                                        idct_block(iqzz, idct);
+
+                                                                        upsampled = malloc(BLOCK_SIZE);
+                                                                        upsampler(idct, 1, 1, upsampled, nb_h, nb_v);
+                                                                        mcu_YCbCr[i_c] = upsampled;
+                                                                }
 
 
                                                                 cur_comp = cur_comp->suiv;
                                                                 // printf("i = %d\n", i);
                                                         }
+
+                                                        YCbCr_to_ARGB(mcu_YCbCr, mcu_RGB, mcu_h, mcu_v);
+
+
+
+                                                        uint8_t nb_h = mcu_h / BLOCK_DIM;
+                                                        uint8_t nb_v = mcu_v / BLOCK_DIM;
+
+
+                                                        // printf("tfd = %x\n", tfd);
+                                                        // printf("mcu_RGB = %x\n", mcu_RGB);
+                                                        // printf("mcu_h = %d\n", mcu_h);
+                                                        // printf("mcu_v = %d\n", mcu_v);
+                                                        // printf("nb_blocks_h = %d\n", nb_h);
+                                                        // printf("nb_blocks_v = %d\n", nb_v);
+
+                                                        /* Ecrit le contenu de la MCU passée en paramètre dans le fichier TIFF
+                                                         * représenté par la structure tiff_file_desc tfd. nb_blocks_h et
+                                                         * nb_blocks_v représentent les nombres de blocs 8x8 composant la MCU
+                                                         * en horizontal et en vertical. */
+                                                        write_tiff_file(tfd, mcu_RGB, nb_h, nb_v);
                                                 }
+
+                                                close_tiff_file(tfd);
+                                                }
+
 
                                                 skip_bitstream_until(stream, 0xFF);
                                                 break;

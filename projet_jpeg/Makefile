@@ -43,7 +43,7 @@ clean:
 	rm -f jpeg2tiff $(NEW_OBJ_FILES)
 
 
-# IMAGE=tests/shaun_the_sheep.tiff
+# IMAGE=tests/shaun_the_sheep
 IMAGE=tests/ice_age
 JPEG=${IMAGE}.jpeg
 TIFF=${IMAGE}.tiff

@@ -13,6 +13,11 @@ void YCbCr_to_ARGB(uint8_t  *mcu_YCbCr[3], uint32_t *mcu_RGB,
         uint8_t *Cr = mcu_YCbCr[2];
         int32_t R, G, B;
 
+        if (Y == NULL || Cb == NULL || Cr == NULL) {
+                printf("ERROR : corrupt YCbCr data\n");
+                return;
+        }
+
         for (uint32_t i = 0; i < SIZE; ++i) {
 
                 /* Conversion moins précise */
