@@ -371,14 +371,17 @@ void process_image(struct bitstream *stream, struct jpeg_data *jpeg, bool *error
                 uint8_t i_q;
                 int32_t *last_DC;
 
-                uint8_t data_YCbCr[3][mcu_h * mcu_v];
-                uint8_t *mcu_YCbCr[3] = { &data_YCbCr[0], &data_YCbCr[1], &data_YCbCr[2] };
-                uint32_t mcu_RGB[mcu_h * mcu_v];
-
                 int32_t block[BLOCK_SIZE];
                 int32_t iqzz[BLOCK_SIZE];
-                uint8_t idct[nb][BLOCK_SIZE];
                 uint8_t *upsampled;
+
+                uint32_t mcu_RGB[mcu_h * mcu_v];
+                uint8_t data_YCbCr[3][mcu_h * mcu_v];
+                uint8_t *mcu_YCbCr[3] = {
+                        (uint8_t*)&data_YCbCr[0],
+                        (uint8_t*)&data_YCbCr[1],
+                        (uint8_t*)&data_YCbCr[2]
+                };
 
 
                 for (uint32_t i = 0; i < nb_mcu; i++) {
@@ -397,6 +400,7 @@ void process_image(struct bitstream *stream, struct jpeg_data *jpeg, bool *error
                                 // printf("i_q = %d\n", i_q);
 
                                 nb = nb_h * nb_v;
+                                uint8_t idct[nb][BLOCK_SIZE];
 
 
                                 // printf("nb = %d\n", nb);
@@ -417,16 +421,9 @@ void process_image(struct bitstream *stream, struct jpeg_data *jpeg, bool *error
                                 // printf("nb_h = %d\n", nb_h);
                                 // printf("nb_v = %d\n", nb_v);
                                 upsampler((uint8_t*)idct, nb_h, nb_v, upsampled, mcu_h_dim, mcu_v_dim);
-
-                                // mcu_YCbCr[i_c] = upsampled;
                         }
 
                         YCbCr_to_ARGB(mcu_YCbCr, mcu_RGB, mcu_h_dim, mcu_v_dim);
-
-                        // for (uint8_t i = 0; i < nb_comps; i++)
-                        //         SAFE_FREE(mcu_YCbCr[i]);
-
-
 
                         // printf("tfd = %x\n", tfd);
                         // printf("mcu_RGB = %x\n", mcu_RGB);
@@ -438,9 +435,8 @@ void process_image(struct bitstream *stream, struct jpeg_data *jpeg, bool *error
 
                 close_tiff_file(file);
 
-        } else {
+        } else
                 *error = true;
-        }
 
 
         SAFE_FREE(name);
