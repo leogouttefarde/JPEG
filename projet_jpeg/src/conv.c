@@ -6,21 +6,6 @@
 void YCbCr_to_ARGB(uint8_t  *mcu_YCbCr[3], uint32_t *mcu_RGB,
                 uint32_t nb_blocks_h, uint32_t nb_blocks_v)
 {
-        //printf("YCbCr_to_ARGB :\n");
-        // printf("nb_blocks_h = %d\n", nb_blocks_h);
-        // printf("nb_blocks_v = %d\n\n", nb_blocks_v);
-
-        // print_block(&mcu_YCbCr[0][256]);
-        // print_block(&mcu_YCbCr[1][0]);
-
-        // printf("mcu_YCbCr[0][17] = %d\n", mcu_YCbCr[0][17]);
-        // printf("mcu_YCbCr[0][42] = %d\n", mcu_YCbCr[0][42]);
-        // printf("mcu_YCbCr[1][17] = %d\n", mcu_YCbCr[1][17]);
-        // printf("mcu_YCbCr[1][42] = %d\n", mcu_YCbCr[1][42]);
-        // printf("mcu_YCbCr[2][17] = %d\n", mcu_YCbCr[2][17]);
-        // printf("mcu_YCbCr[2][42] = %d\n\n", mcu_YCbCr[2][42]);
-        // exit(0);
-
         const uint32_t SIZE = BLOCK_DIM*nb_blocks_h * BLOCK_DIM*nb_blocks_v;
 
         uint8_t *Y = mcu_YCbCr[0];

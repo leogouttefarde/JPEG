@@ -80,11 +80,8 @@ void loeffler(double vect[BLOCK_DIM])
         //swap(&vect, &next);
 }
 
-static uint32_t calls = 0;
-
 void idct_block(int32_t in[64], uint8_t out[64])
 {
-        // printf("idct_block %d\n", ++calls);
         double vector[BLOCK_DIM];
         double matrix[BLOCK_SIZE];
 

@@ -8,45 +8,7 @@
 #include "tiff.h"
 #include "conv.h"
 #include "upsampler.h"
-
-
-bool read_short_BE(struct bitstream *stream, uint16_t *value)
-{
-        bool error = true;
-
-        if (stream != NULL && value != NULL) {
-                uint8_t count;
-                uint32_t dest;
-
-                count = read_bitstream(stream, 16, &dest, false);
-
-                if (count == 16) {
-                        error = false;
-                        *value = (uint16_t)dest;
-                }
-        }
-
-        return error;
-}
-
-bool read_byte(struct bitstream *stream, uint8_t *value)
-{
-        bool error = true;
-
-        if (stream != NULL && value != NULL) {
-                uint8_t count;
-                uint32_t dest;
-
-                count = read_bitstream(stream, 8, &dest, false);
-
-                if (count == 8) {
-                        error = false;
-                        *value = (uint8_t)dest;
-                }
-        }
-
-        return error;
-}
+#include "jpeg.h"
 
 
 int main(int argc, char **argv)
@@ -86,10 +48,10 @@ int main(int argc, char **argv)
                                 };
 
                                 struct color_comp comps[3];
+                                int32_t pred_DC[3];
 
 
                                 uint16_t height, width;
-                                int32_t pred_DC[4];
                                 struct huff_table *huff_tables[2][4];
                                 uint8_t quantif_tables[0x10][BLOCK_SIZE];
 
@@ -342,10 +304,6 @@ int main(int argc, char **argv)
                                                 printf("mcu_v = %d\n", mcu_v);
 
 
-                                                // mcu_h *= BLOCK_DIM;
-                                                // mcu_v *= BLOCK_DIM;
-
-
 
                                                 uint32_t nb_mcu_h = width / mcu_h + (width % mcu_h != 0);
                                                 uint32_t nb_mcu_v = height / mcu_v + (height % mcu_v != 0);
@@ -356,11 +314,6 @@ int main(int argc, char **argv)
 
 
 
-                                                /* Initialisation du fichier TIFF résultat, avec les paramètres suivants:
-                                                   - width: la largeur de l'image ;
-                                                   - height: la hauteur de l'image ;
-                                                   - row_per_strip: le nombre de lignes de pixels par bande.
-                                                 */
                                                 struct tiff_file_desc *tfd = NULL;
 
                                                 uint32_t len = strlen(path);
@@ -388,16 +341,20 @@ int main(int argc, char **argv)
                                                 tiff_name[len_cpy] = 0;
 
                                                 strcat(tiff_name, ".tiff");
-
                                                 // printf("tiff_name = %s\n", tiff_name);
-                                                // exit(0);
 
 
-                                                // tfd = init_tiff_file ("out.tiff", width, height, mcu_v);
                                                 tfd = init_tiff_file (tiff_name, width, height, mcu_v);
 
                                                 if (!tfd)
                                                         error = 1, exit(1);
+
+
+                                                uint8_t mcu_data[3][mcu_h * mcu_v];
+                                                uint8_t *mcu_YCbCr[3] = { &mcu_data[0], &mcu_data[1], &mcu_data[2] };
+
+                                                // for (uint8_t i = 0; i < nb_comps; i++)
+                                                //         mcu_YCbCr[i_c] = malloc(mcu_h * mcu_v);
 
 
                                                 for (uint32_t i = 0; i < nb_mcu; i++) {
@@ -405,8 +362,7 @@ int main(int argc, char **argv)
                                                         cur_comp = &comp_list;
 
 
-                                                        uint8_t *mcu_YCbCr[3] = { NULL, NULL, NULL };
-                                                        uint32_t mcu_RGB[BLOCK_DIM*mcu_h * BLOCK_DIM*mcu_v];
+                                                        uint32_t mcu_RGB[mcu_h * mcu_v];
 
                                                         while (cur_comp) {
 
@@ -417,6 +373,7 @@ int main(int argc, char **argv)
                                                                 uint8_t h_dc = cur_comp->h_dc;
                                                                 uint8_t h_ac = cur_comp->h_ac;
                                                                 uint8_t i_q = comps[i_c].i_q;
+                                                                // printf("i_c = %d\n", i_c);
                                                                 // printf("i_q = %d\n", i_q);
 
                                                                 uint8_t nb = nb_h * nb_v;
@@ -436,42 +393,53 @@ int main(int argc, char **argv)
                                                                         idct_block(iqzz, (uint8_t*)&idct[n]);
                                                                 }
 
-                                                                upsampled = calloc(1, mcu_h * mcu_v * sizeof(uint8_t));
-                                                                // printf("up = %d\n", nb * BLOCK_SIZE);
+                                                                // printf("mcu_h = %d\n", mcu_h);
+                                                                // printf("mcu_v = %d\n", mcu_v);
+                                                                // upsampled = malloc(mcu_h * mcu_v);
+                                                                upsampled = mcu_YCbCr[i_c];
 
-                                                                // printf("i_c = %d\n", i_c);
                                                                 // printf("nb_h = %d\n", nb_h);
                                                                 // printf("nb_v = %d\n", nb_v);
                                                                 upsampler((uint8_t*)idct, nb_h, nb_v, upsampled, mcu_h_dim, mcu_v_dim);
 
-                                                                mcu_YCbCr[i_c] = upsampled;
+                                                                // mcu_YCbCr[i_c] = upsampled;
 
 
                                                                 cur_comp = cur_comp->suiv;
-                                                                // printf("i = %d\n", i);
                                                         }
 
-                                                        // printf("mcu_h = %d\n", mcu_h);
-                                                        // printf("mcu_v = %d\n", mcu_v);
                                                         YCbCr_to_ARGB(mcu_YCbCr, mcu_RGB, mcu_h_dim, mcu_v_dim);
+
+                                                        // for (uint8_t i = 0; i < nb_comps; i++)
+                                                        //         SAFE_FREE(mcu_YCbCr[i]);
 
 
 
                                                         // printf("tfd = %x\n", tfd);
                                                         // printf("mcu_RGB = %x\n", mcu_RGB);
-                                                        // printf("mcu_h = %d\n", mcu_h);
-                                                        // printf("mcu_v = %d\n", mcu_v);
                                                         // printf("nb_blocks_h = %d\n", mcu_h_dim);
                                                         // printf("nb_blocks_v = %d\n", mcu_v_dim);
 
-                                                        /* Ecrit le contenu de la MCU passée en paramètre dans le fichier TIFF
-                                                         * représenté par la structure tiff_file_desc tfd. nb_blocks_h et
-                                                         * nb_blocks_v représentent les nombres de blocs 8x8 composant la MCU
-                                                         * en horizontal et en vertical. */
                                                         write_tiff_file(tfd, mcu_RGB, mcu_h_dim, mcu_v_dim);
                                                 }
 
                                                 close_tiff_file(tfd);
+
+
+
+                                                struct comp_list *suiv = NULL;
+                                                cur_comp = &comp_list;
+
+
+                                                while (cur_comp) {
+
+                                                        suiv = cur_comp->suiv;
+
+                                                        if (cur_comp != &comp_list)
+                                                                SAFE_FREE(cur_comp);
+
+                                                        cur_comp = suiv;
+                                                }
                                                 }
 
 

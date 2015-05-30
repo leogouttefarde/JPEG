@@ -33,11 +33,8 @@ uint8_t S(const uint8_t x, const uint8_t y, int32_t *in)
         return double2uint8(sum);
 }
 
-static uint32_t calls = 0;
-
 void idct_block(int32_t in[64], uint8_t out[64])
 {
-        // printf("idct_block %d\n", ++calls);
         for (uint8_t x = 0; x < BLOCK_DIM; ++x) {
                 for (uint8_t y = 0; y < BLOCK_DIM; ++y) {
                         out[x*BLOCK_DIM + y] = S(x, y, in);

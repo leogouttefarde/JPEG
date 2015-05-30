@@ -29,6 +29,44 @@ uint8_t double2uint8(double x)
         return res;
 }
 
+bool read_short_BE(struct bitstream *stream, uint16_t *value)
+{
+        bool error = true;
+
+        if (stream != NULL && value != NULL) {
+                uint8_t count;
+                uint32_t dest;
+
+                count = read_bitstream(stream, 16, &dest, false);
+
+                if (count == 16) {
+                        error = false;
+                        *value = (uint16_t)dest;
+                }
+        }
+
+        return error;
+}
+
+bool read_byte(struct bitstream *stream, uint8_t *value)
+{
+        bool error = true;
+
+        if (stream != NULL && value != NULL) {
+                uint8_t count;
+                uint32_t dest;
+
+                count = read_bitstream(stream, 8, &dest, false);
+
+                if (count == 8) {
+                        error = false;
+                        *value = (uint8_t)dest;
+                }
+        }
+
+        return error;
+}
+
 bool print_block(int32_t *block)
 {
         bool error = true;
