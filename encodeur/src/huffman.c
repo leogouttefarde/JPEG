@@ -16,6 +16,8 @@ enum node_type {
 
 struct huff_table {
         enum node_type type;
+        uint32_t code;
+        uint8_t size;
 
         union {
                 struct node node;
@@ -24,12 +26,15 @@ struct huff_table {
 };
 
 
-struct huff_table* create_node(enum node_type type, int8_t val)
+struct huff_table* create_node(enum node_type type, uint32_t code,
+                                uint8_t size, int8_t val)
 {
         struct huff_table *node = malloc(sizeof(struct huff_table));
 
         if (node != NULL) {
                 node->type = type;
+                node->code = code;
+                node->size = size;
 
                 if (type == NODE) {
                         node->u.node.left = NULL;
@@ -51,6 +56,9 @@ int8_t add_huffman_code(int8_t value, uint8_t code_size, struct huff_table *pare
                 error = 1;
 
         else {
+                uint32_t code = parent->code << 1;
+                uint8_t size = parent->size + 1;
+
                 struct huff_table **left, **right;
 
                 left = &parent->u.node.left;
@@ -59,23 +67,23 @@ int8_t add_huffman_code(int8_t value, uint8_t code_size, struct huff_table *pare
 
                 if (code_size == 0) {
                         if (*left == NULL)
-                                *left = create_node(LEAF, value);
+                                *left = create_node(LEAF, code, size, value);
 
                         else if (*right == NULL)
-                                *right = create_node(LEAF, value);
+                                *right = create_node(LEAF, code + 1, size, value);
 
                         else
                                 error = -1;
                 }
                 else {
                         if (*left == NULL)
-                                *left = create_node(NODE, 0);
+                                *left = create_node(NODE, code, size, 0);
 
                         error = add_huffman_code(value, code_size - 1, *left);
 
                         if (error) {
                                 if (*right == NULL)
-                                        *right = create_node(NODE, 0);
+                                        *right = create_node(NODE, code + 1, size, 0);
 
                                 error = add_huffman_code(value, code_size - 1, *right);
                         }
@@ -155,8 +163,9 @@ int8_t next_huffman_value(struct huff_table *table,
                         table = table->u.node.left;
         }
 
-        if (table != NULL)
-            result = table->u.val;
+        if (table != NULL) {
+                result = table->u.val;
+        }
 
         return result;
 }
@@ -172,4 +181,49 @@ void free_huffman_table(struct huff_table *table)
                 SAFE_FREE(table);
         }
 }
+
+struct huff_table *get_huffman_code(int8_t value, struct huff_table *table)
+{
+        struct huff_table *code = NULL;
+
+        if (table != NULL) {
+                if (table->type == NODE) {
+                        code = get_huffman_code(value, table->u.node.left);
+
+                        if (code == NULL)
+                                code = get_huffman_code(value, table->u.node.right);
+
+                } else if (table->type == LEAF && value == table->u.val)
+                        code = table;
+        }
+
+        return code;
+}
+
+bool write_huffman_value(int8_t value, struct huff_table *table,
+                         struct bitstream *stream)
+{
+        int8_t bit;
+        bool success = false;
+
+        struct huff_table *leaf = get_huffman_code(value, table);
+
+        if (leaf != NULL) {
+                uint32_t code = leaf->code;
+                uint8_t size = leaf->size;
+
+                for (uint8_t i = 0; i < size; i++) {
+                        bit = (code >> (size - 1 - i)) & 1;
+                        write_bit(stream, bit, true);
+                }
+
+                success = true;
+        }
+        else
+                printf("FATAL ERROR : no Huffman code for %d !\n", value);
+
+
+        return success;
+}
+
 

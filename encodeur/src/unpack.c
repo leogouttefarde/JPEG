@@ -42,7 +42,7 @@ void unpack_block(struct bitstream *stream,
                 struct huff_table *table_AC,
                 int32_t bloc[64])
 {
-        int8_t class, zeros, huffman_value;
+        uint8_t class, zeros, huffman_value;
         uint8_t n = 0;
         int16_t diff;
 
@@ -89,7 +89,7 @@ void unpack_block(struct bitstream *stream,
         }
 }
 
-uint8_t magnitude_class(int16_t value)
+static inline uint8_t magnitude_class(int16_t value)
 {
         uint8_t class = 0;
 
@@ -105,12 +105,30 @@ uint8_t magnitude_class(int16_t value)
         return class;
 }
 
+uint8_t write_dpcm(struct bitstream *stream, int16_t value)
+{
+        uint8_t bit;
+        uint8_t class = magnitude_class(value);
+
+        if (class > 0) {
+                if (value < 0)
+                        value += (1 << class) - 1;
+
+                for (uint8_t k = 0; k < class; ++k) {
+                        bit = (value >> (class - 1 - k)) & 1;
+                        write_bit(stream, bit, true);
+                }
+        }
+
+        return class;
+}
+
 void pack_block(struct bitstream *stream,
                 struct huff_table *table_DC, int32_t *pred_DC,
                 struct huff_table *table_AC,
                 int32_t bloc[64])
 {
-        uint8_t class, zeros, huffman_value;
+        uint8_t class, zeros, symbol;
         uint8_t n = 0;
         int16_t diff;
 
@@ -122,9 +140,10 @@ void pack_block(struct bitstream *stream,
         *pred_DC = bloc[n];
         n++;
 
+
         class = magnitude_class(diff);
         write_huffman_value(class, table_DC, stream);
-        write_dpcm(diff, class, stream);
+        write_dpcm(stream, diff);
 
 
         while (n < BLOCK_SIZE) {
@@ -134,9 +153,6 @@ void pack_block(struct bitstream *stream,
 
                 while (i < BLOCK_SIZE && !bloc[i++])
                         zeros++;
-                        // ;
-
-                // zeros = i - n;
 
 
                 // Si plus que des zéros
@@ -154,11 +170,14 @@ void pack_block(struct bitstream *stream,
                         write_huffman_value(symbol, table_AC, stream);
 
                 } else {
+                        n += zeros;
+
                         class = magnitude_class(bloc[n]);
-                        symbol = (zeros << 4) | class & 0xF;
+                        symbol = (zeros << 4) | (class & 0xF);
 
                         write_huffman_value(symbol, table_AC, stream);
-                        write_dpcm(bloc[n], class, stream);
+                        write_dpcm(stream, bloc[n]);
+                        n++;
                 }
         }
 }

@@ -17,5 +17,8 @@ extern int8_t next_huffman_value(struct huff_table *table,
 
 extern void free_huffman_table(struct huff_table *table);
 
+extern bool write_huffman_value(int8_t value, struct huff_table *table,
+                         struct bitstream *stream);
+
 #endif
 

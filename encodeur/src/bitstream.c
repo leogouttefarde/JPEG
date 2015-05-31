@@ -5,23 +5,37 @@
 
 struct bitstream {
         FILE *file;
+        enum stream_mode mode;
         uint8_t byte;
         uint8_t index;
 };
 
 
-struct bitstream *create_bitstream(const char *filename)
+struct bitstream *create_bitstream(const char *filename, enum stream_mode mode)
 {
         struct bitstream *stream = NULL;
 
         if (filename != NULL) {
-                FILE *file = fopen(filename, "rb");
+                char *open_mode;
+
+                if (mode == RDONLY)
+                        open_mode = "rb";
+
+                else if (mode == WRONLY)
+                        open_mode = "wb";
+
+                else
+                        open_mode = "r+";
+
+
+                FILE *file = fopen(filename, open_mode);
 
                 if (file != NULL) {
                         stream = malloc(sizeof(struct bitstream));
 
                         if (stream != NULL) {
                                 stream->file = file;
+                                stream->mode = mode;
                                 stream->byte = 0;
                                 stream->index = 0;
                         }
@@ -134,4 +148,49 @@ void free_bitstream(struct bitstream *stream)
                 SAFE_FREE(stream);
         }
 }
+
+FILE *bitstream_file(struct bitstream *stream)
+{
+        return stream->file;
+}
+
+int8_t write_bit(struct bitstream *stream, uint8_t bit, bool byte_stuffing)
+{
+        uint32_t size = 0;
+        uint8_t *byte = &stream->byte;
+
+        *byte = *byte << 1 | (bit & 1);
+
+
+        if (++stream->index == 8) {
+
+                uint8_t cur = *byte;
+
+                size = fwrite(byte, 1, 1, stream->file);
+                *byte = 0;
+
+                if (byte_stuffing && cur == 0xFF)
+                        size = fwrite(byte, 1, 1, stream->file);
+
+
+                if (size == 0)
+                        return -2;
+
+                stream->index = 0;
+        }
+
+        return 0;
+}
+
+struct bitstream *make_bitstream(FILE *file)
+{
+        struct bitstream *stream = calloc(1, sizeof(struct bitstream));
+
+        stream->file = file;
+        stream->byte = 0;
+        stream->index = 0;
+
+        return stream;
+}
+
 

@@ -28,5 +28,7 @@ inline uint8_t double2uint8(double x)
         return res;
 }
 
+void copy_file(FILE *dest, FILE *src);
+
 
 #endif

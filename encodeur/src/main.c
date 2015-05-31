@@ -15,17 +15,18 @@ int main(int argc, char **argv)
         char *path = argv[1];
 
         if (!is_valid_ext(path)) {
-                printf("ERROR : Invalid file extension, .jpg or .jpg expected\n");
+                printf("ERROR : Invalid file extension, .jpg or .jpeg expected\n");
                 return EXIT_FAILURE;
         }
 
 
-        struct bitstream *stream = create_bitstream(path);
+        struct bitstream *stream = create_bitstream(path, RDONLY);
+        // struct bitstream *stream = create_bitstream(path);
 
         if (stream != NULL) {
 
                 bool error = false;
-                uint8_t marker;
+                // uint8_t marker;
 
                 struct jpeg_data jpeg;
                 memset(&jpeg, 0, sizeof(struct jpeg_data));
@@ -36,18 +37,18 @@ int main(int argc, char **argv)
                 /* Read header data */
                 read_header(stream, &jpeg, &error);
 
-                /* Extract then write image data to tiff file */
+                /* Convert image data to JPEG */
                 process_image(stream, &jpeg, &error);
 
 
                 /* EOI check */
                 if (!error) {
-                        marker = read_section(stream, EOI, NULL, &error);
+                        // marker = read_section(stream, EOI, NULL, &error);
 
-                        if (marker != EOI)
-                                printf("ERROR : all JPEG files must end with an EOI section\n");
-                        else
-                                printf("JPEG file successfully decoded\n");
+                        // if (marker != EOI)
+                        //         printf("ERROR : all JPEG files must end with an EOI section\n");
+                        // else
+                                printf("JPEG file successfully encoded\n");
                 } else
                         printf("ERROR : unsupported JPEG format\n");
 

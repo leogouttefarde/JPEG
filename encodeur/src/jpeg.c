@@ -368,6 +368,11 @@ void process_image(struct bitstream *stream, struct jpeg_data *jpeg, bool *error
 
         name = create_tiff_name(jpeg->path);
         file = init_tiff_file(name, jpeg->width, jpeg->height, mcu_v);
+        FILE *out = fopen("out.jpg", "wb");
+
+        copy_file(out, bitstream_file(stream));
+        struct bitstream *ostream = make_bitstream(out);
+
 
         if (file != NULL) {
                 uint8_t nb_blocks_h, nb_blocks_v, nb_blocks;
@@ -409,8 +414,21 @@ void process_image(struct bitstream *stream, struct jpeg_data *jpeg, bool *error
 
                                 // printf("nb_blocks = %d\n", nb_blocks);
                                 for (uint8_t n = 0; n < nb_blocks; n++) {
+                                        int32_t last = *last_DC;
                                         unpack_block(stream, jpeg->htables[0][i_dc], last_DC,
                                                              jpeg->htables[1][i_ac], block);
+
+
+                                        int32_t new = *last_DC;
+
+                                        // On restaure pred_DC pour tester pack_block
+                                        *last_DC = last;
+
+                                        pack_block(ostream, jpeg->htables[0][i_dc], last_DC,
+                                                             jpeg->htables[1][i_ac], block);
+                                        // *last_DC = new;
+                                        // New doit avoir été restauré
+                                        assert(*last_DC == new);
 
                                         iqzz_block(block, iqzz, (uint8_t*)&jpeg->qtables[i_q]);
 
@@ -442,7 +460,7 @@ void process_image(struct bitstream *stream, struct jpeg_data *jpeg, bool *error
         } else
                 *error = true;
 
-
+        free_bitstream(ostream);
         SAFE_FREE(name);
 
         skip_bitstream_until(stream, SECTION_HEAD);
