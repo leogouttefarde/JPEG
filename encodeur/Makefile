@@ -46,21 +46,24 @@ ${OBJ_DIR}/%.o: ${SRC_DIR}/%.c
 	$(CC) $(CFLAGS) ${INC} $< -o $@ -c
 
 clean:
-	rm -f ${EXEC} $(NEW_OBJ_FILES) gmon.out
+	rm -f ${EXEC} $(NEW_OBJ_FILES) gmon.out *.tiff out.jpg
 
 
-IMAGE=tests/shaun_the_sheep
-# IMAGE=tests/ice_age
+# IMAGE=tests/shaun_the_sheep
+IMAGE=tests/ice_age
 # IMAGE=pic
 JPEG=${IMAGE}.jpeg
 TIFF=${IMAGE}.tiff
+OUT=out.jpg
 
 run: all
 	./${EXEC} ${JPEG}
 
-	# if [ -a ${TIFF} ]; \
-	# then \
-	# 	display ${TIFF}; \
-	# 	rm -f ${TIFF}; \
-	# fi;
+	if [ -a ${OUT} ]; \
+	then \
+		display ${OUT}; \
+		rm -f ${OUT}; \
+	fi;
+
+	rm -f ${TIFF};
 

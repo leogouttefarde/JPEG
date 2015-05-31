@@ -3,7 +3,7 @@
 #include "common.h"
 
 
-static inline int16_t extract_dpcm(struct bitstream *stream, uint8_t class)
+static inline int16_t read_magnitude(struct bitstream *stream, uint8_t class)
 {
         bool negative = false;
         int8_t bit;
@@ -52,7 +52,7 @@ void unpack_block(struct bitstream *stream,
 
 
         class = next_huffman_value(table_DC, stream);
-        diff = extract_dpcm(stream, class);
+        diff = read_magnitude(stream, class);
 
         bloc[n] = *pred_DC + diff;
         *pred_DC = bloc[n];
@@ -84,7 +84,7 @@ void unpack_block(struct bitstream *stream,
 
                         n += zeros;
 
-                        bloc[n++] = extract_dpcm(stream, class);
+                        bloc[n++] = read_magnitude(stream, class);
                 }
         }
 }

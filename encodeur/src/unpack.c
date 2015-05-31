@@ -8,7 +8,7 @@ enum ac_symbols {
         EOB = 0x00
 };
 
-static inline int16_t extract_dpcm(struct bitstream *stream, uint8_t class)
+static inline int16_t extract_magnitude(struct bitstream *stream, uint8_t class)
 {
         bool negative = false;
         int8_t bit;
@@ -52,7 +52,7 @@ void unpack_block(struct bitstream *stream,
 
 
         class = next_huffman_value(table_DC, stream);
-        diff = extract_dpcm(stream, class);
+        diff = extract_magnitude(stream, class);
 
         bloc[n] = *pred_DC + diff;
         *pred_DC = bloc[n];
@@ -84,7 +84,7 @@ void unpack_block(struct bitstream *stream,
 
                         n += zeros;
 
-                        bloc[n++] = extract_dpcm(stream, class);
+                        bloc[n++] = extract_magnitude(stream, class);
                 }
         }
 }
@@ -105,7 +105,7 @@ static inline uint8_t magnitude_class(int16_t value)
         return class;
 }
 
-uint8_t write_dpcm(struct bitstream *stream, int16_t value)
+uint8_t write_magnitude(struct bitstream *stream, int16_t value)
 {
         uint8_t bit;
         uint8_t class = magnitude_class(value);
@@ -143,7 +143,7 @@ void pack_block(struct bitstream *stream,
 
         class = magnitude_class(diff);
         write_huffman_value(class, table_DC, stream);
-        write_dpcm(stream, diff);
+        write_magnitude(stream, diff);
 
 
         while (n < BLOCK_SIZE) {
@@ -176,7 +176,7 @@ void pack_block(struct bitstream *stream,
                         symbol = (zeros << 4) | (class & 0xF);
 
                         write_huffman_value(symbol, table_AC, stream);
-                        write_dpcm(stream, bloc[n]);
+                        write_magnitude(stream, bloc[n]);
                         n++;
                 }
         }
