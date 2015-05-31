@@ -99,4 +99,18 @@ bool is_valid_ext(char *path)
         return result;
 }
 
+bool skip_bitstream(struct bitstream *stream, uint32_t nb_bytes)
+{
+        bool error = false;
+
+        if (stream != NULL) {
+                uint8_t byte;
+
+                for (uint32_t i = 0; i < nb_bytes; i++)
+                        error |= read_byte(stream, &byte);
+        }
+
+        return error;
+}
+
 

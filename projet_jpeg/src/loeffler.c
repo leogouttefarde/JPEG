@@ -3,7 +3,7 @@
 #include "common.h"
 
 
-void rotation(double i0, double i1, double *out0, double *out1, uint8_t k, uint8_t n)
+static inline void rotation(double i0, double i1, double *out0, double *out1, uint8_t k, uint8_t n)
 {
         const double COS = cos((n * M_PI)/16);
         const double SIN = sin((n * M_PI)/16);
@@ -12,7 +12,7 @@ void rotation(double i0, double i1, double *out0, double *out1, uint8_t k, uint8
         *out1 = k * (i1 * COS + i0 * SIN);
 }
 
-void swap(double **a, double **b)
+static inline void swap(double **a, double **b)
 {
         double *temp = *a;
 
@@ -20,13 +20,13 @@ void swap(double **a, double **b)
         *b = temp;
 }
 
-void butterfly(double i0, double i1, double *out0, double *out1)
+static inline void butterfly(double i0, double i1, double *out0, double *out1)
 {
         *out0 = i0 + i1;
         *out1 = i0 - i1;
 }
 
-void loeffler(double vect[BLOCK_DIM])
+static void loeffler(double vect[BLOCK_DIM])
 {
         double next_buf[BLOCK_DIM];
         double *next = next_buf;

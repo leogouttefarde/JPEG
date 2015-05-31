@@ -52,11 +52,13 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
         switch (marker) {
 
         case APP0:
-                {
+                if (!*error) {
                         char jfif[5];
 
-                        for (uint8_t i = 0; i < sizeof(jfif); i++)
+                        for (uint8_t i = 0; i < sizeof(jfif); i++) {
                                 *error |= read_byte(stream, (uint8_t*)&jfif[i]);
+                                unread--;
+                        }
 
                         /* JFIF header check */
                         if (strcmp(jfif, "JFIF"))
@@ -64,12 +66,12 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                 }
 
                 /* Skip unused header data */
-                skip_bitstream_until(stream, SECTION_HEAD);
+                skip_bitstream(stream, unread);
                 break;
 
         case COM:
                 /* Skip the comment section */
-                skip_bitstream_until(stream, SECTION_HEAD);
+                skip_bitstream(stream, unread);
                 break;
 
         case DQT:
@@ -103,13 +105,13 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                                                 *error = true;
 
                                         // printf("unread = %d\n", unread);
+                                        jpeg->state |= DQT_OK;
                                 }
 
                         } while (unread > 0 && !*error);
                 } else
                         *error = true;
 
-                skip_bitstream_until(stream, SECTION_HEAD);
                 break;
 
         case SOF0:
@@ -162,12 +164,12 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                                         }
                                         //printf("nb_blocks_h = %d\n", h_sampling_factor);
                                         //printf("nb_blocks_v = %d\n", v_sampling_factor);
+                                        jpeg->state |= SOF0_OK;
                                 }
                         }
                 } else
                         *error = true;
 
-                skip_bitstream_until(stream, SECTION_HEAD);
                 break;
 
         case DHT:
@@ -213,11 +215,11 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
 
                                 unread -= nb_byte_read;
                                 // printf("unread = %i\n", unread);
+                                jpeg->state |= DHT_OK;
                         }
                 } else
                         *error = true;
 
-                skip_bitstream_until(stream, SECTION_HEAD);
                 break;
 
         /* Start Of Scan */
@@ -258,8 +260,8 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
         // case DHP:
         // case EXP:
         default:
-                printf("ERROR : unsupported JPEG section 0x%02X\n", marker);
-                *error = true;
+                printf("Unsupported marker : %02X\n", marker);
+                skip_bitstream(stream, unread);
         }
 
 
@@ -280,10 +282,10 @@ void read_header(struct bitstream *stream, struct jpeg_data *jpeg, bool *error)
         if (marker != SOI)
                 printf("ERROR : all JPEG files must start with an SOI section\n");
 
-        while (!*error && marker != SOS && !end_of_bitstream(stream)) {
+        while (!*error && marker != SOS) {
 
                 marker = read_section(stream, ANY, jpeg, error);
-
+                *error |= end_of_bitstream(stream);
                 // printf("Section : 0x%02X\n", marker);
 
                 // printf("end_of_bitstream(stream) : %d\n", end_of_bitstream(stream));
@@ -328,8 +330,10 @@ char* create_tiff_name(char *path)
 /* Extract then write image data to tiff file */
 void process_image(struct bitstream *stream, struct jpeg_data *jpeg, bool *error)
 {
-        if (stream == NULL || error == NULL || *error || jpeg == NULL)
+        if (stream == NULL || *error || jpeg == NULL || jpeg->state != ALL_OK) {
+                *error = true;
                 return;
+        }
 
         char *name = NULL;
         struct tiff_file_desc *file = NULL;
@@ -366,13 +370,8 @@ void process_image(struct bitstream *stream, struct jpeg_data *jpeg, bool *error
         file = init_tiff_file(name, jpeg->width, jpeg->height, mcu_v);
 
         if (file != NULL) {
-                uint8_t nb_h;
-                uint8_t nb_v;
-                uint8_t nb;
-
-                uint8_t i_dc;
-                uint8_t i_ac;
-                uint8_t i_q;
+                uint8_t nb_blocks_h, nb_blocks_v, nb_blocks;
+                uint8_t i_dc, i_ac, i_q;
                 int32_t *last_DC;
 
                 int32_t block[BLOCK_SIZE];
@@ -393,22 +392,23 @@ void process_image(struct bitstream *stream, struct jpeg_data *jpeg, bool *error
 
                                 i_c = jpeg->comp_order[i];
 
-                                nb_h = jpeg->comps[i_c].nb_blocks_h;
-                                nb_v = jpeg->comps[i_c].nb_blocks_v;
+                                nb_blocks_h = jpeg->comps[i_c].nb_blocks_h;
+                                nb_blocks_v = jpeg->comps[i_c].nb_blocks_v;
+                                nb_blocks = nb_blocks_h * nb_blocks_v;
 
                                 i_dc = jpeg->comps[i_c].i_dc;
                                 i_ac = jpeg->comps[i_c].i_ac;
                                 i_q = jpeg->comps[i_c].i_q;
+
                                 last_DC = &jpeg->comps[i_c].last_DC;
                                 // printf("i_c = %d\n", i_c);
                                 // printf("i_q = %d\n", i_q);
 
-                                nb = nb_h * nb_v;
-                                uint8_t idct[nb][BLOCK_SIZE];
 
+                                uint8_t idct[nb_blocks][BLOCK_SIZE];
 
-                                // printf("nb = %d\n", nb);
-                                for (uint8_t n = 0; n < nb; n++) {
+                                // printf("nb_blocks = %d\n", nb_blocks);
+                                for (uint8_t n = 0; n < nb_blocks; n++) {
                                         unpack_block(stream, jpeg->htables[0][i_dc], last_DC,
                                                              jpeg->htables[1][i_ac], block);
 
@@ -424,7 +424,7 @@ void process_image(struct bitstream *stream, struct jpeg_data *jpeg, bool *error
 
                                 // printf("nb_h = %d\n", nb_h);
                                 // printf("nb_v = %d\n", nb_v);
-                                upsampler((uint8_t*)idct, nb_h, nb_v, upsampled, mcu_h_dim, mcu_v_dim);
+                                upsampler((uint8_t*)idct, nb_blocks_h, nb_blocks_v, upsampled, mcu_h_dim, mcu_v_dim);
                         }
 
                         YCbCr_to_ARGB(mcu_YCbCr, mcu_RGB, mcu_h_dim, mcu_v_dim);

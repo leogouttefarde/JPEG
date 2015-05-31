@@ -46,7 +46,10 @@ int main(int argc, char **argv)
 
                         if (marker != EOI)
                                 printf("ERROR : all JPEG files must end with an EOI section\n");
-                }
+                        else
+                                printf("JPEG file successfully decoded\n");
+                } else
+                        printf("ERROR : unsupported JPEG format\n");
 
 
                 /* Close input JPEG file */

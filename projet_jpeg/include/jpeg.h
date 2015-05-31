@@ -27,6 +27,14 @@ enum jpeg_section {
         EXP  = 0xDF
 };
 
+/* JPEG status check */
+enum jpeg_status {
+        DHT_OK  = 1,
+        DQT_OK  = 2,
+        SOF0_OK = 4,
+        ALL_OK = 7
+};
+
 
 struct comp {
 
@@ -62,6 +70,8 @@ struct jpeg_data {
 
         /* Quantification tables */
         uint8_t qtables[MAX_QTABLES][BLOCK_SIZE];
+
+        uint8_t state;
 };
 
 

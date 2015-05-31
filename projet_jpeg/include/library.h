@@ -12,6 +12,7 @@ uint8_t double2uint8(double x);
 bool read_short_BE(struct bitstream *stream, uint16_t *value);
 bool read_byte(struct bitstream *stream, uint8_t *value);
 bool is_valid_ext(char *path);
+bool skip_bitstream(struct bitstream *stream, uint32_t nb_bytes);
 
 
 #endif  
