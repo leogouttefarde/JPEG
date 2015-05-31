@@ -3,6 +3,12 @@
 #include "common.h"
 
 
+enum RLE {
+        ZRL = 0xF0,
+        EOB = 0x00
+};
+
+
 static inline int16_t read_magnitude(struct bitstream *stream, uint8_t class)
 {
         bool negative = false;
@@ -31,11 +37,6 @@ static inline int16_t read_magnitude(struct bitstream *stream, uint8_t class)
 
         return value;
 }
-
-enum ac_symbols {
-        ZRL = 0xF0,
-        EOB = 0x00
-};
 
 void unpack_block(struct bitstream *stream,
                 struct huff_table *table_DC, int32_t *pred_DC,
