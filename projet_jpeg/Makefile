@@ -6,8 +6,11 @@ INC_DIR = include
 
 # Options de compilation 
 
-CC = gcc
-LD = gcc
+# gprof jpeg2tiff gmon.out > analysis.txt
+PROFILING = -p
+# PROFILING = 
+CC = gcc ${PROFILING}
+LD = gcc ${PROFILING}
 INC = -I$(INC_DIR)
 CFLAGS = $(INC) -Wall -std=c99 -O3 #-Wextra -g #-O3
 LDFLAGS = -lm
@@ -42,7 +45,7 @@ ${OBJ_DIR}/%.o: ${SRC_DIR}/%.c
 	$(CC) $(CFLAGS) ${INC} $< -o $@ -c
 
 clean:
-	rm -f jpeg2tiff $(NEW_OBJ_FILES)
+	rm -f jpeg2tiff $(NEW_OBJ_FILES) gmon.out
 
 
 IMAGE=tests/shaun_the_sheep

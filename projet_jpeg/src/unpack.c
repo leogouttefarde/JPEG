@@ -3,7 +3,7 @@
 #include "common.h"
 
 
-int16_t extract_dpcm(struct bitstream *stream, uint8_t class)
+static inline int16_t extract_dpcm(struct bitstream *stream, uint8_t class)
 {
         bool negative = false;
         int8_t bit;

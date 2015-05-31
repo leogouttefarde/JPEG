@@ -26,7 +26,7 @@ static inline void butterfly(double i0, double i1, double *out0, double *out1)
         *out1 = i0 - i1;
 }
 
-static void loeffler(double vect[BLOCK_DIM])
+static inline void loeffler(double vect[BLOCK_DIM])
 {
         double next_buf[BLOCK_DIM];
         double *next = next_buf;
