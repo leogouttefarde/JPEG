@@ -6,8 +6,8 @@ INC_DIR = include
 
 # Options de compilation 
 
-PROFILING = -p
-# PROFILING = 
+# PROFILING = -p
+PROFILING = 
 CC = gcc ${PROFILING}
 LD = gcc ${PROFILING}
 INC = -I$(INC_DIR)
@@ -32,11 +32,13 @@ NEW_OBJ_FILES += $(OBJ_DIR)/loeffler.o
 NEW_OBJ_FILES += $(OBJ_DIR)/jpeg.o $(OBJ_DIR)/main.o
 #NEW_OBJ_FILES += $(OBJ_DIR)/tiff.o
 
-all : jpeg2tiff
+EXEC=tiff2jpeg
+
+all : ${EXEC}
 
 # Edition de lien des executables
-jpeg2tiff : $(OBJ_FILES)
-	$(LD) -o jpeg2tiff $(OBJ_FILES) $(LDFLAGS)
+${EXEC} : $(OBJ_FILES)
+	$(LD) -o ${EXEC} $(OBJ_FILES) $(LDFLAGS)
 
 # Compilation des sources
 
@@ -44,7 +46,7 @@ ${OBJ_DIR}/%.o: ${SRC_DIR}/%.c
 	$(CC) $(CFLAGS) ${INC} $< -o $@ -c
 
 clean:
-	rm -f jpeg2tiff $(NEW_OBJ_FILES) gmon.out
+	rm -f ${EXEC} $(NEW_OBJ_FILES) gmon.out
 
 
 IMAGE=tests/shaun_the_sheep
@@ -54,14 +56,11 @@ JPEG=${IMAGE}.jpeg
 TIFF=${IMAGE}.tiff
 
 run: all
-	./jpeg2tiff ${JPEG}
+	./${EXEC} ${JPEG}
 
-	if [ -a ${TIFF} ]; \
-	then \
-		display ${TIFF}; \
-		rm -f ${TIFF}; \
-	fi;
-
-prof:
-	gprof jpeg2tiff gmon.out > analysis.txt
+	# if [ -a ${TIFF} ]; \
+	# then \
+	# 	display ${TIFF}; \
+	# 	rm -f ${TIFF}; \
+	# fi;
 
