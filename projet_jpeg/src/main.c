@@ -41,10 +41,12 @@ int main(int argc, char **argv)
 
 
                 /* EOI check */
-                marker = read_section(stream, EOI, NULL, &error);
+                if (!error) {
+                        marker = read_section(stream, EOI, NULL, &error);
 
-                if (marker != EOI)
-                        printf("ERROR : all JPEG files must end with an EOI section\n");
+                        if (marker != EOI)
+                                printf("ERROR : all JPEG files must end with an EOI section\n");
+                }
 
 
                 /* Close input JPEG file */

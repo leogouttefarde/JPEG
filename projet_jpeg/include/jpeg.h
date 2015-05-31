@@ -4,9 +4,9 @@
 
 #include "common.h"
 
-#define MAX_COLORS 3
+#define MAX_COMPS 3
 #define MAX_HTABLES 4
-#define MAX_QTABLES 0x10
+#define MAX_QTABLES MAX_COMPS
 #define SECTION_HEAD 0xFF
 
 
@@ -20,7 +20,11 @@ enum jpeg_section {
         DHT  = 0xC4,
         SOS  = 0xDA,
         EOI  = 0xD9,
-        ANY  = 0
+        ANY  = 0,
+        TEM  = 0x01,
+        DNL  = 0xDC,
+        DHP  = 0xDE,
+        EXP  = 0xDF
 };
 
 
@@ -48,16 +52,16 @@ struct jpeg_data {
         uint8_t nb_comps;
 
         /* Color components */
-        struct comp comps[MAX_COLORS];
+        struct comp comps[MAX_COMPS];
 
         /* Color index order */
-        uint8_t comp_order[MAX_COLORS];
+        uint8_t comp_order[MAX_COMPS];
 
         /* Huffman tables */
         struct huff_table *htables[2][MAX_HTABLES];
 
         /* Quantification tables */
-        uint8_t qtables[MAX_COLORS][BLOCK_SIZE];
+        uint8_t qtables[MAX_QTABLES][BLOCK_SIZE];
 };
 
 

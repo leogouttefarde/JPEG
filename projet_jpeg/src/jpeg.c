@@ -90,13 +90,17 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                                 else {
                                         // printf("unread = %d\n", unread);
                                         uint8_t i_q = byte & 0xF;
-                                        uint8_t *qtable = (uint8_t*)&jpeg->qtables[i_q];
 
-                                        // printf("unread = %d\n", unread);
-                                        for (uint8_t i = 0; i < BLOCK_SIZE; i++) {
-                                                *error |= read_byte(stream, &qtable[i]);
-                                                unread--;
-                                        }
+                                        if (i_q < MAX_QTABLES) {
+                                                uint8_t *qtable = (uint8_t*)&jpeg->qtables[i_q];
+
+                                                // printf("unread = %d\n", unread);
+                                                for (uint8_t i = 0; i < BLOCK_SIZE; i++) {
+                                                        *error |= read_byte(stream, &qtable[i]);
+                                                        unread--;
+                                                }
+                                        } else
+                                                *error = true;
 
                                         // printf("unread = %d\n", unread);
                                 }
@@ -148,6 +152,8 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
 
                                         *error |= read_byte(stream, &i_q);
 
+                                        if (i_q >= MAX_QTABLES)
+                                                *error = true;
 
                                         if (!*error) {
                                                 jpeg->comps[i_c].nb_blocks_h = h_sampling_factor;
@@ -247,8 +253,12 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
 
                 break;
 
+        // case TEM:
+        // case DNL:
+        // case DHP:
+        // case EXP:
         default:
-                printf("ERROR : unsupported JPEG section \n0x%02X\n", marker);
+                printf("ERROR : unsupported JPEG section 0x%02X\n", marker);
                 *error = true;
         }
 
