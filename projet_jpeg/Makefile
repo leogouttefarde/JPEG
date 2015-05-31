@@ -6,7 +6,6 @@ INC_DIR = include
 
 # Options de compilation 
 
-# gprof jpeg2tiff gmon.out > analysis.txt
 PROFILING = -p
 # PROFILING = 
 CC = gcc ${PROFILING}
@@ -62,3 +61,7 @@ run: all
 		display ${TIFF}; \
 		rm -f ${TIFF}; \
 	fi;
+
+prof:
+	gprof jpeg2tiff gmon.out > analysis.txt
+

@@ -462,10 +462,7 @@ static inline uint16_t mcu_per_dim(uint8_t mcu, uint16_t dim)
 {
         uint16_t nb = dim / mcu;
 
-        if (dim % mcu)
-                nb++;
-
-        return nb;
+        return (dim % mcu) ? ++nb : nb;
 }
 
 

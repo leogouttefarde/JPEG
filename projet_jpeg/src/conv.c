@@ -6,7 +6,7 @@
 void YCbCr_to_ARGB(uint8_t  *mcu_YCbCr[3], uint32_t *mcu_RGB,
                 uint32_t nb_blocks_h, uint32_t nb_blocks_v)
 {
-        const uint32_t SIZE = BLOCK_DIM*nb_blocks_h * BLOCK_DIM*nb_blocks_v;
+        const uint32_t NB_PIXELS = BLOCK_SIZE * nb_blocks_h * nb_blocks_v;
 
         uint8_t *Y = mcu_YCbCr[0];
         uint8_t *Cb = mcu_YCbCr[1];
@@ -18,7 +18,7 @@ void YCbCr_to_ARGB(uint8_t  *mcu_YCbCr[3], uint32_t *mcu_RGB,
                 return;
         }
 
-        for (uint32_t i = 0; i < SIZE; ++i) {
+        for (uint32_t i = 0; i < NB_PIXELS; ++i) {
 
                 /* Conversion moins précise */
                 // R = Y[i] + 1.402 * (Cr[i] - 128);
