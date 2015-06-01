@@ -432,6 +432,10 @@ void process_image(struct bitstream *stream, struct jpeg_data *jpeg, bool *error
 
                                         iqzz_block(block, iqzz, (uint8_t*)&jpeg->qtables[i_q]);
 
+                                        uint8_t quantif[64];
+                                        qzz_block (iqzz, block, quantif, 1);
+                                        iqzz_block(block, iqzz, quantif);
+
                                         idct_block(iqzz, (uint8_t*)&idct[n]);
                                 }
 
@@ -444,6 +448,10 @@ void process_image(struct bitstream *stream, struct jpeg_data *jpeg, bool *error
                                 // printf("nb_v = %d\n", nb_v);
                                 upsampler((uint8_t*)idct, nb_blocks_h, nb_blocks_v, upsampled, mcu_h_dim, mcu_v_dim);
                         }
+
+                        YCbCr_to_ARGB(mcu_YCbCr, mcu_RGB, mcu_h_dim, mcu_v_dim);
+
+                        ARGB_to_YCbCr(mcu_RGB, mcu_YCbCr, mcu_h_dim, mcu_v_dim);
 
                         YCbCr_to_ARGB(mcu_YCbCr, mcu_RGB, mcu_h_dim, mcu_v_dim);
 
