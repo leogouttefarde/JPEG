@@ -25,7 +25,7 @@ struct priority_queue *create_queue(uint32_t max_size)
         queue = calloc(1, sizeof(struct priority_queue));
 
         if (queue != NULL) {
-                queue->heap = calloc(max_size+1, sizeof(struct element));
+                queue->heap = calloc(max_size, sizeof(struct element));
                 queue->max_size = max_size;
                 queue->size = 0;
 
@@ -51,18 +51,18 @@ bool insert_queue(struct priority_queue *queue, uint32_t priority, struct huff_t
 
                 /* On ajoute l'élément à la prochaine position */
                 i_cur = ++queue->size;
-                heap[i_cur] = (struct element){ priority, table };
+                heap[i_cur - 1] = (struct element){ priority, table };
 
                 /*
                  * On place le nouvel élément dans l'arbre :
                  * tant qu'il est meilleur que son père, on les permute
                  */
                  i_parent = i_cur / 2;
-                 while (i_cur > 1 && (heap[i_cur].priority < heap[i_parent].priority)) {
-                        elem = heap[i_cur];
+                 while (i_cur > 1 && (heap[i_cur-1].priority < heap[i_parent - 1].priority)) {
+                        elem = heap[i_cur - 1];
 
-                        heap[i_cur] = heap[i_parent];
-                        heap[i_parent] = elem;
+                        heap[i_cur - 1] = heap[i_parent - 1];
+                        heap[i_parent - 1] = elem;
 
                         i_cur = i_parent;
                         i_parent = i_cur / 2;
@@ -81,8 +81,8 @@ bool insert_queue(struct priority_queue *queue, uint32_t priority, struct huff_t
 bool best_queue(struct priority_queue *queue, uint32_t *priority, struct huff_table **table)
 {
         if (queue != NULL && queue->size > 0 && priority && table) {
-                *priority = queue->heap[1].priority;
-                *table = queue->heap[1].table;
+                *priority = queue->heap[0].priority;
+                *table = queue->heap[0].table;
 
                 return true;
         }
@@ -104,7 +104,7 @@ bool delete_queue(struct priority_queue *queue)
 
                 heap = queue->heap;
 
-                heap[1] = heap[queue->size--];
+                heap[0] = heap[--queue->size];
 
                 i_cur = 1;
 
@@ -112,13 +112,13 @@ bool delete_queue(struct priority_queue *queue)
 
                         child = 2 * i_cur;
 
-                        if ((child != queue->size) && (heap[child].priority >= heap[child + 1].priority))
+                        if ((child != queue->size) && (heap[child-1].priority >= heap[child].priority))
                                 child++;
 
-                        if (heap[i_cur].priority > heap[child].priority) {
-                                elem = heap[i_cur];
-                                heap[i_cur] = heap[child];
-                                heap[child] = elem;
+                        if (heap[i_cur-1].priority > heap[child-1].priority) {
+                                elem = heap[i_cur-1];
+                                heap[i_cur-1] = heap[child-1];
+                                heap[child-1] = elem;
                                 i_cur = child;
                         } else
                                 fin = true;
