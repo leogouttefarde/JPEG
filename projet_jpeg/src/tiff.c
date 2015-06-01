@@ -1,4 +1,3 @@
-
 #include "tiff.h"
 
 
@@ -25,7 +24,6 @@ struct tiff_file_desc {
 	uint32_t current_line;
 	uint32_t size_line;
 	uint32_t row_size;
-	uint32_t current_position;
 };
 
 /* Initialisation du fichier TIFF résultat, avec les paramètres suivants:
@@ -34,9 +32,9 @@ struct tiff_file_desc {
    - row_per_strip: le nombre de lignes de pixels par bande.
  */
 struct tiff_file_desc *init_tiff_file (const char *file_name,
-                                              uint32_t width,
-                                              uint32_t height,
-                                              uint32_t row_per_strip)
+				       uint32_t width,
+				       uint32_t height,
+				       uint32_t row_per_strip)
 {
         struct tiff_file_desc *tfd = malloc(sizeof(struct tiff_file_desc));
 	
@@ -205,11 +203,12 @@ struct tiff_file_desc *init_tiff_file (const char *file_name,
 	uint32_t ptr_ligne = 0x00B4+8* tfd -> nb_strips;
 	uint32_t taille_ligne = tfd -> rows_per_strip*tfd->width*3;
 
-	// modif ilyes
+	// Initialisation des informations necéssaires pour l'écriture au format TIFF
 	tfd -> current_line = ptr_ligne;
 	tfd -> size_line = taille_ligne;
 	tfd -> row_size = tfd->width*3;
-	// fin modif ilyes
+	// Initialisation de la position de la 1ere mcu
+	tfd -> next_pos_mcu = 0;
 	
 	for (uint32_t i =0; i < tfd -> nb_strips; i ++){
 		buffer[90+2*i] = ptr_ligne;
@@ -232,9 +231,7 @@ struct tiff_file_desc *init_tiff_file (const char *file_name,
 
 	fwrite(buffer,sizeof(uint16_t),taille_buffer,tfd -> file);
 
-	// Initialisation de la position de la 1ere mcu
-	tfd -> next_pos_mcu = 0;
-	//tfd -> current_position = tfd -> current_line;
+	free(buffer);
 	
 	return tfd;
 	
@@ -242,75 +239,45 @@ struct tiff_file_desc *init_tiff_file (const char *file_name,
 
 /* Ferme le fichier associé à la structure tiff_file_desc passée en
  * paramètre et désalloue la mémoire occupée par cette structure. */
-int32_t close_tiff_file(struct tiff_file_desc *tfd)
+void close_tiff_file(struct tiff_file_desc *tfd)
 {
-        return 0;
+        fclose(tfd -> file);
+	free(tfd);
 }
 
 /* Ecrit le contenu de la MCU passée en paramètre dans le fichier TIFF
  * représenté par la structure tiff_file_desc tfd. nb_blocks_h et
  * nb_blocks_v représentent les nombres de blocs 8x8 composant la MCU
  * en horizontal et en vertical. */
-/*int32_t write_tiff_file (struct tiff_file_desc *tfd,
-                                uint32_t *mcu_rgb,
-                                uint8_t nb_blocks_h,
-                                uint8_t nb_blocks_v)
+void write_tiff_file (struct tiff_file_desc *tfd,
+			 uint32_t *mcu_rgb,
+			 uint8_t nb_blocks_h,
+			 uint8_t nb_blocks_v)
 {
 
-	
-	//uint32_t current_row = 0;
-	uint32_t current_position = tfd -> current_line + tfd -> next_pos_mcu;
+	/* for(uint32_t i = 0; i < nb_blocks_h*nb_blocks_v*MCU_SIZE*MCU_SIZE; i++){ */
+	/* 	if(i % (nb_blocks_h*MCU_SIZE) == 0) */
+	/* 		printf("\n"); */
+	/* 	printf("%#08x ", mcu_rgb[i]); */
+	/* } */
 
-	// tableau intermédiare pour récupérer les valeurs RGB
-	uint8_t *rgb_row = malloc(sizeof(uint8_t)*nb_blocks_h*MCU_SIZE*3);
-
-	// ******** problème calcul de position dans le fichier tiff next_pos_mcu, current_position ******** 
-	//if (tfd -> next_pos_mcu <= 900){
-	for(uint32_t i = 0; i < tfd -> rows_per_strip; i++) {
-		fseek(tfd -> file, current_position, SEEK_SET);
-		//fwrite(mcu_rgb + i*nb_blocks_h*MCU_SIZE, sizeof(uint32_t), nb_blocks_h*MCU_SIZE, tfd -> file);
-		for(uint32_t j = 0; j < nb_blocks_h*MCU_SIZE*3; j+=3) {
-			rgb_row[j] = mcu_rgb[i*nb_blocks_h*MCU_SIZE+j/3] >> 16;
-			rgb_row[j+1] = mcu_rgb[i*nb_blocks_h*MCU_SIZE+j/3] >> 8;
-			rgb_row[j+2] = mcu_rgb[i*nb_blocks_h*MCU_SIZE+j/3];
-		}
-		fwrite(rgb_row, sizeof(uint8_t), nb_blocks_h*MCU_SIZE*3, tfd -> file);
-		//current_position += tfd -> row_size;
-		current_position += nb_blocks_h*MCU_SIZE*sizeof(uint8_t)*3;
-		//tfd -> next_pos_mcu += nb_blocks_h*MCU_SIZE*sizeof(uint8_t)*3;
-		// if (tfd -> current_position == 0x4b0) 
-		// 	printf("current_position : %#08x %#08x\n", tfd -> current_position, rgb_row[0]); 
-	}
-	tfd -> next_pos_mcu += nb_blocks_h*MCU_SIZE*sizeof(uint8_t)*3;
-	//printf("next_pos_mcu : %u \n", tfd -> next_pos_mcu);
-	//printf("rowsize : %u \n", tfd -> row_size);
-	//printf("rowsperstrip : %u \n", tfd -> rows_per_strip);
-	//}
-	free(rgb_row);
-	
-        return 0;
-}*/
-
-
- int32_t write_tiff_file (struct tiff_file_desc *tfd,
-                                uint32_t *mcu_rgb,
-                                uint8_t nb_blocks_h,
-                                uint8_t nb_blocks_v)
-{
-
-	
-	
 	//On passe à la ligne suivante s'il n'y a plus de place pour mettre la MCU
-	if (tfd -> current_line + tfd -> next_pos_mcu + (nb_blocks_v*MCU_SIZE-1)*tfd -> row_size > tfd -> current_line + tfd -> size_line){
+	if (tfd -> current_line + tfd -> next_pos_mcu + (nb_blocks_v*MCU_SIZE-1)*tfd -> row_size >= tfd -> current_line + tfd -> size_line){
 		tfd -> current_line += tfd -> size_line;
 		tfd -> next_pos_mcu = 0;
-		}
+	}
 	uint32_t current_position = tfd -> current_line + tfd -> next_pos_mcu;
-	
 
+	// calcul du nombre de pixel RGB à écrire dans le fichier en fonction de row_size
+	uint32_t nb_rgb_to_write;
+	if (tfd -> next_pos_mcu + nb_blocks_h*MCU_SIZE*3 > tfd -> row_size){
+		nb_rgb_to_write = nb_blocks_h*MCU_SIZE*3-(tfd -> next_pos_mcu + nb_blocks_h*MCU_SIZE*3-tfd -> row_size);
+	} else { 
+		nb_rgb_to_write = nb_blocks_h*MCU_SIZE*3;
+	}
+	
 	// tableau intermédiare pour récupérer les valeurs RGB
 	uint8_t *rgb_mcu_row = malloc(sizeof(uint8_t)*nb_blocks_h*MCU_SIZE*3);
-
 	
 	for(uint32_t i = 0; i < nb_blocks_v*MCU_SIZE; i++) {
 		
@@ -322,18 +289,31 @@ int32_t close_tiff_file(struct tiff_file_desc *tfd)
 			k +=3;
 		}
 		fseek(tfd -> file, current_position, 0);
-		fwrite(rgb_mcu_row, sizeof(uint8_t), nb_blocks_h*MCU_SIZE*3, tfd -> file);
+		fwrite(rgb_mcu_row, sizeof(uint8_t), nb_rgb_to_write, tfd -> file);
 		current_position += tfd -> row_size;
 	}
+
+	tfd -> next_pos_mcu += nb_rgb_to_write;
+
+	/* if (tfd -> next_pos_mcu + nb_blocks_h*MCU_SIZE*3 > tfd -> row_size){  */
+	/* 	fwrite(rgb_mcu_row, sizeof(uint8_t), nb_blocks_h*MCU_SIZE*3-(tfd -> next_pos_mcu + nb_blocks_h*MCU_SIZE*3-tfd -> row_size), tfd -> file); */
+	/* } else {  */
+	/* 	fwrite(rgb_mcu_row, sizeof(uint8_t), nb_blocks_h*MCU_SIZE*3, tfd -> file); */
+	/* } */
+	/* if (tfd -> next_pos_mcu + nb_blocks_h*MCU_SIZE*3 > tfd -> row_size){ */
+	/* 	tfd -> next_pos_mcu += nb_blocks_h*MCU_SIZE*3-(tfd -> next_pos_mcu + nb_blocks_h*MCU_SIZE*3-tfd -> row_size); */
+	/* } else {  */
+	/* 	tfd -> next_pos_mcu += nb_blocks_h*MCU_SIZE*3; */
+	/* } */
 	
-	tfd -> next_pos_mcu += nb_blocks_h*MCU_SIZE*3;
-	
-	
+	/*
+	printf("%u > %u\n", tfd -> current_line + tfd -> next_pos_mcu + 
+	       (nb_blocks_v*MCU_SIZE-1)*tfd -> row_size, tfd -> current_line + tfd -> size_line);
 	printf("next_pos_mcu : %u \n", tfd -> next_pos_mcu);
 	printf("rowsize : %u \n", tfd -> row_size);
 	printf("rowsperstrip : %u \n", tfd -> rows_per_strip);
-	free(rgb_mcu_row);
+	*/
 	
-        return 0;
+	free(rgb_mcu_row);
 }
  
