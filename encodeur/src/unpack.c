@@ -131,10 +131,12 @@ void pack_block(struct bitstream *stream,
         uint8_t class, zeros, symbol;
         uint8_t n = 0;
         int16_t diff;
+        // printf("pack_block %x\n");
 
         if (table_AC == NULL || table_DC == NULL || pred_DC == NULL)
                 // Error
                 return;
+
 
         diff = bloc[n] - *pred_DC;
         *pred_DC = bloc[n];

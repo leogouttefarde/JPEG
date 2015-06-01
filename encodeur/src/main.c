@@ -21,9 +21,10 @@ int main(int argc, char **argv)
 
 
         struct bitstream *stream = create_bitstream(path, RDONLY);
+        struct bitstream *ostream = create_bitstream("out.jpg", WRONLY);
         // struct bitstream *stream = create_bitstream(path);
 
-        if (stream != NULL) {
+        if (stream != NULL && ostream) {
 
                 bool error = false;
                 // uint8_t marker;
@@ -81,14 +82,16 @@ int main(int argc, char **argv)
 
 
                 /* Compute Huffman tables */
-                process_image(stream, &jpeg, &ojpeg, &error);
+                process_image(stream, NULL, &jpeg, &ojpeg, &error);
 
 
-                // write_header(stream, &ojpeg &error);
+                write_header(ostream, &ojpeg, &error);
 
 
                 /* Write new JPEG data */
-                // process_image(stream, &jpeg, &ojpeg, &error);
+                process_image(stream, ostream, &jpeg, &ojpeg, &error);
+
+                write_section(ostream, EOI, NULL, &error);
 
 
                 /* EOI check */
@@ -102,6 +105,7 @@ int main(int argc, char **argv)
                 } else
                         printf("ERROR : unsupported JPEG format\n");
 
+                free_bitstream(ostream);
 
                 /* Close input JPEG file */
                 free_bitstream(stream);

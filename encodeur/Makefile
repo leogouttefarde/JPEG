@@ -11,7 +11,7 @@ PROFILING =
 CC = gcc ${PROFILING}
 LD = gcc ${PROFILING}
 INC = -I$(INC_DIR)
-CFLAGS = $(INC) -Wall -std=c99 -O3 #-Wextra -g #-O3
+CFLAGS = $(INC) -Wall -std=c99 -g #-O3 #-Wextra -g #-O3
 LDFLAGS = -lm
 
 # Liste des objets encadrants
@@ -67,11 +67,11 @@ OUT=out.jpg
 run: all
 	./${EXEC} ${JPEG}
 
-	if [ -a ${OUT} ]; \
-	then \
-		display ${OUT}; \
-		rm -f ${OUT}; \
-	fi;
+	# if [ -a ${OUT} ]; \
+	# then \
+	# 	display ${OUT}; \
+	# 	rm -f ${OUT}; \
+	# fi;
 
-	rm -f ${TIFF};
+	#rm -f ${TIFF};
 

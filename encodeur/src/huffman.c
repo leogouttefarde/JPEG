@@ -204,6 +204,7 @@ struct huff_table *get_huffman_code(int8_t value, struct huff_table *table)
 bool write_huffman_value(int8_t value, struct huff_table *table,
                          struct bitstream *stream)
 {
+        // printf("write_huffman_value\n");
         int8_t bit;
         bool success = false;
 
@@ -291,6 +292,57 @@ struct huff_table *create_huffman_tree(uint32_t freqs[0x100])
 
 
         return tree;
+}
+
+void write_huffman_table(struct bitstream *stream, struct huff_table *table)
+{
+        // uint8_t code_sizes[16];
+        // uint16_t nb_codes = 0;
+        // int32_t size_read = 0;
+        // uint32_t dest;
+        // struct huff_table *table = NULL;
+
+        // if (nb_byte_read == NULL)
+        //         return NULL;
+
+        // *nb_byte_read = -1;
+
+
+        // for (uint8_t i = 0; i < 16; i++) {
+        //         size_read += read_bitstream(stream, 8, &dest, false);
+        //         code_sizes[i] = dest & 0xFF;
+        // }
+
+        // for (uint8_t i = 0; i < sizeof(code_sizes); ++i)
+        //         nb_codes += code_sizes[i];
+
+
+        // /* There must be less than 256 different codes */
+        // if (nb_codes >= 256)
+        //         return NULL;
+
+        // else {
+        //         table = malloc(sizeof(struct huff_table));
+
+        //         if (table == NULL)
+        //                 return NULL;
+        // }
+
+
+
+        // memset(table, 0, sizeof(struct huff_table));
+
+        // for (uint8_t i = 0; i < sizeof(code_sizes); ++i) {
+        //         for (uint8_t j = 0; j < code_sizes[i]; ++j) {
+        //                 size_read += read_bitstream(stream, 8, &dest, false);
+        //                 add_huffman_code(dest & 0xFF, i, table);
+        //         }
+        // }
+
+        // *nb_byte_read = size_read / 8;
+
+
+        // return table;
 }
 
 

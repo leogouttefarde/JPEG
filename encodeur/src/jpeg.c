@@ -328,7 +328,8 @@ char* create_tiff_name(char *path)
 }
 
 /* Extract then write image data to tiff file */
-void process_image(struct bitstream *stream, struct jpeg_data *jpeg, struct jpeg_data *ojpeg, bool *error)
+void process_image(struct bitstream *stream, struct bitstream *ostream,
+                        struct jpeg_data *jpeg, struct jpeg_data *ojpeg, bool *error)
 {
         if (stream == NULL || *error || jpeg == NULL || jpeg->state != ALL_OK) {
                 *error = true;
@@ -370,15 +371,15 @@ void process_image(struct bitstream *stream, struct jpeg_data *jpeg, struct jpeg
         file = init_tiff_file(name, jpeg->width, jpeg->height, mcu_v);
 
 
-        struct bitstream *ostream = NULL;
-        FILE *out = NULL;
+        // struct bitstream *ostream = NULL;
+        // FILE *out = NULL;
 
-        if (!(ojpeg->state & DHT_OK)) {
-                out = fopen("out.jpg", "wb");
+        // if (!(ojpeg->state & DHT_OK)) {
+        //         out = fopen("out.jpg", "wb");
 
-                copy_file(out, bitstream_file(stream));
-                ostream = make_bitstream(out);
-        }
+        //         copy_file(out, bitstream_file(stream));
+        //         ostream = make_bitstream(out);
+        // }
 
 
         if (file != NULL) {
@@ -401,7 +402,8 @@ void process_image(struct bitstream *stream, struct jpeg_data *jpeg, struct jpeg
 
                 uint32_t **freqs = NULL;
 
-                if (!(ojpeg->state & DHT_OK)) {
+                if (!ostream) {
+                // if (!(ojpeg->state & DHT_OK)) {
                         freqs = calloc(2, sizeof(uint32_t*));
                         freqs[0] = calloc(0x100, sizeof(uint32_t));
                         freqs[1] = calloc(0x100, sizeof(uint32_t));
@@ -441,11 +443,17 @@ void process_image(struct bitstream *stream, struct jpeg_data *jpeg, struct jpeg
                                         // On restaure pred_DC pour tester pack_block
                                         *last_DC = last;
 
-                                        pack_block(ostream, jpeg->htables[0][i_dc], last_DC,
+                                        int32_t *test = &ojpeg->comps[i_c].last_DC;
+                                        if (freqs)
+                                        pack_block(ostream, jpeg->htables[0][i_dc], test,
                                                              jpeg->htables[1][i_ac], block, freqs);
+                                        else
+                                        pack_block(ostream, ojpeg->htables[0][0], test,
+                                                             ojpeg->htables[1][0], block, freqs);
                                         // *last_DC = new;
                                         // New doit avoir été restauré
-                                        assert(*last_DC == new);
+                                        // assert(*last_DC == new);
+                                        *last_DC = new;
 
                                         iqzz_block(block, iqzz, (uint8_t*)&jpeg->qtables[i_q]);
 
@@ -487,11 +495,11 @@ void process_image(struct bitstream *stream, struct jpeg_data *jpeg, struct jpeg
                         // printf("freqs\n");
                         // DC table
                         ojpeg->htables[0][0] = create_huffman_tree(freqs[0]);
-                        // printf("create_huffman_tree(freqs[0]);\n");
+                        // printf("create_huffman_tree(freqs[0]) => %x\n", ojpeg->htables[0][0]);
 
                         // AC table
                         ojpeg->htables[1][0] = create_huffman_tree(freqs[1]);
-                        // printf("create_huffman_tree(freqs[1]);\n");
+                        // printf("create_huffman_tree(freqs[1]) => %x\n", ojpeg->htables[1][0]);
 
 
                         SAFE_FREE(freqs[0]);
@@ -505,7 +513,13 @@ void process_image(struct bitstream *stream, struct jpeg_data *jpeg, struct jpeg
         } else
                 *error = true;
 
-        free_bitstream(ostream);
+
+
+
+        // write_section(ostream, EOI, NULL, error);
+
+
+        // free_bitstream(ostream);
         SAFE_FREE(name);
 
         skip_bitstream_until(stream, SECTION_HEAD);
@@ -526,6 +540,255 @@ static inline uint16_t mcu_per_dim(uint8_t mcu, uint16_t dim)
         uint16_t nb = dim / mcu;
 
         return (dim % mcu) ? ++nb : nb;
+}
+
+void write_section(struct bitstream *stream, enum jpeg_section section,
+                        struct jpeg_data *jpeg, bool *error)
+{
+        uint8_t byte;
+
+        if (stream == NULL || error == NULL || *error)
+                return;
+
+
+        /* Write SECTION_HEAD */
+        write_byte(stream, SECTION_HEAD);
+
+        /* Write section marker */
+        write_byte(stream, section);
+
+
+        if (section == SOI || section == EOI)
+                return;
+
+
+        uint16_t size = 0;
+        uint32_t pos_size;
+
+        /* Write dummy size : rewrite later */
+        pos_size = pos_bitstream(stream);
+        write_short_BE(stream, 0);
+
+
+        /* Process each section */
+        switch (section) {
+
+        case APP0:
+                if (!*error) {
+                        const char *jfif = "JFIF";
+
+                        for (uint8_t i = 0; i < 5; i++)
+                                write_byte(stream, jfif[i]);
+
+                        /* Current JFIF version : 1.2 */
+                        write_byte(stream, 0x01);
+                        write_byte(stream, 0x02);
+
+                        /* Density units : No units, aspect ratio only specified */
+                        write_byte(stream, 0x00);
+
+                        /* X density : Integer horizontal pixel density */
+                        write_short_BE(stream, 1);
+
+                        /* Y density : Integer vertical pixel density */
+                        write_short_BE(stream, 1);
+
+
+                        /* Thumbnail width (no thumbnail) */
+                        write_byte(stream, 0);
+
+                        /* Thumbnail height (no thumbnail) */
+                        write_byte(stream, 0);
+                }
+                break;
+
+        case COM:
+                {
+                        const char *comment = "JPEG Encoder by ND, IK & LG. Copyright 2015 Ensimag.";
+                        const uint16_t len = strlen(comment) + 1;
+
+                        for (uint16_t i = 0; i < len; i++)
+                                write_byte(stream, comment[i]);
+                }
+
+                break;
+
+        case DQT:
+                if (jpeg != NULL) {
+
+                        /* Write all quantification tables */
+                        for (uint8_t i = 0; i < jpeg->nb_comps; i++) {
+
+                                /* Accuracy : 0 for 8 bits */
+                                const uint8_t accuracy = 0;
+                                uint8_t i_q = jpeg->comps[i].i_q;
+
+                                if (i_q >= MAX_QTABLES)
+                                        *error = true;
+
+                                else {
+                                        byte = accuracy << 4;
+                                        byte |= i_q & 0xF;
+                                        write_byte(stream, byte);
+                                }
+
+
+                                if (i_q < MAX_QTABLES) {
+                                        uint8_t *qtable = (uint8_t*)&jpeg->qtables[i_q];
+
+                                        for (uint8_t i = 0; i < BLOCK_SIZE; i++)
+                                                write_byte(stream, qtable[i]);
+
+                                } else
+                                        *error = true;
+
+                                jpeg->state |= DQT_OK;
+                        }
+                } else
+                        *error = true;
+
+                break;
+
+        case SOF0:
+                if (jpeg != NULL) {
+                        const uint8_t accuracy = 8;
+                        write_byte(stream, &accuracy);
+
+
+                        write_short_BE(stream, jpeg->height);
+                        write_short_BE(stream, jpeg->width);
+
+                        write_byte(stream, jpeg->nb_comps);
+
+
+                        for (uint8_t i = 0; i < jpeg->nb_comps; i++) {
+                                uint8_t i_c = i + 1;
+                                uint8_t i_q = jpeg->comps[i].i_q;
+                                uint8_t h_sampling_factor = jpeg->comps[i].nb_blocks_h;
+                                uint8_t v_sampling_factor = jpeg->comps[i].nb_blocks_v;
+
+                                write_byte(stream, i_c);
+
+
+                                byte = h_sampling_factor << 4;
+                                byte |= v_sampling_factor & 0xF;
+                                write_byte(stream, byte);
+
+                                write_byte(stream, i_q);
+
+                                //printf("nb_blocks_h = %d\n", h_sampling_factor);
+                                //printf("nb_blocks_v = %d\n", v_sampling_factor);
+                                jpeg->state |= SOF0_OK;
+                        }
+                } else
+                        *error = true;
+
+                break;
+
+        case DHT:
+                if (jpeg != NULL) {
+                        uint8_t i_h;
+                        uint8_t type = jpeg->next_qtype;
+
+                        /* Write all Huffman tables */
+                        for (uint8_t i = 0; i < MAX_HTABLES; i++) {
+
+                                i_h = i;
+                                struct huff_table *table = jpeg->htables[type][i_h];
+
+                                if (table == NULL)
+                                        continue;
+
+                                /*
+                                 * 0 for DC
+                                 * 1 for AC
+                                 */
+                                byte = (type & 1) << 4;
+                                byte |= i_h & 0xF;
+                                write_byte(stream, byte);
+
+                                write_huffman_table(stream, table);
+                        }
+
+                        jpeg->state |= DHT_OK;
+                } else
+                        *error = true;
+
+                break;
+
+        /* Start Of Scan */
+        case SOS:
+                if (jpeg != NULL) {
+                        uint8_t i_c;
+
+
+                        write_byte(stream, jpeg->nb_comps);
+
+
+                        for (uint8_t i = 0; i < jpeg->nb_comps; i++) {
+
+                                // printf("i_c = %i\n", byte);
+                                i_c = jpeg->comp_order[i];
+                                write_byte(stream, i_c + 1);
+
+
+                                uint8_t i_dc = jpeg->comps[i_c].i_dc;
+                                uint8_t i_ac = jpeg->comps[i_c].i_ac;
+
+                                byte = (i_dc << 4) | (i_ac & 0xF);
+
+                                write_byte(stream, &byte);
+                        }
+
+                        /* Weïrd stuff, write 0 */
+                        write_byte(stream, 0);
+                        write_byte(stream, 0);
+                        write_byte(stream, 0);
+                } else
+                        *error = true;
+
+                break;
+
+        // case TEM:
+        // case DNL:
+        // case DHP:
+        // case EXP:
+        default:
+                *error = true;
+        }
+
+
+        uint32_t end_section;
+
+        end_section = pos_bitstream(stream);
+        size = end_section - pos_size;
+
+        /* Write section size and then restore current position */
+        seek_bitstream(stream, pos_size);
+
+        write_short_BE(stream, size);
+
+        seek_bitstream(stream, end_section);
+}
+
+void write_header(struct bitstream *stream, struct jpeg_data *jpeg, bool *error)
+{
+        write_section(stream, SOI, jpeg, error);
+        write_section(stream, APP0, jpeg, error);
+        write_section(stream, COM, jpeg, error);
+
+        /* Write DC quantif tables */
+        jpeg->next_qtype = 0;
+        write_section(stream, DQT, jpeg, error);
+
+        /* Write AC quantif tables */
+        jpeg->next_qtype = 1;
+        write_section(stream, DQT, jpeg, error);
+
+
+        write_section(stream, SOF0, jpeg, error);
+        write_section(stream, DHT, jpeg, error);
+        write_section(stream, SOS, jpeg, error);
 }
 
 

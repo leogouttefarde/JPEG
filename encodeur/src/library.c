@@ -105,5 +105,21 @@ void copy_file(FILE *dest, FILE *src)
         fseek(dest, state, SEEK_SET);
 }
 
+uint32_t truncate(int32_t s)
+{
+        s = (s > 255) ? 255 : ( (s < 0) ? 0 : s );
+
+        return (uint32_t)s;
+}
+
+uint8_t double2uint8(double x)
+{
+        uint8_t res;
+
+        res = (x > 255) ? 255 : ( (x < 0) ? 0 : (uint8_t)x );
+
+        return res;
+}
+
 
 

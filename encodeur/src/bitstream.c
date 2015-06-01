@@ -27,7 +27,7 @@ struct bitstream *create_bitstream(const char *filename, enum stream_mode mode)
                 else
                         open_mode = "r+";
 
-
+                // printf("open_mode == %s\n", open_mode);
                 FILE *file = fopen(filename, open_mode);
 
                 if (file != NULL) {
@@ -180,6 +180,33 @@ int8_t write_bit(struct bitstream *stream, uint8_t bit, bool byte_stuffing)
         }
 
         return 0;
+}
+
+void write_byte(struct bitstream *stream, uint8_t byte)
+{
+        uint8_t temp = byte;
+
+        fwrite(&temp, 1, 1, stream->file);
+}
+
+void write_short_BE(struct bitstream *stream, uint16_t val)
+{
+        uint8_t temp[2];
+
+        temp[0] = val >> 8;
+        temp[1] = val;
+
+        fwrite(temp, 2, 1, stream->file);
+}
+
+void seek_bitstream(struct bitstream *stream, uint32_t pos)
+{
+        fseek(stream->file, pos, SEEK_SET);
+}
+
+uint32_t pos_bitstream(struct bitstream *stream)
+{
+        return ftell(stream->file);
 }
 
 struct bitstream *make_bitstream(FILE *file)

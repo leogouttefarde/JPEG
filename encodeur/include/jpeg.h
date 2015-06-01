@@ -71,6 +71,9 @@ struct jpeg_data {
         /* Quantification tables */
         uint8_t qtables[MAX_QTABLES][BLOCK_SIZE];
 
+        /* Next QT table type to write : 0 for DC, 1 for AC */
+        uint8_t next_qtype;
+
         uint8_t state;
 };
 
@@ -84,7 +87,8 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
 void read_header(struct bitstream *stream, struct jpeg_data *jpeg, bool *error);
 
 /* Extract then write image data to tiff file */
-void process_image(struct bitstream *stream, struct jpeg_data *jpeg, struct jpeg_data *ojpeg, bool *error);
+void process_image(struct bitstream *stream, struct bitstream *ostream,
+                        struct jpeg_data *jpeg, struct jpeg_data *ojpeg, bool *error);
 
 
 void free_jpeg_data(struct jpeg_data *jpeg);
