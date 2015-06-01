@@ -36,9 +36,15 @@ EXEC=tiff2jpeg
 
 all : ${EXEC}
 
+TEST_FILE_O= test_file $(OBJ_DIR)/test_file.o $(OBJ_DIR)/priority_queue.o
+
+test_file: $@ $(OBJ_DIR)/test_file.o $(OBJ_DIR)/priority_queue.o
+	$(LD) -o $@ $(OBJ_DIR)/test_file.o $(OBJ_DIR)/priority_queue.o $(LDFLAGS)
+
+
 # Edition de lien des executables
 ${EXEC} : $(OBJ_FILES)
-	$(LD) -o ${EXEC} $(OBJ_FILES) $(LDFLAGS)
+	$(LD) -o $@ $(OBJ_FILES) $(LDFLAGS)
 
 # Compilation des sources
 
@@ -46,7 +52,7 @@ ${OBJ_DIR}/%.o: ${SRC_DIR}/%.c
 	$(CC) $(CFLAGS) ${INC} $< -o $@ -c
 
 clean:
-	rm -f ${EXEC} $(NEW_OBJ_FILES) gmon.out *.tiff out.jpg
+	rm -f ${EXEC} $(NEW_OBJ_FILES) gmon.out *.tiff out.jpg $(TEST_FILE_O)
 
 
 # IMAGE=tests/shaun_the_sheep

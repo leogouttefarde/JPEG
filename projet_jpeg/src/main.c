@@ -15,7 +15,7 @@ int main(int argc, char **argv)
         char *path = argv[1];
 
         if (!is_valid_ext(path)) {
-                printf("ERROR : Invalid file extension, .jpg or .jpg expected\n");
+                printf("ERROR : Invalid file extension, .jpg or .jpeg expected\n");
                 return EXIT_FAILURE;
         }
 
