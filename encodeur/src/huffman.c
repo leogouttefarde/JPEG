@@ -1,6 +1,7 @@
 
 #include "huffman.h"
 #include "common.h"
+#include "priority_queue.h"
 
 
 struct node {
@@ -224,6 +225,72 @@ bool write_huffman_value(int8_t value, struct huff_table *table,
 
 
         return success;
+}
+
+struct huff_table *create_huffman_tree(uint32_t freqs[0x100])
+{
+        // printf("create_queue\n");
+        struct priority_queue *queue = create_queue(0x100);
+        struct huff_table *node = NULL;
+
+        if (queue == NULL)
+                return NULL;
+
+
+        for (uint16_t val = 0; val < 0x100; val++) {
+                if (freqs[val] > 0) {
+                        node = create_node(LEAF, -1, -1, val);
+                        insert_queue(queue, freqs[val], node);
+                }
+        }
+
+        struct huff_table *tree = NULL;
+        struct huff_table *child0 = NULL;
+        struct huff_table *child1 = NULL;
+        bool status = true;
+        uint32_t p1, p2;
+
+
+        /* Construction de l'arbre de Huffman */
+        while (status) {
+                // printf("status = %d\n", status);
+                status = best_queue(queue, &p1, &child0);
+
+                /* S'il y a un arbre de priorité minimale */
+                if (status) {
+                        delete_queue(queue);
+                        status = best_queue(queue, &p2, &child1);
+                }
+
+                /* S'il y a un nouvel arbre de priorité minimale */
+                if (status) {
+                        delete_queue(queue);
+
+
+                        node = create_node(NODE, -1, -1, -1);
+
+                        if (node != NULL) {
+
+                                node->u.node.left = child1;
+                                node->u.node.right = child0;
+
+                                /* On fusionne les deux arbres avant de les ajouter à la file */
+                                insert_queue(queue, p1 + p2, node);
+                        } else
+                                break;
+                }
+
+                /*
+                * Sinon, l'arbre de Huffman est
+                * le dernier arbre extrait : Fils0
+                */
+                else
+                        tree = child0;
+        }
+
+
+
+        return tree;
 }
 
 

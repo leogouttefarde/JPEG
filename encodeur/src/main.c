@@ -34,11 +34,61 @@ int main(int argc, char **argv)
                 jpeg.path = path;
 
 
+
                 /* Read header data */
                 read_header(stream, &jpeg, &error);
 
-                /* Convert image data to JPEG */
-                process_image(stream, &jpeg, &error);
+
+                struct jpeg_data ojpeg;
+                memset(&ojpeg, 0, sizeof(struct jpeg_data));
+
+
+                ojpeg.height = jpeg.height;
+                ojpeg.width = jpeg.width;
+
+                ojpeg.nb_comps = jpeg.nb_comps;
+
+                memcpy(&ojpeg.comps, &jpeg.comps, sizeof(jpeg.comps));
+
+                for (uint8_t i = 0; i < ojpeg.nb_comps; i++) {
+                        // ojpeg.comps[i] = jpeg.comps[i];
+
+                        ojpeg.comps[i].i_dc = 0;
+                        ojpeg.comps[i].i_ac = 0;
+
+                        // /* SOF0 data */
+                        // uint8_t nb_blocks_h;
+                        // uint8_t nb_blocks_v;
+                        // uint8_t i_q;
+
+                        // /* SOS data */
+                        // uint8_t i_dc;
+                        // uint8_t i_ac;
+
+                        // /* Last DC decoded value */
+                        // int32_t last_DC;
+                }
+
+                for (uint8_t i = 0; i < ojpeg.nb_comps; i++)
+                        ojpeg.comp_order[i] = jpeg.comp_order[i];
+
+
+
+                memcpy(&ojpeg.qtables, &jpeg.qtables, sizeof(jpeg.qtables));
+
+
+
+
+
+                /* Compute Huffman tables */
+                process_image(stream, &jpeg, &ojpeg, &error);
+
+
+                // write_header(stream, &ojpeg &error);
+
+
+                /* Write new JPEG data */
+                // process_image(stream, &jpeg, &ojpeg, &error);
 
 
                 /* EOI check */

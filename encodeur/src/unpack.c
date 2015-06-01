@@ -126,7 +126,7 @@ uint8_t write_magnitude(struct bitstream *stream, int16_t value)
 void pack_block(struct bitstream *stream,
                 struct huff_table *table_DC, int32_t *pred_DC,
                 struct huff_table *table_AC,
-                int32_t bloc[64])
+                int32_t bloc[64], uint32_t **freqs)
 {
         uint8_t class, zeros, symbol;
         uint8_t n = 0;
@@ -142,8 +142,14 @@ void pack_block(struct bitstream *stream,
 
 
         class = magnitude_class(diff);
-        write_huffman_value(class, table_DC, stream);
-        write_magnitude(stream, diff);
+
+        if (freqs)
+                freqs[0][class]++;
+
+        else {
+                write_huffman_value(class, table_DC, stream);
+                write_magnitude(stream, diff);
+        }
 
 
         while (n < BLOCK_SIZE) {
@@ -160,14 +166,22 @@ void pack_block(struct bitstream *stream,
                         symbol = EOB;
                         n = BLOCK_SIZE;
 
-                        write_huffman_value(symbol, table_AC, stream);
+                        if (freqs)
+                                freqs[1][symbol]++;
+
+                        else
+                                write_huffman_value(symbol, table_AC, stream);
 
                 // Si au moins 16 zéros
                 } else if (zeros >= 16) {
                         symbol = ZRL;
                         n += 16;
 
-                        write_huffman_value(symbol, table_AC, stream);
+                        if (freqs)
+                                freqs[1][symbol]++;
+
+                        else
+                                write_huffman_value(symbol, table_AC, stream);
 
                 } else {
                         n += zeros;
@@ -175,8 +189,14 @@ void pack_block(struct bitstream *stream,
                         class = magnitude_class(bloc[n]);
                         symbol = (zeros << 4) | (class & 0xF);
 
-                        write_huffman_value(symbol, table_AC, stream);
-                        write_magnitude(stream, bloc[n]);
+                        if (freqs)
+                                freqs[1][symbol]++;
+
+                        else {
+                                write_huffman_value(symbol, table_AC, stream);
+                                write_magnitude(stream, bloc[n]);
+                        }
+
                         n++;
                 }
         }

@@ -22,6 +22,7 @@ OBJ_FILES += $(OBJ_DIR)/tiff.o $(OBJ_DIR)/library.o $(OBJ_DIR)/bitstream.o
 OBJ_FILES += $(OBJ_DIR)/loeffler.o
 #OBJ_FILES += $(OBJ_DIR)/idct.o
 OBJ_FILES += $(OBJ_DIR)/jpeg.o
+OBJ_FILES += $(OBJ_DIR)/priority_queue.o
 
 # Liste des objets realises
 NEW_OBJ_FILES = $(OBJ_DIR)/iqzz.o $(OBJ_DIR)/conv.o
@@ -31,6 +32,7 @@ NEW_OBJ_FILES += $(OBJ_DIR)/idct.o
 NEW_OBJ_FILES += $(OBJ_DIR)/loeffler.o
 NEW_OBJ_FILES += $(OBJ_DIR)/jpeg.o $(OBJ_DIR)/main.o
 #NEW_OBJ_FILES += $(OBJ_DIR)/tiff.o
+NEW_OBJ_FILES += $(OBJ_DIR)/priority_queue.o
 
 EXEC=tiff2jpeg
 

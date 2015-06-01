@@ -328,7 +328,7 @@ char* create_tiff_name(char *path)
 }
 
 /* Extract then write image data to tiff file */
-void process_image(struct bitstream *stream, struct jpeg_data *jpeg, bool *error)
+void process_image(struct bitstream *stream, struct jpeg_data *jpeg, struct jpeg_data *ojpeg, bool *error)
 {
         if (stream == NULL || *error || jpeg == NULL || jpeg->state != ALL_OK) {
                 *error = true;
@@ -368,10 +368,17 @@ void process_image(struct bitstream *stream, struct jpeg_data *jpeg, bool *error
 
         name = create_tiff_name(jpeg->path);
         file = init_tiff_file(name, jpeg->width, jpeg->height, mcu_v);
-        FILE *out = fopen("out.jpg", "wb");
 
-        copy_file(out, bitstream_file(stream));
-        struct bitstream *ostream = make_bitstream(out);
+
+        struct bitstream *ostream = NULL;
+        FILE *out = NULL;
+
+        if (!(ojpeg->state & DHT_OK)) {
+                out = fopen("out.jpg", "wb");
+
+                copy_file(out, bitstream_file(stream));
+                ostream = make_bitstream(out);
+        }
 
 
         if (file != NULL) {
@@ -392,7 +399,17 @@ void process_image(struct bitstream *stream, struct jpeg_data *jpeg, bool *error
                 };
 
 
+                uint32_t **freqs = NULL;
+
+                if (!(ojpeg->state & DHT_OK)) {
+                        freqs = calloc(2, sizeof(uint32_t*));
+                        freqs[0] = calloc(0x100, sizeof(uint32_t));
+                        freqs[1] = calloc(0x100, sizeof(uint32_t));
+                }
+
+
                 for (uint32_t i = 0; i < nb_mcu; i++) {
+                        // printf("i = %d\n",i);
                         for (uint8_t i = 0; i < jpeg->nb_comps; i++) {
 
                                 i_c = jpeg->comp_order[i];
@@ -425,7 +442,7 @@ void process_image(struct bitstream *stream, struct jpeg_data *jpeg, bool *error
                                         *last_DC = last;
 
                                         pack_block(ostream, jpeg->htables[0][i_dc], last_DC,
-                                                             jpeg->htables[1][i_ac], block);
+                                                             jpeg->htables[1][i_ac], block, freqs);
                                         // *last_DC = new;
                                         // New doit avoir été restauré
                                         assert(*last_DC == new);
@@ -461,6 +478,26 @@ void process_image(struct bitstream *stream, struct jpeg_data *jpeg, bool *error
                         // printf("nb_blocks_v = %d\n", mcu_v_dim);
 
                         write_tiff_file(file, mcu_RGB, mcu_h_dim, mcu_v_dim);
+                }
+
+
+                // printf("test freqs\n");
+
+                if (freqs) {
+                        // printf("freqs\n");
+                        // DC table
+                        ojpeg->htables[0][0] = create_huffman_tree(freqs[0]);
+                        // printf("create_huffman_tree(freqs[0]);\n");
+
+                        // AC table
+                        ojpeg->htables[1][0] = create_huffman_tree(freqs[1]);
+                        // printf("create_huffman_tree(freqs[1]);\n");
+
+
+                        SAFE_FREE(freqs[0]);
+                        SAFE_FREE(freqs[1]);
+                        SAFE_FREE(freqs);
+                        // printf("freqs\n");
                 }
 
                 close_tiff_file(file);
