@@ -443,6 +443,12 @@ void process_image(struct bitstream *stream, struct bitstream *ostream,
                                         // On restaure pred_DC pour tester pack_block
                                         // *last_DC = last;
 
+                                        iqzz_block(block, iqzz, (uint8_t*)&jpeg->qtables[i_q]);
+
+                                        uint8_t *quantif = (uint8_t*)&ojpeg->qtables[i_q];
+                                        qzz_block (iqzz, block, quantif, 3);
+
+
                                         int32_t *test = &ojpeg->comps[i_c].last_DC;
                                         if (freqs)
                                         pack_block(ostream, jpeg->htables[0][i_dc], test,
@@ -454,11 +460,6 @@ void process_image(struct bitstream *stream, struct bitstream *ostream,
                                         // New doit avoir été restauré
                                         // assert(*last_DC == new);
                                         // *last_DC = new;
-
-                                        iqzz_block(block, iqzz, (uint8_t*)&jpeg->qtables[i_q]);
-
-                                        uint8_t quantif[64];
-                                        qzz_block (iqzz, block, quantif, 1);
                                         iqzz_block(block, iqzz, quantif);
 
                                         idct_block(iqzz, (uint8_t*)&idct[n]);

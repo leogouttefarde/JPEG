@@ -76,7 +76,7 @@ int main(int argc, char **argv)
 
 
 
-                memcpy(&ojpeg.qtables, &jpeg.qtables, sizeof(jpeg.qtables));
+                //memcpy(&ojpeg.qtables, &jpeg.qtables, sizeof(jpeg.qtables));
                 memset(&ojpeg.htables, 0, sizeof(ojpeg.htables));
 
 
