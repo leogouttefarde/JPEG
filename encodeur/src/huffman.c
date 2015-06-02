@@ -240,7 +240,7 @@ struct huff_table *create_huffman_tree(uint32_t freqs[0x100])
 
         for (uint16_t val = 0; val < 0x100; val++) {
                 if (freqs[val] > 0) {
-                        node = create_node(LEAF, -1, -1, val);
+                        node = create_node(LEAF, 0, 0, val);
                         insert_queue(queue, freqs[val], node);
                 }
         }
@@ -271,6 +271,11 @@ struct huff_table *create_huffman_tree(uint32_t freqs[0x100])
                         node = create_node(NODE, -1, -1, -1);
 
                         if (node != NULL) {
+
+                                child1->code = child1->code << 1 | 0;
+                                child0->code = child0->code << 1 | 1;
+                                child1->size++;
+                                child0->size++;
 
                                 node->u.node.left = child1;
                                 node->u.node.right = child0;

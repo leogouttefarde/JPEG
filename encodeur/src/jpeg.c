@@ -368,6 +368,8 @@ void process_image(struct bitstream *stream, struct bitstream *ostream,
         // printf("nb_mcu = %d\n", nb_mcu);
 
         name = create_tiff_name(jpeg->path);
+
+        if (ostream)
         file = init_tiff_file(name, jpeg->width, jpeg->height, mcu_v);
 
 
@@ -382,7 +384,7 @@ void process_image(struct bitstream *stream, struct bitstream *ostream,
         // }
 
 
-        if (file != NULL) {
+        if (1) {
                 uint8_t nb_blocks_h, nb_blocks_v, nb_blocks;
                 uint8_t i_dc, i_ac, i_q;
                 int32_t *last_DC;
@@ -485,6 +487,7 @@ void process_image(struct bitstream *stream, struct bitstream *ostream,
                         // printf("nb_blocks_h = %d\n", mcu_h_dim);
                         // printf("nb_blocks_v = %d\n", mcu_v_dim);
 
+        if (ostream)
                         write_tiff_file(file, mcu_RGB, mcu_h_dim, mcu_v_dim);
                 }
 
@@ -508,6 +511,7 @@ void process_image(struct bitstream *stream, struct bitstream *ostream,
                         // printf("freqs\n");
                 }
 
+        if (ostream)
                 close_tiff_file(file);
 
         } else
@@ -616,6 +620,9 @@ void write_section(struct bitstream *stream, enum jpeg_section section,
         case DQT:
                 if (jpeg != NULL) {
 
+                        bool mem[MAX_QTABLES];
+                        memset(mem, 0, sizeof(mem));
+
                         /* Write all quantification tables */
                         for (uint8_t i = 0; i < jpeg->nb_comps; i++) {
 
@@ -623,10 +630,14 @@ void write_section(struct bitstream *stream, enum jpeg_section section,
                                 const uint8_t accuracy = 0;
                                 uint8_t i_q = jpeg->comps[i].i_q;
 
+                                if (mem[i_q])
+                                        continue;
+
                                 if (i_q >= MAX_QTABLES)
                                         *error = true;
 
                                 else {
+                                        mem[i_q] = true;
                                         byte = accuracy << 4;
                                         byte |= i_q & 0xF;
                                         write_byte(stream, byte);
@@ -636,8 +647,8 @@ void write_section(struct bitstream *stream, enum jpeg_section section,
                                 if (i_q < MAX_QTABLES) {
                                         uint8_t *qtable = (uint8_t*)&jpeg->qtables[i_q];
 
-                                        for (uint8_t i = 0; i < BLOCK_SIZE; i++)
-                                                write_byte(stream, qtable[i]);
+                                        for (uint8_t j = 0; j < BLOCK_SIZE; j++)
+                                                write_byte(stream, qtable[j]);
 
                                 } else
                                         *error = true;
@@ -777,17 +788,19 @@ void write_header(struct bitstream *stream, struct jpeg_data *jpeg, bool *error)
         write_section(stream, APP0, jpeg, error);
         write_section(stream, COM, jpeg, error);
 
-        /* Write DC quantif tables */
-        jpeg->next_qtype = 0;
         write_section(stream, DQT, jpeg, error);
-
-        /* Write AC quantif tables */
-        jpeg->next_qtype = 1;
-        write_section(stream, DQT, jpeg, error);
-
-
         write_section(stream, SOF0, jpeg, error);
+
+
+        /* Write DC Huffman tables */
+        jpeg->next_qtype = 0;
         write_section(stream, DHT, jpeg, error);
+
+        /* Write AC Huffman tables */
+        jpeg->next_qtype = 1;
+        write_section(stream, DHT, jpeg, error);
+
+
         write_section(stream, SOS, jpeg, error);
 }
 

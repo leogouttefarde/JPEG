@@ -13,7 +13,6 @@
 #include <stdbool.h>
 #include <complex.h>
 #include <inttypes.h>
-#include "library.h"
 
 // defines
 #ifndef M_PI

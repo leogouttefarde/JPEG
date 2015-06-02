@@ -78,14 +78,25 @@ int main(int argc, char **argv)
                 memcpy(&ojpeg.qtables, &jpeg.qtables, sizeof(jpeg.qtables));
 
 
-
-
+                // printf("pos stream\n");
+                uint32_t pos = pos_bitstream(stream);
 
                 /* Compute Huffman tables */
                 process_image(stream, NULL, &jpeg, &ojpeg, &error);
 
 
                 write_header(ostream, &ojpeg, &error);
+
+
+                seek_bitstream(stream, pos);
+
+                // printf("pos stream\n");
+                // uint32_t pos2 = pos_bitstream(stream);
+
+
+                for (uint8_t i = 0; i < jpeg.nb_comps; i++)
+                        jpeg.comps[i].last_DC = 0;
+
 
 
                 /* Write new JPEG data */
