@@ -166,6 +166,9 @@ int8_t next_huffman_value(struct huff_table *table,
 
         if (table != NULL) {
                 result = table->u.val;
+        // printf("next_huffman_value %d\n", result);
+        // printf("code %d\n", table->code);
+        // printf("size %d\n", table->size);
         }
 
         return result;
@@ -204,7 +207,7 @@ struct huff_table *get_huffman_code(int8_t value, struct huff_table *table)
 bool write_huffman_value(int8_t value, struct huff_table *table,
                          struct bitstream *stream)
 {
-        // printf("write_huffman_value\n");
+        // printf("write_huffman_value %d\n", value);
         int8_t bit;
         bool success = false;
 
@@ -213,6 +216,8 @@ bool write_huffman_value(int8_t value, struct huff_table *table,
         if (leaf != NULL) {
                 uint32_t code = leaf->code;
                 uint8_t size = leaf->size;
+        // printf("code %d\n", code);
+        // printf("size %d\n", size);
 
                 for (uint8_t i = 0; i < size; i++) {
                         bit = (code >> (size - 1 - i)) & 1;
@@ -269,7 +274,7 @@ struct huff_table *create_huffman_tree(uint32_t freqs[0x100])
 
         for (uint16_t val = 0; val < 0x100; val++) {
                 if (freqs[val] > 0) {
-                        printf("freqs[%d] = %d\n", val, freqs[val]);
+                        // printf("freqs[%d] = %d\n", val, freqs[val]);
                         node = create_node(LEAF, 0, 0, val);
                         insert_queue(queue, freqs[val], node);
                 }
