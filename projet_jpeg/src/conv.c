@@ -30,7 +30,7 @@ void YCbCr_to_ARGB(uint8_t  *mcu_YCbCr[3], uint32_t *mcu_RGB,
                 G = Y[i] - 0.3436954 * (Cb[i] - 128) - 0.7141690 * (Cr[i] - 128);
                 B = Y[i] + 1.7721604 * (Cb[i] - 128) + 0.0009902 * (Cr[i] - 128);
 
-
+		/* Fonction truncate déclarée dans library.h */
                 mcu_RGB[i] = truncate(R) << 16 | truncate(G) << 8 | truncate(B);
         }
 }
