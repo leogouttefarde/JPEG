@@ -23,7 +23,6 @@ int main(int argc, char **argv)
 
         struct bitstream *stream = create_bitstream(path, RDONLY);
         struct bitstream *ostream = create_bitstream("out.jpg", WRONLY);
-        // struct bitstream *stream = create_bitstream(path);
 
         if (stream != NULL && ostream) {
 
@@ -39,11 +38,6 @@ int main(int argc, char **argv)
 
                 /* Read header data */
                 read_header(stream, &jpeg, &error);
-
-
-                huffman_export("jpeg_dc_0.dot", jpeg.htables[0][0]);
-                // huffman_export("jpeg_ac_0.dot", jpeg.htables[1][0]);
-
 
 
                 struct jpeg_data ojpeg;
@@ -76,6 +70,7 @@ int main(int argc, char **argv)
                         // int32_t last_DC;
                 }
 
+
                 for (uint8_t i = 0; i < ojpeg.nb_comps; i++)
                         ojpeg.comp_order[i] = jpeg.comp_order[i];
 
@@ -88,19 +83,14 @@ int main(int argc, char **argv)
                 // printf("pos stream\n");
                 uint32_t pos = pos_bitstream(stream);
 
-                /* Compute Huffman tables */
+                /* Compute raw Huffman tables */
                 process_image(stream, NULL, &jpeg, &ojpeg, &error);
 
 
                 write_header(ostream, &ojpeg, &error);
 
-
-
-                huffman_export("dc_tree.dot", ojpeg.htables[0][0]);
-
-                huffman_export("ac_tree.dot", ojpeg.htables[1][0]);
-
-
+                //huffman_export("dc_tree.dot", ojpeg.htables[0][0]);
+                //huffman_export("ac_tree.dot", ojpeg.htables[1][0]);
 
 
                 seek_bitstream(stream, pos);

@@ -286,10 +286,6 @@ void read_header(struct bitstream *stream, struct jpeg_data *jpeg, bool *error)
 
                 marker = read_section(stream, ANY, jpeg, error);
                 *error |= end_of_bitstream(stream);
-                // printf("Section : 0x%02X\n", marker);
-
-                // printf("end_of_bitstream(stream) : %d\n", end_of_bitstream(stream));
-                // printf("error : %d\n", error);
         }
 }
 
@@ -435,15 +431,15 @@ void process_image(struct bitstream *stream, struct bitstream *ostream,
 
                                 // printf("nb_blocks = %d\n", nb_blocks);
                                 for (uint8_t n = 0; n < nb_blocks; n++) {
-                                        int32_t last = *last_DC;
+                                        // int32_t last = *last_DC;
                                         unpack_block(stream, jpeg->htables[0][i_dc], last_DC,
                                                              jpeg->htables[1][i_ac], block);
 
 
-                                        int32_t new = *last_DC;
+                                        // int32_t new = *last_DC;
 
                                         // On restaure pred_DC pour tester pack_block
-                                        *last_DC = last;
+                                        // *last_DC = last;
 
                                         int32_t *test = &ojpeg->comps[i_c].last_DC;
                                         if (freqs)
@@ -455,7 +451,7 @@ void process_image(struct bitstream *stream, struct bitstream *ostream,
                                         // *last_DC = new;
                                         // New doit avoir été restauré
                                         // assert(*last_DC == new);
-                                        *last_DC = new;
+                                        // *last_DC = new;
 
                                         iqzz_block(block, iqzz, (uint8_t*)&jpeg->qtables[i_q]);
 
@@ -487,8 +483,8 @@ void process_image(struct bitstream *stream, struct bitstream *ostream,
                         // printf("nb_blocks_h = %d\n", mcu_h_dim);
                         // printf("nb_blocks_v = %d\n", mcu_v_dim);
 
-        if (ostream)
-                        write_tiff_file(file, mcu_RGB, mcu_h_dim, mcu_v_dim);
+                        if (ostream)
+                                write_tiff_file(file, mcu_RGB, mcu_h_dim, mcu_v_dim);
                 }
 
 
@@ -498,23 +494,16 @@ void process_image(struct bitstream *stream, struct bitstream *ostream,
                         // printf("freqs\n");
                         // DC table
                         ojpeg->htables[0][0] = create_huffman_tree(freqs[0]);
-                        // printf("create_huffman_tree(freqs[0]) => %x\n", ojpeg->htables[0][0]);
+                        ojpeg->htables[0][1] = ojpeg->htables[0][0];
 
                         // AC table
                         ojpeg->htables[1][0] = create_huffman_tree(freqs[1]);
-                        // printf("create_huffman_tree(freqs[1]) => %x\n", ojpeg->htables[1][0]);
-
-
-
-
-                        // huffman_export("dc_tree.dot", ojpeg->htables[0][0]);
-                        // huffman_export("ac_tree.dot", ojpeg->htables[1][0]);
+                        ojpeg->htables[1][1] = ojpeg->htables[1][0];
 
 
                         SAFE_FREE(freqs[0]);
                         SAFE_FREE(freqs[1]);
                         SAFE_FREE(freqs);
-                        // printf("freqs\n");
                 }
 
                 if (ostream) {
@@ -526,12 +515,6 @@ void process_image(struct bitstream *stream, struct bitstream *ostream,
                 *error = true;
 
 
-
-
-        // write_section(ostream, EOI, NULL, error);
-
-
-        // free_bitstream(ostream);
         SAFE_FREE(name);
 
         skip_bitstream_until(stream, SECTION_HEAD);
@@ -697,8 +680,6 @@ void write_section(struct bitstream *stream, enum jpeg_section section,
 
                                 write_byte(stream, i_q);
 
-                                //printf("nb_blocks_h = %d\n", h_sampling_factor);
-                                //printf("nb_blocks_v = %d\n", v_sampling_factor);
                                 jpeg->state |= SOF0_OK;
                         }
                 } else
@@ -709,26 +690,30 @@ void write_section(struct bitstream *stream, enum jpeg_section section,
         case DHT:
                 if (jpeg != NULL) {
                         uint8_t i_h;
-                        uint8_t type = jpeg->next_qtype;
+                        uint8_t type;
 
                         /* Write all Huffman tables */
-                        for (uint8_t i = 0; i < MAX_HTABLES; i++) {
+                        for (uint8_t h = 0; h < 2; h++) {
+                                type = h;
 
-                                i_h = i;
-                                struct huff_table **table = &jpeg->htables[type][i_h];
+                                for (uint8_t i = 0; i < MAX_HTABLES; i++) {
 
-                                if (*table == NULL)
-                                        continue;
+                                        i_h = i;
+                                        struct huff_table **table = &jpeg->htables[type][i_h];
 
-                                /*
-                                 * 0 for DC
-                                 * 1 for AC
-                                 */
-                                byte = (type & 1) << 4;
-                                byte |= i_h & 0xF;
-                                write_byte(stream, byte);
+                                        if (*table == NULL)
+                                                continue;
 
-                                write_huffman_table(stream, table);
+                                        /*
+                                         * 0 for DC
+                                         * 1 for AC
+                                         */
+                                        byte = (type & 1) << 4;
+                                        byte |= i_h & 0xF;
+                                        write_byte(stream, byte);
+
+                                        write_huffman_table(stream, table);
+                                }
                         }
 
                         jpeg->state |= DHT_OK;
@@ -761,10 +746,9 @@ void write_section(struct bitstream *stream, enum jpeg_section section,
                                 write_byte(stream, byte);
                         }
 
-                        /* Weïrd stuff, write 0 */
-                        write_byte(stream, 0);
-                        write_byte(stream, 0);
-                        write_byte(stream, 0);
+                        write_byte(stream, 0x00);
+                        write_byte(stream, 0x3F);
+                        write_byte(stream, 0x00);
                 } else
                         *error = true;
 
@@ -794,23 +778,19 @@ void write_section(struct bitstream *stream, enum jpeg_section section,
 
 void write_header(struct bitstream *stream, struct jpeg_data *jpeg, bool *error)
 {
+        /* Write header data */
         write_section(stream, SOI, jpeg, error);
         write_section(stream, APP0, jpeg, error);
         write_section(stream, COM, jpeg, error);
-
-        write_section(stream, DQT, jpeg, error);
         write_section(stream, SOF0, jpeg, error);
 
+        /* Write all Quantification tables */
+        write_section(stream, DQT, jpeg, error);
 
-        /* Write DC Huffman tables */
-        jpeg->next_qtype = 0;
+        /* Write all Huffman tables */
         write_section(stream, DHT, jpeg, error);
 
-        /* Write AC Huffman tables */
-        jpeg->next_qtype = 1;
-        write_section(stream, DHT, jpeg, error);
-
-
+        /* Write SOS data */
         write_section(stream, SOS, jpeg, error);
 }
 

@@ -110,7 +110,7 @@ struct huff_table *load_huffman_table(
 
 
         /* There must be less than 256 different codes */
-        if (nb_codes >= 256)
+        if (nb_codes > 256)
                 return NULL;
 
         else {
@@ -140,7 +140,6 @@ struct huff_table *load_huffman_table(
 int8_t next_huffman_value(struct huff_table *table, 
                 struct bitstream *stream)
 {
-        printf("next_huff_value :   ");
         int8_t bit;
         int8_t result = 0;
         uint32_t dest;
@@ -155,12 +154,11 @@ int8_t next_huffman_value(struct huff_table *table,
                 else
                         table = table->u.node.left;
         }
-        printf("\n");
 
         if (table != NULL)
             result = table->u.val;
         else
-                printf("FATAL ERROR : no huff val found\n");
+                printf("FATAL ERROR : no Huffman value found\n");
 
         return result;
 }

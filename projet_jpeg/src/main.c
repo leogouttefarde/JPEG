@@ -2,6 +2,7 @@
 #include "common.h"
 #include "bitstream.h"
 #include "jpeg.h"
+#include "huffman.h"
 
 
 int main(int argc, char **argv)

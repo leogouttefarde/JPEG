@@ -70,7 +70,6 @@ int8_t next_bit(struct bitstream *stream, bool byte_stuffing)
         }
 	/* Retourne le prochain bit */
         bit = 1 & (*byte >> --stream->index);
-        printf("%d", bit);
 
         return bit;
 }
