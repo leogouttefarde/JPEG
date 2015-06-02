@@ -114,15 +114,10 @@ struct huff_table *load_huffman_table(
                 return NULL;
 
         else {
-                table = malloc(sizeof(struct huff_table));
-
+		table = calloc(1, sizeof(struct huff_table));
                 if (table == NULL)
                         return NULL;
         }
-
-
-
-        memset(table, 0, sizeof(struct huff_table));
 
         for (uint8_t i = 0; i < sizeof(code_sizes); ++i) {
                 for (uint8_t j = 0; j < code_sizes[i]; ++j) {
