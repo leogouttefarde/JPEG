@@ -228,6 +228,35 @@ bool write_huffman_value(int8_t value, struct huff_table *table,
         return success;
 }
 
+void compute_huffman_codes(struct huff_table *parent)
+{
+        if (parent != NULL && parent->type != LEAF) {
+                uint32_t code = parent->code << 1;
+                uint8_t size = parent->size + 1;
+
+
+                struct huff_table **left, **right;
+
+                left = &parent->u.node.left;
+                right = &parent->u.node.right;
+
+
+                if (*left != NULL) {
+                        (*left)->code = code;
+                        (*left)->size = size;
+
+                        compute_huffman_codes(*left);
+                }
+
+                if (*right != NULL) {
+                        (*right)->code = code | 1;
+                        (*right)->size = size;
+
+                        compute_huffman_codes(*right);
+                }
+        }
+}
+
 struct huff_table *create_huffman_tree(uint32_t freqs[0x100])
 {
         // printf("create_queue\n");
@@ -268,17 +297,12 @@ struct huff_table *create_huffman_tree(uint32_t freqs[0x100])
                         delete_queue(queue);
 
 
-                        node = create_node(NODE, -1, -1, -1);
+                        node = create_node(NODE, 0, 0, 0);
 
                         if (node != NULL) {
 
-                                child1->code = child1->code << 1 | 0;
-                                child0->code = child0->code << 1 | 1;
-                                child1->size++;
-                                child0->size++;
-
-                                node->u.node.left = child1;
-                                node->u.node.right = child0;
+                                node->u.node.left = child0;
+                                node->u.node.right = child1;
 
                                 /* On fusionne les deux arbres avant de les ajouter à la file */
                                 insert_queue(queue, p1 + p2, node);
@@ -294,60 +318,118 @@ struct huff_table *create_huffman_tree(uint32_t freqs[0x100])
                         tree = child0;
         }
 
+        compute_huffman_codes(tree);
+
 
 
         return tree;
 }
 
+void forge_huffman_values(struct huff_table *table, uint8_t **values, uint8_t *pos, uint8_t code_sizes[16])
+{
+        if (table != NULL) {
+                if (table->type == LEAF){
+                        uint8_t i = table->size - 1;
+
+                        // printf("i = %d\n", i);
+
+                        if (pos[i] < code_sizes[i]) {
+                                // printf("test 0\n");
+                                values[i][pos[i]] = table->u.val;
+                                // printf("test 1\n");
+                                ++pos[i];       
+                        }
+                        // else {
+                        //         printf("FATAL ERROR  forge %d\n", pos[i]);
+                        //         printf("code_sizes[%d] = %d\n", i, code_sizes[i]);
+                        // }
+                }
+
+                else if (table->type == NODE) {
+                        forge_huffman_values(table->u.node.left, values, pos, code_sizes);
+                        forge_huffman_values(table->u.node.right, values, pos, code_sizes);
+                }
+                //else
+                //         printf("FATAL ERROR : corrupted Huffman table forge\n");
+        }
+}
+
+void count_code_sizes(struct huff_table *table, uint8_t *code_sizes)
+{
+        if (table != NULL) {
+                if (table->type == LEAF) {
+                        uint8_t i = table->size - 1;
+
+                        // printf("code_sizes[%d] < 0x%02X\n", i, table->u.val);
+                        if (i < 16)
+                                ++(code_sizes[i]);
+                        // else
+                        //         printf("FATAL ERROR  count %d\n", i);
+                }
+
+                else if (table->type == NODE) {
+                        count_code_sizes(table->u.node.left, code_sizes);
+                        count_code_sizes(table->u.node.right, code_sizes);
+                }
+                //else
+                //         printf("FATAL ERROR : corrupted Huffman table\n");
+        }
+}
+
 void write_huffman_table(struct bitstream *stream, struct huff_table *table)
 {
-        // uint8_t code_sizes[16];
-        // uint16_t nb_codes = 0;
-        // int32_t size_read = 0;
-        // uint32_t dest;
-        // struct huff_table *table = NULL;
+        uint8_t code_sizes[16];
+        uint16_t nb_codes = 0;
+        int32_t size_read = 0;
+        uint32_t dest;
 
-        // if (nb_byte_read == NULL)
-        //         return NULL;
-
-        // *nb_byte_read = -1;
+        if (table == NULL)
+                return NULL;
 
 
-        // for (uint8_t i = 0; i < 16; i++) {
-        //         size_read += read_bitstream(stream, 8, &dest, false);
-        //         code_sizes[i] = dest & 0xFF;
-        // }
+        memset(code_sizes, 0, sizeof(code_sizes));
 
-        // for (uint8_t i = 0; i < sizeof(code_sizes); ++i)
-        //         nb_codes += code_sizes[i];
+        count_code_sizes(table, code_sizes);
 
 
-        // /* There must be less than 256 different codes */
-        // if (nb_codes >= 256)
-        //         return NULL;
+        for (uint8_t i = 0; i < sizeof(code_sizes); i++)
+                write_byte(stream, code_sizes[i]);
 
-        // else {
-        //         table = malloc(sizeof(struct huff_table));
 
-        //         if (table == NULL)
-        //                 return NULL;
-        // }
+        for (uint8_t i = 0; i < sizeof(code_sizes); ++i)
+                nb_codes += code_sizes[i];
+
+
+        /* There must be less than 256 different codes */
+        if (nb_codes >= 256) {
+                printf("write_huffman_table error : more than 256 codes : %d\n", nb_codes);
+                return;
+        }
 
 
 
-        // memset(table, 0, sizeof(struct huff_table));
+        uint8_t *values[16];
+        uint8_t pos[16];
 
-        // for (uint8_t i = 0; i < sizeof(code_sizes); ++i) {
-        //         for (uint8_t j = 0; j < code_sizes[i]; ++j) {
-        //                 size_read += read_bitstream(stream, 8, &dest, false);
-        //                 add_huffman_code(dest & 0xFF, i, table);
-        //         }
-        // }
+        for (uint8_t i = 0; i < sizeof(code_sizes); ++i) {
+                values[i] = calloc(1, code_sizes[i]);
+        }
 
-        // *nb_byte_read = size_read / 8;
+        memset(pos, 0, sizeof(pos));
 
 
-        // return table;
+        // for (uint8_t i = 0; i < 16; ++i)
+        //         printf("code_sizes[%d] = %d\n", i, code_sizes[i]);
+
+        forge_huffman_values(table, values, pos, code_sizes);
+
+
+        for (uint8_t i = 0; i < sizeof(code_sizes); ++i) {
+                for (uint8_t j = 0; j < code_sizes[i]; ++j) {
+                        write_byte(stream, values[i][j]);
+                }
+        }
+
 }
 
 

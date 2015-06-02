@@ -228,4 +228,19 @@ struct bitstream *make_bitstream(FILE *file)
         return stream;
 }
 
+void flush_bitstream(struct bitstream *stream)
+{
+        if (stream == NULL)
+                return;
+
+        if (stream->index > 0) {
+                stream->byte <<= 8 - stream->index;
+
+                fwrite(&stream->byte, 1, 1, stream->file);
+
+                stream->index = 0;
+                stream->byte = 0;
+        }
+}
+
 

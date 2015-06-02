@@ -511,8 +511,10 @@ void process_image(struct bitstream *stream, struct bitstream *ostream,
                         // printf("freqs\n");
                 }
 
-        if (ostream)
-                close_tiff_file(file);
+                if (ostream) {
+                        close_tiff_file(file);
+                        flush_bitstream(ostream);
+                }
 
         } else
                 *error = true;
