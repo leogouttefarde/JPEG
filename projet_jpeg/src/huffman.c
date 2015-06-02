@@ -103,10 +103,11 @@ struct huff_table *load_huffman_table(
         for (uint8_t i = 0; i < 16; i++) {
                 size_read += read_bitstream(stream, 8, &dest, false);
                 code_sizes[i] = dest & 0xFF;
+		nb_codes += code_sizes[i];
         }
 
-        for (uint8_t i = 0; i < sizeof(code_sizes); ++i)
-                nb_codes += code_sizes[i];
+        
+                
 
 
         /* There must be less than 256 different codes */
