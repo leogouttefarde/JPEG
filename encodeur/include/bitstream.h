@@ -34,6 +34,17 @@ struct bitstream *make_bitstream(FILE *file);
 
 FILE *bitstream_file(struct bitstream *stream);
 
+void write_byte(struct bitstream *stream, uint8_t byte);
+
+void write_short_BE(struct bitstream *stream, uint16_t val);
+
+void seek_bitstream(struct bitstream *stream, uint32_t pos);
+
+uint32_t pos_bitstream(struct bitstream *stream);
+
+void flush_bitstream(struct bitstream *stream);
+
+
 
 #endif
 

@@ -22,5 +22,8 @@ extern bool write_huffman_value(int8_t value, struct huff_table *table,
 
 extern struct huff_table *create_huffman_tree(uint32_t freqs[0x100]);
 
+void write_huffman_table(struct bitstream *stream, struct huff_table *table);
+
+
 #endif
 

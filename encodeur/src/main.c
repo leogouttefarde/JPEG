@@ -2,6 +2,7 @@
 #include "common.h"
 #include "bitstream.h"
 #include "jpeg.h"
+#include "library.h"
 
 
 int main(int argc, char **argv)
@@ -76,6 +77,7 @@ int main(int argc, char **argv)
 
 
                 memcpy(&ojpeg.qtables, &jpeg.qtables, sizeof(jpeg.qtables));
+                memset(&ojpeg.htables, 0, sizeof(ojpeg.htables));
 
 
                 // printf("pos stream\n");

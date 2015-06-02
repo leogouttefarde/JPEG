@@ -94,6 +94,10 @@ void process_image(struct bitstream *stream, struct bitstream *ostream,
 
 void free_jpeg_data(struct jpeg_data *jpeg);
 
+void write_section(struct bitstream *stream, enum jpeg_section section,
+                        struct jpeg_data *jpeg, bool *error);
+
+void write_header(struct bitstream *stream, struct jpeg_data *jpeg, bool *error);
 
 
 #endif

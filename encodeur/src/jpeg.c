@@ -642,6 +642,7 @@ void write_section(struct bitstream *stream, enum jpeg_section section,
                                         mem[i_q] = true;
                                         byte = accuracy << 4;
                                         byte |= i_q & 0xF;
+                                        // byte = i_q & 0xF;
                                         write_byte(stream, byte);
                                 }
 
@@ -665,12 +666,13 @@ void write_section(struct bitstream *stream, enum jpeg_section section,
         case SOF0:
                 if (jpeg != NULL) {
                         const uint8_t accuracy = 8;
-                        write_byte(stream, &accuracy);
+                        write_byte(stream, accuracy);
 
 
                         write_short_BE(stream, jpeg->height);
                         write_short_BE(stream, jpeg->width);
 
+                        assert(jpeg->nb_comps == 3);
                         write_byte(stream, jpeg->nb_comps);
 
 
@@ -750,7 +752,7 @@ void write_section(struct bitstream *stream, enum jpeg_section section,
 
                                 byte = (i_dc << 4) | (i_ac & 0xF);
 
-                                write_byte(stream, &byte);
+                                write_byte(stream, byte);
                         }
 
                         /* Weïrd stuff, write 0 */

@@ -269,6 +269,7 @@ struct huff_table *create_huffman_tree(uint32_t freqs[0x100])
 
         for (uint16_t val = 0; val < 0x100; val++) {
                 if (freqs[val] > 0) {
+                        printf("freqs[%d] = %d\n", val, freqs[val]);
                         node = create_node(LEAF, 0, 0, val);
                         insert_queue(queue, freqs[val], node);
                 }
@@ -380,11 +381,9 @@ void write_huffman_table(struct bitstream *stream, struct huff_table *table)
 {
         uint8_t code_sizes[16];
         uint16_t nb_codes = 0;
-        int32_t size_read = 0;
-        uint32_t dest;
 
         if (table == NULL)
-                return NULL;
+                return;
 
 
         memset(code_sizes, 0, sizeof(code_sizes));
@@ -399,6 +398,7 @@ void write_huffman_table(struct bitstream *stream, struct huff_table *table)
         for (uint8_t i = 0; i < sizeof(code_sizes); ++i)
                 nb_codes += code_sizes[i];
 
+        printf("nb_codes = %d\n", nb_codes);
 
         /* There must be less than 256 different codes */
         if (nb_codes >= 256) {
