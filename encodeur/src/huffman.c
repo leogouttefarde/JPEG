@@ -204,7 +204,6 @@ struct huff_table *get_huffman_code(int8_t value, struct huff_table *table)
 bool write_huffman_value(int8_t value, struct huff_table *table,
                          struct bitstream *stream)
 {
-        // printf("huff val write:  ");
         int8_t bit;
         bool success = false;
 
@@ -213,14 +212,11 @@ bool write_huffman_value(int8_t value, struct huff_table *table,
         if (leaf != NULL) {
                 uint32_t code = leaf->code;
                 uint8_t size = leaf->size;
-        // printf("code %d\n", code);
-        // printf("size %d\n", size);
 
                 for (uint8_t i = 0; i < size; i++) {
                         bit = (code >> (size - 1 - i)) & 1;
                         write_bit(stream, bit, true);
                 }
-                // printf("\n");
 
                 success = true;
         }
@@ -262,43 +258,6 @@ void compute_huffman_codes(struct huff_table *parent)
                 }
         }
 }
-
-// uint8_t min_code_size(struct huff_table *table, uint8_t size)
-// {
-//         uint8_t ret = size;
-
-//         if (table != NULL) {
-//                 size++;
-
-//                 if (table->type == NODE) {
-
-
-//                         struct huff_table **left, **right;
-
-//                         left = &table->u.node.left;
-//                         right = &table->u.node.right;
-
-
-//                         if (*left != NULL)
-//                                 ret = min_code_size(*left, size);
-
-//                         if (*right != NULL) {
-//                                 uint8_t rt_s = min_code_size(*right, size);
-//                                 if (rt_s < ret)
-//                                         ret = rt_s;
-//                         }
-//                 }
-
-//                 else if (table->type == LEAF)
-//                         // return size;
-//                         ;
-
-//                 else
-//                         printf("FATAL ERROR min\n");
-//         }
-
-//         return ret;
-// }
 
 void delete_node(struct huff_table **table, struct huff_table *del)
 {
@@ -362,25 +321,9 @@ struct huff_table *create_huffman_tree(uint32_t freqs[0x100])
                         node = create_node(NODE, 0, 0, 0);
 
                         if (node != NULL) {
-                                //struct huff_table *left = NULL;
-                                //struct huff_table *right = NULL;
-
-                                // if (min_code_size(child0, 0) <= min_code_size(child1, 0)) {
-                                //         left = child0;
-                                //         right = child1;
-                                // }
-                                // else {
-                                //         left = child1;
-                                //         right = child0;
-                                // }
-
-                                // node->u.node.left = left;
-                                // node->u.node.right = right;
-
 
                                 node->u.node.left = child0;
                                 node->u.node.right = child1;
-
 
                                 /* On fusionne les deux arbres avant de les ajouter à la file */
                                 insert_queue(queue, p1 + p2, node);
@@ -414,7 +357,7 @@ void forge_huffman_values(struct huff_table *table, uint8_t **values, uint8_t *p
                 if (table->type == LEAF){
                         uint8_t i = table->size - 1;
 
-                        // TODO : fix construction arbres huffman pour interdir tailles > 16
+                        // TODO : fix construction arbres huffman pour interdire tailles > 16
                         if (i > 16)
                                 printf("FATAL ERROR, code_size > 16\n");
 
@@ -503,7 +446,7 @@ void write_huffman_table(struct bitstream *stream, struct huff_table **itable)
                 values[i] = calloc(1, code_sizes[i]);
 
 
-        /* Retrieve all Huffman values to write in the correct order */
+        /* Retrieve all Huffman values to write them in the correct order */
         forge_huffman_values(table, values, pos, code_sizes);
 
         free_huffman_table(table);

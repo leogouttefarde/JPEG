@@ -214,6 +214,10 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                                 if (!*error)
                                         jpeg->htables[type][i_h] = table;
 
+                                else if (table != NULL)
+                                        free_huffman_table(table);
+
+
                                 unread -= nb_byte_read;
                                 // printf("unread = %i\n", unread);
                                 jpeg->state |= DHT_OK;

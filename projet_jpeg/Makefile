@@ -11,7 +11,7 @@ PROFILING = -p
 CC = gcc ${PROFILING}
 LD = gcc ${PROFILING}
 INC = -I$(INC_DIR)
-CFLAGS = $(INC) -Wall -std=c99 -O3 #-Wextra -g #-O3
+CFLAGS = $(INC) -Wall -std=c99 -g #-O3 #-Wextra -g #-O3
 LDFLAGS = -lm
 
 # Liste des objets encadrants

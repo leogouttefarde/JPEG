@@ -494,11 +494,9 @@ void process_image(struct bitstream *stream, struct bitstream *ostream,
                         // printf("freqs\n");
                         // DC table
                         ojpeg->htables[0][0] = create_huffman_tree(freqs[0]);
-                        ojpeg->htables[0][1] = ojpeg->htables[0][0];
 
                         // AC table
                         ojpeg->htables[1][0] = create_huffman_tree(freqs[1]);
-                        ojpeg->htables[1][1] = ojpeg->htables[1][0];
 
 
                         SAFE_FREE(freqs[0]);

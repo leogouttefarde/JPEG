@@ -37,9 +37,8 @@ int main(int argc, char **argv)
                 /* Read header data */
                 read_header(stream, &jpeg, &error);
 
-                huffman_export("dc_new.dot", jpeg.htables[0][0]);
-
-                huffman_export("ac_new.dot", jpeg.htables[1][0]);
+                //huffman_export("dc_new.dot", jpeg.htables[0][0]);
+                //huffman_export("ac_new.dot", jpeg.htables[1][0]);
 
                 /* Extract then write image data to tiff file */
                 process_image(stream, &jpeg, &error);
