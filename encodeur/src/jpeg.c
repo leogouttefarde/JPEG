@@ -212,6 +212,8 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
 
                                 if (!*error)
                                         jpeg->htables[type][i_h] = table;
+                                else
+                                        SAFE_FREE(table);
 
                                 unread -= nb_byte_read;
                                 // printf("unread = %i\n", unread);

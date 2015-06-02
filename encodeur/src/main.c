@@ -131,6 +131,7 @@ int main(int argc, char **argv)
 
                 /* Free any allocated JPEG data */
                 free_jpeg_data(&jpeg);
+                free_jpeg_data(&ojpeg);
         }
 
 

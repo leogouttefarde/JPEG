@@ -263,13 +263,14 @@ void delete_node(struct huff_table **table, struct huff_table *del)
 {
         if (table != NULL && *table != NULL) {
                 if (*table == del) {
-                        SAFE_FREE(*table);
+                        free_huffman_table(*table);
+                        *table = NULL;
                         // printf("delete node OK\n");
 
                 } else if ((*table)->type == NODE) {
 
-                        delete_node(&((*table)->u.node.left), del);
-                        delete_node(&((*table)->u.node.right), del);
+                        delete_node(&(*table)->u.node.left, del);
+                        delete_node(&(*table)->u.node.right, del);
                 }
         }
 }
