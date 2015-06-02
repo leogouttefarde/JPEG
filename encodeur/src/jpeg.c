@@ -505,6 +505,12 @@ void process_image(struct bitstream *stream, struct bitstream *ostream,
                         // printf("create_huffman_tree(freqs[1]) => %x\n", ojpeg->htables[1][0]);
 
 
+
+
+                        // huffman_export("dc_tree.dot", ojpeg->htables[0][0]);
+                        // huffman_export("ac_tree.dot", ojpeg->htables[1][0]);
+
+
                         SAFE_FREE(freqs[0]);
                         SAFE_FREE(freqs[1]);
                         SAFE_FREE(freqs);
@@ -709,9 +715,9 @@ void write_section(struct bitstream *stream, enum jpeg_section section,
                         for (uint8_t i = 0; i < MAX_HTABLES; i++) {
 
                                 i_h = i;
-                                struct huff_table *table = jpeg->htables[type][i_h];
+                                struct huff_table **table = &jpeg->htables[type][i_h];
 
-                                if (table == NULL)
+                                if (*table == NULL)
                                         continue;
 
                                 /*

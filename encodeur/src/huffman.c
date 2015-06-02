@@ -149,6 +149,7 @@ struct huff_table *load_huffman_table(
 int8_t next_huffman_value(struct huff_table *table, 
                 struct bitstream *stream)
 {
+        printf("next_huff_value :  ");
         int8_t bit;
         int8_t result = 0;
         uint32_t dest;
@@ -163,6 +164,7 @@ int8_t next_huffman_value(struct huff_table *table,
                 else
                         table = table->u.node.left;
         }
+        printf("\n");
 
         if (table != NULL) {
                 result = table->u.val;
@@ -207,7 +209,7 @@ struct huff_table *get_huffman_code(int8_t value, struct huff_table *table)
 bool write_huffman_value(int8_t value, struct huff_table *table,
                          struct bitstream *stream)
 {
-        // printf("write_huffman_value %d\n", value);
+        printf("huff val write:  ");
         int8_t bit;
         bool success = false;
 
@@ -223,6 +225,7 @@ bool write_huffman_value(int8_t value, struct huff_table *table,
                         bit = (code >> (size - 1 - i)) & 1;
                         write_bit(stream, bit, true);
                 }
+                printf("\n");
 
                 success = true;
         }
@@ -262,9 +265,46 @@ void compute_huffman_codes(struct huff_table *parent)
         }
 }
 
+uint8_t min_code_size(struct huff_table *table, uint8_t size)
+{
+        uint8_t ret = size;
+
+        if (table != NULL) {
+                size++;
+
+                if (table->type == NODE) {
+
+
+                        struct huff_table **left, **right;
+
+                        left = &table->u.node.left;
+                        right = &table->u.node.right;
+
+
+                        if (*left != NULL)
+                                ret = min_code_size(*left, size);
+
+                        if (*right != NULL) {
+                                uint8_t rt_s = min_code_size(*right, size);
+                                if (rt_s < ret)
+                                        ret = rt_s;
+                        }
+                }
+
+                else if (table->type == LEAF)
+                        // return size;
+                        ;
+
+                else
+                        printf("FATAL ERROR min\n");
+        }
+
+        return ret;
+}
+
 struct huff_table *create_huffman_tree(uint32_t freqs[0x100])
 {
-        // printf("create_queue\n");
+        printf("\ncreate_queue\n");
         struct priority_queue *queue = create_queue(0x100);
         struct huff_table *node = NULL;
 
@@ -274,7 +314,7 @@ struct huff_table *create_huffman_tree(uint32_t freqs[0x100])
 
         for (uint16_t val = 0; val < 0x100; val++) {
                 if (freqs[val] > 0) {
-                        // printf("freqs[%d] = %d\n", val, freqs[val]);
+                        printf("freqs[%02X] = %d\n", val, freqs[val]);
                         node = create_node(LEAF, 0, 0, val);
                         insert_queue(queue, freqs[val], node);
                 }
@@ -306,9 +346,21 @@ struct huff_table *create_huffman_tree(uint32_t freqs[0x100])
                         node = create_node(NODE, 0, 0, 0);
 
                         if (node != NULL) {
+                                struct huff_table *left = NULL;
+                                struct huff_table *right = NULL;
 
-                                node->u.node.left = child0;
-                                node->u.node.right = child1;
+                                if (min_code_size(child0, 0) <= min_code_size(child1, 0)) {
+                                        left = child0;
+                                        right = child1;
+                                }
+                                else {
+                                        left = child1;
+                                        right = child0;
+                                }
+
+                                node->u.node.left = left;
+                                node->u.node.right = right;
+
 
                                 /* On fusionne les deux arbres avant de les ajouter à la file */
                                 insert_queue(queue, p1 + p2, node);
@@ -325,7 +377,6 @@ struct huff_table *create_huffman_tree(uint32_t freqs[0x100])
         }
 
         compute_huffman_codes(tree);
-
 
 
         return tree;
@@ -382,13 +433,15 @@ void count_code_sizes(struct huff_table *table, uint8_t *code_sizes)
         }
 }
 
-void write_huffman_table(struct bitstream *stream, struct huff_table *table)
+void write_huffman_table(struct bitstream *stream, struct huff_table **itable)
 {
         uint8_t code_sizes[16];
         uint16_t nb_codes = 0;
 
-        if (table == NULL)
+        if (itable == NULL || *itable == NULL)
                 return;
+
+        struct huff_table *table = *itable;
 
 
         memset(code_sizes, 0, sizeof(code_sizes));
@@ -428,13 +481,73 @@ void write_huffman_table(struct bitstream *stream, struct huff_table *table)
 
         forge_huffman_values(table, values, pos, code_sizes);
 
+        free_huffman_table(table);
+
+        table = calloc(1, sizeof(struct huff_table));
+        *itable = table;
+        // printf("0\n");
+
 
         for (uint8_t i = 0; i < sizeof(code_sizes); ++i) {
                 for (uint8_t j = 0; j < code_sizes[i]; ++j) {
                         write_byte(stream, values[i][j]);
+                        add_huffman_code(values[i][j], i, table);
                 }
         }
 
+        // printf("1\n");
+
+}
+
+
+void huffman_export_rec(FILE *file, struct huff_table *table, uint32_t *index)
+{
+        if (table != NULL && index) {
+                uint32_t cur = *index + 1;
+
+                *index = cur;
+
+                fprintf(file, " -- %u", cur);
+
+                if (table->type == LEAF) {
+                        fprintf(file, "    %u [label=\"%u : %02X => %2X\"]\n", cur, table->size, table->code, (uint8_t)table->u.val);
+                } else {
+                        huffman_export_rec(file, table->u.node.left, index);
+                        fprintf(file, "    %u [label=\"%02X\"]\n", cur, table->code);
+                        fprintf(file, "    %u", cur);
+                        huffman_export_rec(file, table->u.node.right, index);
+                }
+        } else {
+                fprintf(file, "\n");
+        }
+}
+
+void huffman_export(char *dest, struct huff_table *table)
+{
+        FILE *file = NULL;
+        uint32_t index = 0;
+        uint32_t cur = index;
+
+        file = fopen(dest, "w");
+
+        if (table != NULL && file != NULL) {
+                fprintf(file, "\ngraph {\n");
+
+                if (table->type == LEAF) {
+                        fprintf(file, "    %u [label=\"%i\"]\n", cur, table->u.val);
+                } else {
+                        fprintf(file, "    %u \n", cur);
+                        fprintf(file, "    %u [label=\"ε\"]\n", cur);
+                }
+
+                fprintf(file, "    %u", cur);
+                huffman_export_rec(file, table->u.node.left, &index);
+                fprintf(file, "    %u", cur);
+                huffman_export_rec(file, table->u.node.right, &index);
+                fprintf(file, "}\n\n");
+
+                fclose(file);
+        }
 }
 
 

@@ -41,6 +41,11 @@ int main(int argc, char **argv)
                 read_header(stream, &jpeg, &error);
 
 
+                huffman_export("jpeg_dc_0.dot", jpeg.htables[0][0]);
+                // huffman_export("jpeg_ac_0.dot", jpeg.htables[1][0]);
+
+
+
                 struct jpeg_data ojpeg;
                 memset(&ojpeg, 0, sizeof(struct jpeg_data));
 
@@ -90,6 +95,14 @@ int main(int argc, char **argv)
                 write_header(ostream, &ojpeg, &error);
 
 
+
+                huffman_export("dc_tree.dot", ojpeg.htables[0][0]);
+
+                huffman_export("ac_tree.dot", ojpeg.htables[1][0]);
+
+
+
+
                 seek_bitstream(stream, pos);
 
                 // printf("pos stream\n");
@@ -98,6 +111,9 @@ int main(int argc, char **argv)
 
                 for (uint8_t i = 0; i < jpeg.nb_comps; i++)
                         jpeg.comps[i].last_DC = 0;
+
+                for (uint8_t i = 0; i < ojpeg.nb_comps; i++)
+                        ojpeg.comps[i].last_DC = 0;
 
 
 

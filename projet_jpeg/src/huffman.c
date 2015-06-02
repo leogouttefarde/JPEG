@@ -140,6 +140,7 @@ struct huff_table *load_huffman_table(
 int8_t next_huffman_value(struct huff_table *table, 
                 struct bitstream *stream)
 {
+        printf("next_huff_value :   ");
         int8_t bit;
         int8_t result = 0;
         uint32_t dest;
@@ -154,9 +155,12 @@ int8_t next_huffman_value(struct huff_table *table,
                 else
                         table = table->u.node.left;
         }
+        printf("\n");
 
         if (table != NULL)
             result = table->u.val;
+        else
+                printf("FATAL ERROR : no huff val found\n");
 
         return result;
 }
@@ -170,6 +174,56 @@ void free_huffman_table(struct huff_table *table)
                 }
 
                 SAFE_FREE(table);
+        }
+}
+
+void huffman_export_rec(FILE *file, struct huff_table *table, uint32_t *index)
+{
+        if (table != NULL && index) {
+                uint32_t cur = *index + 1;
+
+                *index = cur;
+
+                fprintf(file, " -- %u", cur);
+
+                if (table->type == LEAF) {
+                        fprintf(file, "    %u [label=\"S : C => %2X\"]\n", cur, (uint8_t)table->u.val);
+                } else {
+                        huffman_export_rec(file, table->u.node.left, index);
+                        fprintf(file, "    %u [label=\"C\"]\n", cur);
+                        fprintf(file, "    %u", cur);
+                        huffman_export_rec(file, table->u.node.right, index);
+                }
+        } else {
+                fprintf(file, "\n");
+        }
+}
+
+void huffman_export(char *dest, struct huff_table *table)
+{
+        FILE *file = NULL;
+        uint32_t index = 0;
+        uint32_t cur = index;
+
+        file = fopen(dest, "w");
+
+        if (table != NULL && file != NULL) {
+                fprintf(file, "\ngraph {\n");
+
+                if (table->type == LEAF) {
+                        fprintf(file, "    %u [label=\"%i\"]\n", cur, table->u.val);
+                } else {
+                        fprintf(file, "    %u \n", cur);
+                        fprintf(file, "    %u [label=\"ε\"]\n", cur);
+                }
+
+                fprintf(file, "    %u", cur);
+                huffman_export_rec(file, table->u.node.left, &index);
+                fprintf(file, "    %u", cur);
+                huffman_export_rec(file, table->u.node.right, &index);
+                fprintf(file, "}\n\n");
+
+                fclose(file);
         }
 }
 

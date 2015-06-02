@@ -83,6 +83,7 @@ int8_t next_bit(struct bitstream *stream, bool byte_stuffing)
         }
 
         bit = 1 & (*byte >> --stream->index);
+        printf("%d", bit);
 
         return bit;
 }
@@ -160,6 +161,7 @@ int8_t write_bit(struct bitstream *stream, uint8_t bit, bool byte_stuffing)
         uint8_t *byte = &stream->byte;
 
         *byte = *byte << 1 | (bit & 1);
+        printf("%d", bit);
 
 
         if (++stream->index == 8) {
