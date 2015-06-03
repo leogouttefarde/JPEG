@@ -122,4 +122,3 @@ uint8_t double2uint8(double x)
 }
 
 
-

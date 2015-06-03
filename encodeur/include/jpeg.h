@@ -72,9 +72,6 @@ struct jpeg_data {
         /* Quantification tables */
         uint8_t qtables[MAX_QTABLES][BLOCK_SIZE];
 
-        /* Next QT table type to write : 0 for DC, 1 for AC */
-        uint8_t next_qtype;
-
         uint8_t state;
 };
 

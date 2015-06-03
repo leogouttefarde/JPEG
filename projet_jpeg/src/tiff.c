@@ -1,4 +1,6 @@
+
 #include "tiff.h"
+#include "common.h"
 
 
 // Macros pour l'écriture dans le fichier
@@ -231,7 +233,7 @@ struct tiff_file_desc *init_tiff_file (const char *file_name,
 
 	fwrite(buffer,sizeof(uint16_t),taille_buffer,tfd -> file);
 
-	free(buffer);
+	SAFE_FREE(buffer);
 	
 	return tfd;
 	
@@ -241,8 +243,10 @@ struct tiff_file_desc *init_tiff_file (const char *file_name,
  * paramètre et désalloue la mémoire occupée par cette structure. */
 void close_tiff_file(struct tiff_file_desc *tfd)
 {
-        fclose(tfd -> file);
-	free(tfd);
+        if (tfd != NULL && tfd->file != NULL)
+                fclose(tfd->file);
+
+	SAFE_FREE(tfd);
 }
 
 /* Ecrit le contenu de la MCU passée en paramètre dans le fichier TIFF
@@ -314,6 +318,6 @@ void write_tiff_file (struct tiff_file_desc *tfd,
 	printf("rowsperstrip : %u \n", tfd -> rows_per_strip);
 	*/
 	
-	free(rgb_mcu_row);
+	SAFE_FREE(rgb_mcu_row);
 }
  

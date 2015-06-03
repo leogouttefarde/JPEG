@@ -19,8 +19,8 @@ LDFLAGS = -lm
 OBJ_FILES = $(OBJ_DIR)/main.o $(OBJ_DIR)/conv.o $(OBJ_DIR)/iqzz.o
 OBJ_FILES += $(OBJ_DIR)/upsampler.o $(OBJ_DIR)/huffman.o $(OBJ_DIR)/unpack.o
 OBJ_FILES += $(OBJ_DIR)/tiff.o $(OBJ_DIR)/library.o $(OBJ_DIR)/bitstream.o
-OBJ_FILES += $(OBJ_DIR)/loeffler.o
-#OBJ_FILES += $(OBJ_DIR)/idct.o
+#OBJ_FILES += $(OBJ_DIR)/loeffler.o
+OBJ_FILES += $(OBJ_DIR)/idct.o
 OBJ_FILES += $(OBJ_DIR)/jpeg.o
 OBJ_FILES += $(OBJ_DIR)/priority_queue.o
 
@@ -42,6 +42,11 @@ TEST_FILE_O= test_file $(OBJ_DIR)/test_file.o $(OBJ_DIR)/priority_queue.o
 
 test_file: $@ $(OBJ_DIR)/test_file.o $(OBJ_DIR)/priority_queue.o
 	$(LD) -o $@ $(OBJ_DIR)/test_file.o $(OBJ_DIR)/priority_queue.o $(LDFLAGS)
+
+TEST_DCT_O = test_dct $(OBJ_DIR)/test_dct.o $(OBJ_DIR)/idct.o $(OBJ_DIR)/library.o $(OBJ_DIR)/bitstream.o
+
+test_dct: $@ $(OBJ_DIR)/test_dct.o $(OBJ_DIR)/idct.o $(OBJ_DIR)/library.o $(OBJ_DIR)/bitstream.o
+	$(LD) -o $@ $(OBJ_DIR)/test_dct.o $(OBJ_DIR)/idct.o $(OBJ_DIR)/library.o $(OBJ_DIR)/bitstream.o $(LDFLAGS)
 
 
 # Edition de lien des executables
@@ -66,6 +71,8 @@ OUT=out.jpg
 
 run: all
 	./${EXEC} ${JPEG}
+	#dot -Tpng dc_tree.dot > dc_tree.png
+	#dot -Tpng ac_tree.dot > ac_tree.png
 
 	# if [ -a ${OUT} ]; \
 	# then \
