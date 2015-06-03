@@ -464,6 +464,9 @@ void process_image(struct bitstream *stream, struct bitstream *ostream,
                                         iqzz_block(block, iqzz, quantif);
 
                                         idct_block(iqzz, (uint8_t*)&idct[n]);
+					// test dct
+					dct_block((uint8_t*)&idct[n], iqzz);
+					idct_block(iqzz, (uint8_t*)&idct[n]);
                                 }
 
                                 // printf("mcu_h = %d\n", mcu_h);
