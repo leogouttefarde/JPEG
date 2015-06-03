@@ -17,6 +17,10 @@
 
 #define JPEG_COMMENT "JPEG Encoder by ND, IK & LG. Copyright 2015 Ensimag"
 
+#define USAGE "Usage : %s <input_file>\n"\
+              "\n"\
+              "Supported input images : TIFF, JPEG\n"
+
 
 // defines
 #ifndef M_PI

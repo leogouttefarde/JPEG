@@ -7,7 +7,7 @@
 
 #define MAX_COMPS 3
 #define MAX_HTABLES 4
-#define MAX_QTABLES MAX_COMPS
+#define MAX_QTABLES 0x10
 #define SECTION_HEAD 0xFF
 
 
@@ -25,7 +25,8 @@ enum jpeg_section {
         TEM  = 0x01,
         DNL  = 0xDC,
         DHP  = 0xDE,
-        EXP  = 0xDF
+        EXP  = 0xDF,
+        DRI  = 0xDD
 };
 
 /* JPEG status check */
@@ -52,7 +53,19 @@ struct comp {
         int32_t last_DC;
 };
 
+struct mcu_info {
+        uint8_t h;
+        uint8_t v;
+        uint8_t h_dim;
+        uint8_t v_dim;
+        uint32_t nb_h;
+        uint32_t nb_v;
+        uint32_t nb;
+        uint16_t size;
+};
+
 struct jpeg_data {
+
         char *path;
 
         uint16_t height, width;
@@ -73,6 +86,12 @@ struct jpeg_data {
         uint8_t qtables[MAX_QTABLES][BLOCK_SIZE];
 
         uint8_t state;
+
+        uint32_t *raw_mcu;
+
+        struct mcu_info mcu;
+
+        uint32_t *mcu_data;
 };
 
 
@@ -83,10 +102,6 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
 
 /* Read header data */
 void read_header(struct bitstream *stream, struct jpeg_data *jpeg, bool *error);
-
-/* Extract then write image data to tiff file */
-void process_image(struct bitstream *stream, struct bitstream *ostream,
-                        struct jpeg_data *jpeg, struct jpeg_data *ojpeg, bool *error);
 
 
 void free_jpeg_data(struct jpeg_data *jpeg);

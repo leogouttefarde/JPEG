@@ -393,9 +393,9 @@ void process_image(struct bitstream *stream, struct jpeg_data *jpeg, bool *error
 
 
                 for (uint32_t i = 0; i < nb_mcu; i++) {
-                        for (uint8_t i = 0; i < jpeg->nb_comps; i++) {
+                        for (uint8_t j = 0; j < jpeg->nb_comps; j++) {
 
-                                i_c = jpeg->comp_order[i];
+                                i_c = jpeg->comp_order[j];
 
                                 nb_blocks_h = jpeg->comps[i_c].nb_blocks_h;
                                 nb_blocks_v = jpeg->comps[i_c].nb_blocks_v;
