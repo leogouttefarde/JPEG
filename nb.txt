@@ -1,0 +1,42 @@
+
+
+
+Quests :
+
+- support niveau de gris (1 composante au lieu de 3) ?
+- extension fonctions bitstream encodeur ?
+- choix tables quantification (différentes calculées à chaque bloc) : table moyenne ?
+- support section DRI ? tiff.o fourni gère DRI sans pb, us not
+- DRI : faut-il / cmt détecter marqueur RSTm (very long execution time for now) ?
+- gestion erreurs unpack ?
+- réencodage JPEG : stockage données heap après freqs ou fseek ?
+- package-merge Huffman codes ?
+
+
+
+
+Nb :
+
+Amélioration compatibilité :
+Construction les arbres huffman avec le package-merge algorithme,
+pour limiter la taille des codes à 16
+
+
+
+libjpeg :
+/*
+* no code is allowed to be all ones.
+*/
+
+=>
+Interdiction de créer des codes avec que des 1 !
+Restriction supplémentaires à la construction des arbres
+
+
+
+Tools :
+
+exiftool
+identify
+
+
