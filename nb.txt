@@ -17,7 +17,7 @@ todo :
 - gestion encodage tiff
 - package-merge
 - fix bug tiff.c
-
+- ajouter l'indice de qualité en commentaire
 
 
 Nb :
@@ -43,5 +43,18 @@ Tools :
 
 exiftool
 identify
+
+
+
+
+
+
+Options encodeur :
+
+- Fichier de destination                  [paramètre obligatoire]
+- Qualité (entier de 0 à 25)              [par défaut : 2]
+- Taille MCUs (8x8 / 16x8 / 8x16 / 16x16) [par défaut : 8x8]
+- Couleurs : RGB / Black & White          [par défaut : comme le fichier d'entrée]
+- Commentaire
 
 
