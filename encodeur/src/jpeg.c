@@ -131,8 +131,9 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                         read_byte(stream, &jpeg->nb_comps);
 
 
-                        if (jpeg->nb_comps != 3) {
-                                printf("ERROR : this baseline JPEG decoder only supports 3 component images\n");
+                        /* Only RGB & Gray JPEG images are possible */
+                        if (jpeg->nb_comps != 3
+                            && jpeg->nb_comps != 1) {
                                 *error = true;
                         } else {
                                 for (uint8_t i = 0; i < jpeg->nb_comps; i++) {
@@ -444,6 +445,8 @@ void process_image(struct bitstream *stream, struct bitstream *ostream,
                                         // *last_DC = last;
 
                                         iqzz_block(block, iqzz, (uint8_t*)&jpeg->qtables[i_q]);
+                                        idct_block(iqzz, (uint8_t*)&idct[n]);
+                                        dct_block((uint8_t*)&idct[n], iqzz);
 
                                         uint8_t *quantif = (uint8_t*)&ojpeg->qtables[i_q];
                                         qzz_block (iqzz, block, quantif, 3);
@@ -460,12 +463,12 @@ void process_image(struct bitstream *stream, struct bitstream *ostream,
                                         // New doit avoir été restauré
                                         // assert(*last_DC == new);
                                         // *last_DC = new;
-                                        iqzz_block(block, iqzz, quantif);
+                                        // iqzz_block(block, iqzz, quantif);
 
-                                        idct_block(iqzz, (uint8_t*)&idct[n]);
+                                        // idct_block(iqzz, (uint8_t*)&idct[n]);
 					// test dct
-					dct_block((uint8_t*)&idct[n], iqzz);
-					idct_block(iqzz, (uint8_t*)&idct[n]);
+					// dct_block((uint8_t*)&idct[n], iqzz);
+					// idct_block(iqzz, (uint8_t*)&idct[n]);
                                 }
 
                                 // printf("mcu_h = %d\n", mcu_h);
@@ -478,11 +481,20 @@ void process_image(struct bitstream *stream, struct bitstream *ostream,
                                 upsampler((uint8_t*)idct, nb_blocks_h, nb_blocks_v, upsampled, mcu_h_dim, mcu_v_dim);
                         }
 
-                        YCbCr_to_ARGB(mcu_YCbCr, mcu_RGB, mcu_h_dim, mcu_v_dim);
+                        if (jpeg->nb_comps == 3) {
+                                YCbCr_to_ARGB(mcu_YCbCr, mcu_RGB, mcu_h_dim, mcu_v_dim);
+                                ARGB_to_YCbCr(mcu_RGB, mcu_YCbCr, mcu_h_dim, mcu_v_dim);
+                                YCbCr_to_ARGB(mcu_YCbCr, mcu_RGB, mcu_h_dim, mcu_v_dim);
+                        }
 
-                        ARGB_to_YCbCr(mcu_RGB, mcu_YCbCr, mcu_h_dim, mcu_v_dim);
+                        else if (jpeg->nb_comps == 1) {
+                                Y_to_ARGB(mcu_YCbCr[0], mcu_RGB, mcu_h_dim, mcu_v_dim);
+                                ARGB_to_Y(mcu_RGB, mcu_YCbCr[0], mcu_h_dim, mcu_v_dim);
+                                Y_to_ARGB(mcu_YCbCr[0], mcu_RGB, mcu_h_dim, mcu_v_dim);
+                        }
+                        else
+                                *error = true;
 
-                        YCbCr_to_ARGB(mcu_YCbCr, mcu_RGB, mcu_h_dim, mcu_v_dim);
 
                         // printf("tfd = %x\n", tfd);
                         // printf("mcu_RGB = %x\n", mcu_RGB);
@@ -665,7 +677,6 @@ void write_section(struct bitstream *stream, enum jpeg_section section,
                         write_short_BE(stream, jpeg->height);
                         write_short_BE(stream, jpeg->width);
 
-                        assert(jpeg->nb_comps == 3);
                         write_byte(stream, jpeg->nb_comps);
 
 
