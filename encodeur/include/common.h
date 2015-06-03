@@ -15,6 +15,9 @@
 #include <inttypes.h>
 #include "library.h"
 
+#define JPEG_COMMENT "JPEG Encoder by ND, IK & LG. Copyright 2015 Ensimag"
+
+
 // defines
 #ifndef M_PI
 #define M_PI 3.14159265358979323846

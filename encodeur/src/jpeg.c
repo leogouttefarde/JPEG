@@ -600,7 +600,7 @@ void write_section(struct bitstream *stream, enum jpeg_section section,
 
         case COM:
                 {
-                        const char *comment = "JPEG Encoder by ND, IK & LG. Copyright 2015 Ensimag.";
+                        const char *comment = JPEG_COMMENT;
                         const uint16_t len = strlen(comment) + 1;
 
                         for (uint16_t i = 0; i < len; i++)
