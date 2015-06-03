@@ -3,8 +3,10 @@
 
 Quests :
 
+- support section DRI ?
 - DRI : faut-il / cmt détecter marqueur RSTm (very long execution time for now) ?
 - package-merge Huffman codes ?
+- gestion erreurs unpack ?
 
 
 
@@ -14,6 +16,7 @@ todo :
 - choix + gestion des paramètres d'encodage
 - gestion encodage tiff
 - package-merge
+- fix bug tiff.c
 
 
 
