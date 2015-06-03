@@ -6,10 +6,10 @@
 #define LONG 0x0004
 #define RATI 0x0005
 
-#define ZERO 0x0000;
-#define UN 0x0001;
-#define DEUX 0x0002;
-#define TROIS 0x0003;
+#define ZERO 0x0000
+#define UN 0x0001
+#define DEUX 0x0002
+#define TROIS 0x0003
 
 #define MCU_SIZE 8
 
