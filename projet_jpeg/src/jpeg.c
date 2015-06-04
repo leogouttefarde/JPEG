@@ -130,9 +130,9 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
 
                         read_byte(stream, &jpeg->nb_comps);
 
-
-                        if (jpeg->nb_comps != 3) {
-                                printf("ERROR : this baseline JPEG decoder only supports 3 component images\n");
+                        /* Only RGB & Gray JPEG images are possible */
+                        if (jpeg->nb_comps != 3
+                            && jpeg->nb_comps != 1) {
                                 *error = true;
                         } else {
                                 for (uint8_t i = 0; i < jpeg->nb_comps; i++) {
@@ -393,9 +393,9 @@ void process_image(struct bitstream *stream, struct jpeg_data *jpeg, bool *error
 
 
                 for (uint32_t i = 0; i < nb_mcu; i++) {
-                        for (uint8_t i = 0; i < jpeg->nb_comps; i++) {
+                        for (uint8_t j = 0; j < jpeg->nb_comps; j++) {
 
-                                i_c = jpeg->comp_order[i];
+                                i_c = jpeg->comp_order[j];
 
                                 nb_blocks_h = jpeg->comps[i_c].nb_blocks_h;
                                 nb_blocks_v = jpeg->comps[i_c].nb_blocks_v;
@@ -432,7 +432,13 @@ void process_image(struct bitstream *stream, struct jpeg_data *jpeg, bool *error
                                 upsampler((uint8_t*)idct, nb_blocks_h, nb_blocks_v, upsampled, mcu_h_dim, mcu_v_dim);
                         }
 
-                        YCbCr_to_ARGB(mcu_YCbCr, mcu_RGB, mcu_h_dim, mcu_v_dim);
+                        if (jpeg->nb_comps == 3)
+                                YCbCr_to_ARGB(mcu_YCbCr, mcu_RGB, mcu_h_dim, mcu_v_dim);
+
+                        else if (jpeg->nb_comps == 1)
+                                Y_to_ARGB(mcu_YCbCr[0], mcu_RGB, mcu_h_dim, mcu_v_dim);
+                        else
+                                *error = true;
 
                         // printf("tfd = %x\n", tfd);
                         // printf("mcu_RGB = %x\n", mcu_RGB);

@@ -3,16 +3,21 @@
 
 Quests :
 
-- support niveau de gris (1 composante au lieu de 3) ?
-- extension fonctions bitstream encodeur ?
-- choix tables quantification (différentes calculées à chaque bloc) : table moyenne ?
-- support section DRI ? tiff.o fourni gère DRI sans pb, us not
+- support section DRI ?
 - DRI : faut-il / cmt détecter marqueur RSTm (very long execution time for now) ?
-- gestion erreurs unpack ?
-- réencodage JPEG : stockage données heap après freqs ou fseek ?
 - package-merge Huffman codes ?
+- gestion erreurs unpack ?
 
 
+
+
+todo :
+
+- choix + gestion des paramètres d'encodage
+- gestion encodage tiff
+- package-merge
+- fix bug tiff.c
+- ajouter l'indice de qualité en commentaire
 
 
 Nb :
@@ -38,5 +43,18 @@ Tools :
 
 exiftool
 identify
+
+
+
+
+
+
+Options encodeur :
+
+- Fichier de destination                  [paramètre obligatoire]
+- Qualité (entier de 0 à 25)              [par défaut : 2]
+- Taille MCUs (8x8 / 16x8 / 8x16 / 16x16) [par défaut : 8x8]
+- Couleurs : RGB / Black & White          [par défaut : comme le fichier d'entrée]
+- Commentaire
 
 

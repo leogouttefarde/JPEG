@@ -149,11 +149,6 @@ void free_bitstream(struct bitstream *stream)
         }
 }
 
-FILE *bitstream_file(struct bitstream *stream)
-{
-        return stream->file;
-}
-
 int8_t write_bit(struct bitstream *stream, uint8_t bit, bool byte_stuffing)
 {
         uint32_t size = 0;
@@ -215,17 +210,6 @@ uint32_t pos_bitstream(struct bitstream *stream)
         // stream->byte = 0;
         // stream->index = 0;
         return ftell(stream->file);
-}
-
-struct bitstream *make_bitstream(FILE *file)
-{
-        struct bitstream *stream = calloc(1, sizeof(struct bitstream));
-
-        stream->file = file;
-        stream->byte = 0;
-        stream->index = 0;
-
-        return stream;
 }
 
 void flush_bitstream(struct bitstream *stream)

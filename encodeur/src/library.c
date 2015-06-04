@@ -56,7 +56,7 @@ bool print_block(int32_t *block)
         return error;
 }
 
-bool is_valid_ext(char *path)
+bool is_valid_jpeg(char *path)
 {
         bool result = false;
 
@@ -84,25 +84,6 @@ bool skip_bitstream(struct bitstream *stream, uint32_t nb_bytes)
         }
 
         return error;
-}
-
-void copy_file(FILE *dest, FILE *src)
-{
-        uint32_t state = ftell(src);
-
-        fseek(src, 0, SEEK_END);
-        uint32_t size = ftell(src);
-
-        uint8_t *contents = malloc(size);
-
-        fseek(src, 0, SEEK_SET);
-        fseek(dest, 0, SEEK_SET);
-
-        fread(contents, size, 1, src);
-        fwrite(contents, size, 1, dest);
-
-        fseek(src, state, SEEK_SET);
-        fseek(dest, state, SEEK_SET);
 }
 
 uint32_t truncate(int32_t s)
