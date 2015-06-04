@@ -220,17 +220,19 @@ bool parse_args(int argc, char **argv, struct options *options)
         }
 
 
+        /* Compression rate detection */
         if (i_comp != NULL) {
                 uint32_t val = get_value(i_comp, &error);
 
                 if (!error) {
-                        if (0 <= val && val <= 25) {
+                        if (0 <= val && val <= 25)
                                 quality = val;
-                                // printf("Compression : %d\n", quality);
-                        }
+                        else
+                                error = true;
                 }
         }
 
+        /* New MCU size detection */
         if (i_mcu != NULL) {
                 uint32_t h_val;
                 uint32_t v_val;
@@ -253,7 +255,7 @@ bool parse_args(int argc, char **argv, struct options *options)
         }
 
 
-
+        /* Input image file detection (first non-optional parameter) */
         if (optind < argc) {
                 input = argv[optind];
                 optind++;
@@ -268,9 +270,8 @@ bool parse_args(int argc, char **argv, struct options *options)
         }
 
 
-        if (input == NULL || output == NULL) {
+        if (input == NULL || output == NULL)
                 error = true;
-        }
 
 
         if (error)

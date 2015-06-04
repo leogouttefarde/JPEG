@@ -54,7 +54,7 @@ int main(int argc, char **argv)
                 free_jpeg_data(&jpeg);
 
         } else
-                printf("Invalid input image path\n");
+                printf("ERROR : Invalid input JPEG path\n");
 
 
         SAFE_FREE(options.output);

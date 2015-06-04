@@ -5,7 +5,7 @@ Quests :
 
 - support section DRI ?
 - DRI : faut-il / cmt détecter marqueur RSTm (very long execution time for now) ?
-- package-merge Huffman codes ?
+- package-merge Huffman codes ? ou 1 arbre AC/DC de Huffman pour chaque composante ?
 - gestion erreurs unpack ?
 - quid qtables gimp ?
 
@@ -13,10 +13,16 @@ Quests :
 
 todo :
 
-- package-merge
 - fix bug tiff.c : test2.jpg, pic.jpeg ...
 - fix downsampler
 - finir lecture tiff
+- fonction de changement de taille des mcus (pour changer celles d'un jpeg décodé ou permettre sa transformation en gris)
+
+
+secondaire :
+
+- package-merge
+- dct loeffler
 
 
 Nb :

@@ -18,21 +18,21 @@ static const uint8_t zz[64] =
 
 void iqzz_block (int32_t in[64], int32_t out[64], uint8_t quantif[64])
 {
-        uint8_t j = 0;
+        uint8_t z = 0;
 
         for(uint8_t i = 0; i < 64; ++i) {
-                j = zz[i];
-                out[i] = in[j] * quantif[j];
+                z = zz[i];
+                out[i] = in[z] * quantif[z];
         }
 }
 
 void qzz_block (int32_t in[64], int32_t out[64], uint8_t quantif[64])
 {
-        uint8_t j = 0;
+        uint8_t z = 0;
 
         for(uint8_t i = 0; i < 64; ++i) {
-                j = zz[i];
-                out[j] = in[i] / quantif[j];
+                z = zz[i];
+                out[z] = in[i] / quantif[z];
         }
 }
 
