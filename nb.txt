@@ -14,9 +14,8 @@ Quests :
 todo :
 
 - choix + gestion des paramètres d'encodage
-- gestion encodage tiff
 - package-merge
-- fix bug tiff.c
+- fix bug écriture tiff.c : test2.jpg
 - ajouter l'indice de qualité en commentaire
 
 
@@ -56,5 +55,38 @@ Options encodeur :
 - Taille MCUs (8x8 / 16x8 / 8x16 / 16x16) [par défaut : 8x8]
 - Couleurs : RGB / Black & White          [par défaut : comme le fichier d'entrée]
 - Commentaire
+
+
+
+
+
+
+
+
+
+
+
+Tables de quantif de gimp
+
+
+Luminance :
+05, 03, 03, 05, 07, 0c, 0f, 12
+04, 04, 04, 06, 08, 11, 12, 11
+04, 04, 05, 07, 0c, 11, 15, 11
+04, 05, 07, 09, 0f, 1a, 18, 13
+05, 07, 0b, 11, 14, 21, 1f, 17
+07, 0b, 11, 13, 18, 1f, 22, 1c
+0f, 13, 17, 1a, 1f, 24, 24, 1e
+16, 1c, 1d, 1d, 22, 1e, 1f, 1e
+
+Chrominance :
+05, 05, 07, 0e, 1e, 1e, 1e, 1e
+05, 06, 08, 14, 1e, 1e, 1e, 1e
+07, 08, 11, 1e, 1e, 1e, 1e, 1e
+0e, 14, 1e, 1e, 1e, 1e, 1e, 1e
+1e, 1e, 1e, 1e, 1e, 1e, 1e, 1e
+1e, 1e, 1e, 1e, 1e, 1e, 1e, 1e
+1e, 1e, 1e, 1e, 1e, 1e, 1e, 1e
+1e, 1e, 1e, 1e, 1e, 1e, 1e, 1e
 
 

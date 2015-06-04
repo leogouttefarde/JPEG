@@ -17,9 +17,14 @@
 
 #define JPEG_COMMENT "JPEG Encoder by ND, IK & LG. Copyright 2015 Ensimag"
 
-#define USAGE "Usage : %s <input_file>\n"\
+#define USAGE "Usage : %s <input_file> -o <output_file> [options]\n"\
               "\n"\
-              "Supported input images : TIFF, JPEG\n"
+              "Supported input images : TIFF, JPEG\n"\
+              "\n"\
+              "\n"\
+              "Options :\n"\
+              "    -o : output JPEG path (mandatory)\n"\
+              "    -c : specify a compression rate [0-25] (0 : lossless, 25 : 100 %% compression)\n"
 
 
 // defines

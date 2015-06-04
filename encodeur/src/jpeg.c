@@ -452,16 +452,53 @@ static void read_jpeg(struct jpeg_data *ojpeg, bool *error)
                         ojpeg->raw_mcu = jpeg.raw_mcu;
 
 
-                        // memcpy(&ojpeg->qtables, &jpeg.qtables, sizeof(jpeg.qtables));
-
-
                         free_bitstream(stream);
                         free_jpeg_data(&jpeg);
 
                 } else
                         *error = true;
         }
+}
 
+/* Read a TIFF file's image data */
+static void read_tiff(struct jpeg_data *ojpeg, bool *error)
+{
+        if (ojpeg == NULL || ojpeg->path == NULL || *error)
+                *error = true;
+
+        else {
+                struct tiff_file_desc *file = NULL;
+                // file = init_tiff_file(ojpeg->path, &ojpeg->width, &ojpeg->height, mcu_v);
+
+                if (file != NULL) {
+
+                        ojpeg->nb_comps = 3;
+
+                        // On fixe des MCUs 8x8 pour tester le tiff (paramétrable plus tard)
+                        ojpeg->mcu.h = 8;
+                        ojpeg->mcu.v = 8;
+
+                        compute_mcu(ojpeg, error);
+
+
+                        uint32_t *mcu_RGB = NULL;
+
+                        const uint32_t nb_pixels_max = ojpeg->mcu.size * ojpeg->mcu.nb;
+                        ojpeg->raw_mcu = malloc(nb_pixels_max * sizeof(uint32_t));
+
+
+                        for (uint32_t i = 0; i < ojpeg->mcu.nb; i++) {
+
+                                mcu_RGB = &(ojpeg->raw_mcu[i * ojpeg->mcu.size]);
+
+                                // read_tiff_file(file, mcu_RGB, ojpeg->mcu.h_dim, ojpeg->mcu.v_dim);
+                        }
+
+                        // close_tiff_file(file);
+
+                } else
+                        *error = true;
+        }
 }
 
 /* Extract raw image data */
@@ -475,8 +512,8 @@ void read_image(struct jpeg_data *jpeg, bool *error)
         if (is_valid_jpeg(jpeg->path))
                 read_jpeg(jpeg, error);
 
-        // else if (is_valid_tiff(image->path))
-        //         read_tiff(image, error);
+        else if (is_valid_tiff(jpeg->path))
+                read_tiff(jpeg, error);
 
         else
                 *error = true;

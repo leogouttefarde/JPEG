@@ -46,7 +46,7 @@ bool print_block(int32_t *block)
 
         for (uint8_t i = 0; i < BLOCK_DIM; i++) {
                 for (uint8_t j = 0; j < BLOCK_DIM; j++)
-                        printf("%u ", block[i * BLOCK_DIM + j]);
+                        printf("%2u, ", block[i * BLOCK_DIM + j]);
 
                 printf("\n");
         }
@@ -65,6 +65,22 @@ bool is_valid_jpeg(char *path)
 
                 if (dot != NULL) {
                         if (!strcasecmp(dot, "jpg") || !strcasecmp(dot, "jpeg"))
+                                result = true;
+                }
+        }
+
+        return result;
+}
+
+bool is_valid_tiff(char *path)
+{
+        bool result = false;
+
+        if (path != NULL) {
+                char *dot = strrchr(path, '.') + 1;
+
+                if (dot != NULL) {
+                        if (!strcasecmp(dot, "tiff") || !strcasecmp(dot, "tif"))
                                 result = true;
                 }
         }

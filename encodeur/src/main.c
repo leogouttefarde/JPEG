@@ -3,26 +3,85 @@
 #include "bitstream.h"
 #include "jpeg.h"
 #include "library.h"
-
+#include <unistd.h>
+#include <getopt.h>
 
 int main(int argc, char **argv)
 {
-        if (argc < 2) {
+        uint8_t quality = 2;
+        char *path = NULL;
+        char *dest = NULL;
+
+        int c;
+        char *copt = NULL;
+
+        while ( (c = getopt(argc, argv, "o:c:")) != -1) {
+
+                // Pour détecter arguments doubles
+                // int this_option_optind = optind ? optind : 1;
+
+                switch (c) {
+                        case 'o':
+                                dest = optarg;
+                                // printf ("Fichier de sortie : '%s'\n", optarg);
+                                break;
+
+                        case 'c':
+                                copt = optarg;
+                                // printf ("Compression [0-25] : '%s'\n", optarg);
+                                break;
+
+                        default:
+                                printf ("Unrecognized option : %c\n", c);
+                }
+        }
+
+
+        if (copt != NULL) {
+                char *endptr = NULL;
+                int32_t val = strtol(copt, &endptr, 10);
+
+                if (endptr != copt) {
+                        if (0 <= val && val <= 25) {
+                                quality = val;
+                                // printf("Compression : %d\n", quality);
+                        }
+                }
+        }
+
+
+
+        if (optind < argc) {
+
+                // printf("optind = %u\n", optind);
+                path = argv[optind];
+                // printf("path = %s\n", path);
+                optind++;
+
+                if (optind < argc) {
+                        printf ("Paramètres non reconnus : ");
+                        while (optind < argc)
+                                printf ("%s ", argv[optind++]);
+
+                        printf ("\n");
+                }
+        }
+
+
+        if (path == NULL || dest == NULL) {
                 printf(USAGE, argv[0]);
                 return EXIT_FAILURE;
         }
 
 
-        char *path = argv[1];
 
         if (!is_valid_jpeg(path)
-                // && !is_valid_tiff(path)
+                && !is_valid_tiff(path)
                 ) {
                 printf("ERROR : Invalid file extension, .tiff .tif .jpg or .jpeg expected\n");
                 return EXIT_FAILURE;
         }
 
-        char *dest = "out.jpg";
         struct bitstream *stream = create_bitstream(dest, WRONLY);
 
         if (stream != NULL) {
@@ -63,9 +122,10 @@ int main(int argc, char **argv)
 
 
                 if (error)
-                        printf("ERROR : unsupported JPEG format\n");
+                        printf("ERROR : unsupported input format\n");
+
                 else
-                        printf("JPEG file successfully encoded\n");
+                        printf("JPEG file successfully created\n");
 
 
                 free_bitstream(stream);
