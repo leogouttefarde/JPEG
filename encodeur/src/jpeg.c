@@ -476,7 +476,10 @@ void process_image(struct bitstream *stream, struct bitstream *ostream,
                                 // printf("nb_h = %d\n", nb_h);
                                 // printf("nb_v = %d\n", nb_v);
                                 upsampler((uint8_t*)idct, nb_blocks_h, nb_blocks_v, upsampled, mcu_h_dim, mcu_v_dim);
-                        }
+				// test downsampler
+				downsampler(upsampled, mcu_h_dim, mcu_v_dim, (uint8_t*)idct, nb_blocks_h, nb_blocks_v);
+				upsampler((uint8_t*)idct, nb_blocks_h, nb_blocks_v, upsampled, mcu_h_dim, mcu_v_dim);
+			}
 
                         YCbCr_to_ARGB(mcu_YCbCr, mcu_RGB, mcu_h_dim, mcu_v_dim);
 
