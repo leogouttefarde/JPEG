@@ -91,25 +91,35 @@ struct jpeg_data {
 
         struct mcu_info mcu;
 
-        uint32_t *mcu_data;
+        int32_t *mcu_data;
 };
 
 
 
 /* Read a section */
-uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
+extern uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                         struct jpeg_data *jpeg, bool *error);
 
 /* Read header data */
-void read_header(struct bitstream *stream, struct jpeg_data *jpeg, bool *error);
+extern void read_header(struct bitstream *stream, struct jpeg_data *jpeg, bool *error);
 
 
-void free_jpeg_data(struct jpeg_data *jpeg);
+extern void free_jpeg_data(struct jpeg_data *jpeg);
 
-void write_section(struct bitstream *stream, enum jpeg_section section,
+extern void write_section(struct bitstream *stream, enum jpeg_section section,
                         struct jpeg_data *jpeg, bool *error);
 
-void write_header(struct bitstream *stream, struct jpeg_data *jpeg, bool *error);
+extern void write_header(struct bitstream *stream, struct jpeg_data *jpeg, bool *error);
+
+/* Extract raw image data */
+extern void read_image(struct jpeg_data *jpeg, bool *error);
+
+/* Compresses raw mcu data, and computes Huffman / Quantification tables */
+extern void compute_jpeg(struct jpeg_data *jpeg, bool *error);
+
+/* Writes previously compressed JPEG data */
+extern void write_blocks(struct bitstream *stream, struct jpeg_data *jpeg, bool *error);
+
 
 
 #endif

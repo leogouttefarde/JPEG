@@ -10,6 +10,8 @@
 
 
 static inline uint16_t mcu_per_dim(uint8_t mcu, uint16_t dim);
+static void detect_mcu(struct jpeg_data *jpeg, bool *error);
+static void compute_mcu(struct jpeg_data *jpeg, bool *error);
 
 /* Read a section */
 uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
@@ -327,7 +329,7 @@ char* create_tiff_name(char *path)
 }
 
 /* Extract and decode raw JPEG data */
-void scan_jpeg(struct bitstream *stream, struct jpeg_data *jpeg, bool *error)
+static void scan_jpeg(struct bitstream *stream, struct jpeg_data *jpeg, bool *error)
 {
         if (stream == NULL || error == NULL || *error || jpeg == NULL)
                 return;
@@ -339,9 +341,6 @@ void scan_jpeg(struct bitstream *stream, struct jpeg_data *jpeg, bool *error)
         uint8_t mcu_h_dim = jpeg->mcu.h_dim;
         uint8_t mcu_v_dim = jpeg->mcu.v_dim;
 
-
-        uint32_t nb_mcu_h = jpeg->mcu.nb_h;
-        uint32_t nb_mcu_v = jpeg->mcu.nb_v;
         uint32_t nb_mcu = jpeg->mcu.nb;
 
 
@@ -418,8 +417,8 @@ void scan_jpeg(struct bitstream *stream, struct jpeg_data *jpeg, bool *error)
         // close_tiff_file(file);
 }
 
-/* Extract and decode raw JPEG data */
-void read_jpeg(struct jpeg_data *ojpeg, bool *error)
+/* Extract and decode a JPEG file */
+static void read_jpeg(struct jpeg_data *ojpeg, bool *error)
 {
         if (ojpeg == NULL || ojpeg->path == NULL || *error)
                 *error = true;
@@ -465,7 +464,7 @@ void read_jpeg(struct jpeg_data *ojpeg, bool *error)
 
 }
 
-/* Extract and requantify input JPEG blocks */
+/* Extract raw image data */
 void read_image(struct jpeg_data *jpeg, bool *error)
 {
         if (jpeg == NULL || jpeg->path == NULL || *error) {
@@ -500,7 +499,7 @@ void read_image(struct jpeg_data *jpeg, bool *error)
         }
 }
 
-void detect_mcu(struct jpeg_data *jpeg, bool *error)
+static void detect_mcu(struct jpeg_data *jpeg, bool *error)
 {
         uint8_t mcu_h = BLOCK_DIM;
         uint8_t mcu_v = BLOCK_DIM;
@@ -518,7 +517,7 @@ void detect_mcu(struct jpeg_data *jpeg, bool *error)
         compute_mcu(jpeg, error);
 }
 
-void compute_mcu(struct jpeg_data *jpeg, bool *error)
+static void compute_mcu(struct jpeg_data *jpeg, bool *error)
 {
         uint8_t mcu_h = jpeg->mcu.h;
         uint8_t mcu_v = jpeg->mcu.v;
@@ -562,7 +561,7 @@ void compute_mcu(struct jpeg_data *jpeg, bool *error)
         jpeg->comps[2].nb_blocks_v = 1;
 }
 
-/* Compresses raw mcu data, and computes Huffman & Quantification tables */
+/* Compresses raw mcu data, and computes Huffman / Quantification tables */
 void compute_jpeg(struct jpeg_data *jpeg, bool *error)
 {
         if (jpeg == NULL || *error) {
@@ -579,8 +578,6 @@ void compute_jpeg(struct jpeg_data *jpeg, bool *error)
         uint8_t mcu_v_dim = jpeg->mcu.v_dim;
 
 
-        uint32_t nb_mcu_h = jpeg->mcu.nb_h;
-        uint32_t nb_mcu_v = jpeg->mcu.nb_v;
         uint32_t nb_mcu = jpeg->mcu.nb;
 
         // name = create_tiff_name(jpeg->path);
@@ -619,7 +616,6 @@ void compute_jpeg(struct jpeg_data *jpeg, bool *error)
         const uint8_t nb_mcu_blocks = mcu_h_dim * mcu_v_dim + (jpeg->nb_comps - 1);
         // printf("Nb de blocks par MCU : %d\n", nb_mcu_blocks);
 
-        const uint32_t nb_pixels_max = jpeg->mcu.size * nb_mcu;
         jpeg->mcu_data = malloc(nb_mcu * nb_mcu_blocks * BLOCK_SIZE * sizeof(int32_t));
 
         uint32_t block_idx = 0;
@@ -730,7 +726,7 @@ void compute_jpeg(struct jpeg_data *jpeg, bool *error)
         // SAFE_FREE(name);
 }
 
-/* Extract then write image data to tiff file */
+/* Writes previously compressed JPEG data */
 void write_blocks(struct bitstream *stream, struct jpeg_data *jpeg, bool *error)
 {
         if (stream == NULL || *error || jpeg == NULL || jpeg->state != ALL_OK) {
@@ -740,31 +736,13 @@ void write_blocks(struct bitstream *stream, struct jpeg_data *jpeg, bool *error)
 
         uint8_t i_c;
 
-        uint8_t mcu_h = jpeg->mcu.h;
-        uint8_t mcu_v = jpeg->mcu.v;
-        uint8_t mcu_h_dim = jpeg->mcu.h_dim;
-        uint8_t mcu_v_dim = jpeg->mcu.v_dim;
-
-        uint32_t nb_mcu_h = jpeg->mcu.nb_h;
-        uint32_t nb_mcu_v = jpeg->mcu.nb_v;
         uint32_t nb_mcu = jpeg->mcu.nb;
 
 
         uint8_t nb_blocks_h, nb_blocks_v, nb_blocks;
-        uint8_t i_dc, i_ac, i_q;
         int32_t *last_DC;
 
         int32_t *block;
-        int32_t iqzz[BLOCK_SIZE];
-        uint8_t *upsampled;
-
-        uint32_t mcu_RGB[mcu_h * mcu_v];
-        uint8_t data_YCbCr[3][mcu_h * mcu_v];
-        uint8_t *mcu_YCbCr[3] = {
-                (uint8_t*)&data_YCbCr[0],
-                (uint8_t*)&data_YCbCr[1],
-                (uint8_t*)&data_YCbCr[2]
-        };
 
         uint32_t block_idx = 0;
 

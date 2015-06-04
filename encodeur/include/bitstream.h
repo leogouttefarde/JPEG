@@ -30,10 +30,6 @@ extern void free_bitstream(struct bitstream *stream);
 
 int8_t write_bit(struct bitstream *stream, uint8_t bit, bool byte_stuffing);
 
-struct bitstream *make_bitstream(FILE *file);
-
-FILE *bitstream_file(struct bitstream *stream);
-
 void write_byte(struct bitstream *stream, uint8_t byte);
 
 void write_short_BE(struct bitstream *stream, uint16_t val);
