@@ -694,9 +694,8 @@ void compute_jpeg(struct jpeg_data *jpeg, bool *error)
 
 
                         upsampled = mcu_YCbCr[i_c];
-
-                        // A décommenter une fois le downsampler fonctionnel
-                        // downsampler(upsampled, nb_blocks_h, nb_blocks_v, (uint8_t*)idct, mcu_h_dim, mcu_v_dim);
+			
+                        downsampler(upsampled, nb_blocks_h, nb_blocks_v, (uint8_t*)idct, mcu_h_dim, mcu_v_dim);
 
 
                         // printf("nb_blocks = %d\n", nb_blocks);
@@ -712,7 +711,6 @@ void compute_jpeg(struct jpeg_data *jpeg, bool *error)
                                 uint8_t *quantif = (uint8_t*)&jpeg->qtables[i_q];
 
                                 qzz_block (iqzz, block, quantif, 3);
-
 
                                 pack_block(NULL, NULL, last_DC, NULL, block, freqs);
 
