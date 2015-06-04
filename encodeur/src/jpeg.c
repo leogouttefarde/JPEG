@@ -367,6 +367,12 @@ static void scan_jpeg(struct bitstream *stream, struct jpeg_data *jpeg, bool *er
         jpeg->raw_mcu = malloc(nb_pixels_max * sizeof(uint32_t));
 
 
+        if (jpeg->raw_mcu == NULL) {
+                *error = true;
+                return;
+        }
+
+
         // struct tiff_file_desc *file = init_tiff_file("test.tiff", jpeg->width, jpeg->height, mcu_v);
 
 
@@ -484,11 +490,16 @@ static void read_tiff(struct jpeg_data *ojpeg, bool *error)
                         ojpeg->raw_mcu = malloc(nb_pixels_max * sizeof(uint32_t));
 
 
-                        for (uint32_t i = 0; i < ojpeg->mcu.nb; i++) {
+                        if (ojpeg->raw_mcu == NULL)
+                                *error = true;
 
-                                mcu_RGB = &(ojpeg->raw_mcu[i * ojpeg->mcu.size]);
+                        else {
+                                for (uint32_t i = 0; i < ojpeg->mcu.nb; i++) {
 
-                                // read_tiff_file(file, mcu_RGB, ojpeg->mcu.h_dim, ojpeg->mcu.v_dim);
+                                        mcu_RGB = &(ojpeg->raw_mcu[i * ojpeg->mcu.size]);
+
+                                        // read_tiff_file(file, mcu_RGB, ojpeg->mcu.h_dim, ojpeg->mcu.v_dim);
+                                }
                         }
 
                         // close_tiff_file(file);
@@ -711,20 +722,27 @@ void compute_jpeg(struct jpeg_data *jpeg, bool *error)
         };
 
 
-        uint32_t **freqs = NULL;
+        /* Use 1 table for each tree (AC/DC)
+         * Allocate 0x100 values because Huffman values use 8 bits */
+        uint32_t freq_data[2][0x100];
+        uint32_t *freqs[2] = {
+                (uint32_t*)freq_data,
+                (uint32_t*)&freq_data[1],
+        };
 
-        /* Allocate 1 table for each tree (AC/DC) */
-        freqs = calloc(2, sizeof(uint32_t*));
-
-        /* Allocate 0x100 values because Huffman values use 8 bits */
-        freqs[0] = calloc(0x100, sizeof(uint32_t));
-        freqs[1] = calloc(0x100, sizeof(uint32_t));
+        memset(&freq_data, 0, sizeof(freq_data));
 
 
         const uint8_t nb_mcu_blocks = mcu_h_dim * mcu_v_dim + (jpeg->nb_comps - 1);
         // printf("Nb de blocks par MCU : %d\n", nb_mcu_blocks);
 
         jpeg->mcu_data = malloc(nb_mcu * nb_mcu_blocks * BLOCK_SIZE * sizeof(int32_t));
+
+        if (jpeg->mcu_data == NULL) {
+                *error = true;
+                return;
+        }
+
 
         uint32_t block_idx = 0;
         uint8_t idct[mcu_h_dim * mcu_v_dim][BLOCK_SIZE];
@@ -802,8 +820,6 @@ void compute_jpeg(struct jpeg_data *jpeg, bool *error)
         // printf("block_idx = %d\n", block_idx);
         // printf("expected = %d\n", nb_mcu * nb_mcu_blocks * BLOCK_SIZE);
 
-        // printf("test freqs\n");
-
 
 
         /*  Reset last_DC fields so that write_blocks can work fine */
@@ -811,26 +827,16 @@ void compute_jpeg(struct jpeg_data *jpeg, bool *error)
                 jpeg->comps[i].last_DC = 0;
 
 
-        if (freqs) {
-                // printf("freqs\n");
-                // DC table
-                jpeg->htables[0][0] = create_huffman_tree(freqs[0], error);
-                // printf("jpeg->htables[0][0] = %x\n", jpeg->htables[0][0]);
+        // DC table
+        jpeg->htables[0][0] = create_huffman_tree(freqs[0], error);
+        // printf("jpeg->htables[0][0] = %x\n", jpeg->htables[0][0]);
 
-                // AC table
-                jpeg->htables[1][0] = create_huffman_tree(freqs[1], error);
-                // printf("jpeg->htables[1][0] = %x\n", jpeg->htables[1][0]);
+        // AC table
+        jpeg->htables[1][0] = create_huffman_tree(freqs[1], error);
+        // printf("jpeg->htables[1][0] = %x\n", jpeg->htables[1][0]);
 
-
-                SAFE_FREE(freqs[0]);
-                SAFE_FREE(freqs[1]);
-                SAFE_FREE(freqs);
-        }
 
         // close_tiff_file(file);
-
-
-        // SAFE_FREE(name);
 }
 
 /* Writes previously compressed JPEG data */

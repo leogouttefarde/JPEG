@@ -21,7 +21,8 @@
               "\n"\
               "Options list :\n"\
               "    -o : output JPEG path (mandatory)\n"\
-              "    -c : compression rate [0-25] (0 : lossless, 25 : highest)\n"
+              "    -c : compression rate [0-25] (0 : lossless, 25 : highest)\n"\
+              "    -m : output MCU sizes, either 8x8 / 16x8 / 8x16 / 16x16\n"
               //"    -g : encode as a gray image\n"
 
 

@@ -370,7 +370,6 @@ void forge_huffman_values(struct huff_table *table, uint8_t **values, uint8_t *p
                 if (table->type == LEAF){
                         uint8_t i = table->size - 1;
 
-                        // TODO : fix construction arbres huffman pour interdire tailles > 16
                         if (i > 16)
                                 printf("FATAL ERROR, code_size > 16\n");
 

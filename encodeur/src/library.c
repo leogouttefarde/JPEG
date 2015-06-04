@@ -174,41 +174,36 @@ bool parse_args(int argc, char **argv, struct options *options)
 {
         bool error = false;
 
-        bool gray = false;
-        uint8_t mcu_h = DEFAULT_MCU_WIDTH;
-        uint8_t mcu_v = DEFAULT_MCU_HEIGHT;
-
+        char *input = NULL;
+        char *output = NULL;
 
         uint8_t quality = DEFAULT_COMPRESSION;
-        char *path = NULL;
-        char *dest = NULL;
+        uint8_t mcu_h = DEFAULT_MCU_WIDTH;
+        uint8_t mcu_v = DEFAULT_MCU_HEIGHT;
+        bool gray = false;
 
-        int c;
-        char *copt = NULL;
-        char *mopt = NULL;
+
+        int opt;
+        char *i_comp = NULL;
+        char *i_mcu = NULL;
+
 
         /* Disable default warnings */
         opterr = 0;
 
-        while ( (c = getopt(argc, argv, "o:c:m:g")) != -1) {
+        while ( (opt = getopt(argc, argv, "o:c:m:g")) != -1) {
 
-                // Pour détecter arguments doubles
-                // int this_option_optind = optind ? optind : 1;
-
-                switch (c) {
+                switch (opt) {
                         case 'o':
-                                dest = optarg;
-                                // printf ("Fichier de sortie : '%s'\n", optarg);
+                                output = optarg;
                                 break;
 
                         case 'c':
-                                copt = optarg;
-                                // printf ("Compression [0-25] : '%s'\n", optarg);
+                                i_comp = optarg;
                                 break;
 
                         case 'm':
-                                mopt = optarg;
-                                // printf ("Taille des MCUs : '%s'\n", optarg);
+                                i_mcu = optarg;
                                 break;
 
                         case 'g':
@@ -221,8 +216,8 @@ bool parse_args(int argc, char **argv, struct options *options)
         }
 
 
-        if (copt != NULL) {
-                uint32_t val = get_value(copt, &error);
+        if (i_comp != NULL) {
+                uint32_t val = get_value(i_comp, &error);
 
                 if (!error) {
                         if (0 <= val && val <= 25) {
@@ -232,12 +227,12 @@ bool parse_args(int argc, char **argv, struct options *options)
                 }
         }
 
-        if (mopt != NULL) {
+        if (i_mcu != NULL) {
                 uint32_t h_val;
                 uint32_t v_val;
 
-                h_val = get_value(mopt, &error);
-                char *next = strchr(mopt, 'x');
+                h_val = get_value(i_mcu, &error);
+                char *next = strchr(i_mcu, 'x');
 
                 if (next++ != NULL)
                         v_val = get_value(next, &error);
@@ -249,44 +244,43 @@ bool parse_args(int argc, char **argv, struct options *options)
                         mcu_h = affect_mcu(h_val, &error);
                         mcu_v = affect_mcu(v_val, &error);
 
-                        printf("New MCUs : h=%d v=%d\n", mcu_h, mcu_v);
+                        // printf("New MCUs : h=%d v=%d\n", mcu_h, mcu_v);
                 }
         }
 
 
 
         if (optind < argc) {
-
-                // printf("optind = %u\n", optind);
-                path = argv[optind];
-                // printf("path = %s\n", path);
+                input = argv[optind];
                 optind++;
 
-                if (optind < argc) {
-                        printf ("Paramètres non reconnus : ");
-                        while (optind < argc)
-                                printf ("%s ", argv[optind++]);
+                // if (optind < argc) {
+                //         printf ("Paramètres non reconnus : ");
+                //         while (optind < argc)
+                //                 printf ("%s ", argv[optind++]);
 
-                        printf ("\n");
-                }
+                //         printf ("\n");
+                // }
         }
 
 
-        if (path == NULL || dest == NULL) {
+        if (input == NULL || output == NULL) {
                 error = true;
         }
 
 
-        if (!error && !is_valid_jpeg(path) && !is_valid_tiff(path)) {
-                printf("ERROR : Invalid input file extension, .tiff .tif .jpg or .jpeg expected\n");
-                error = true;
-        } else if (error)
+        if (error)
                 printf(USAGE, argv[0]);
 
+        else if (!is_valid_jpeg(input) && !is_valid_tiff(input)) {
+                printf("ERROR : Invalid input file extension, .tiff .tif .jpg or .jpeg expected\n");
+                error = true;
+        }
 
 
-        options->input = path;
-        options->output = dest;
+
+        options->input = input;
+        options->output = output;
 
         options->mcu_h = mcu_h;
         options->mcu_v = mcu_v;

@@ -7,7 +7,7 @@ Quests :
 - DRI : faut-il / cmt détecter marqueur RSTm (very long execution time for now) ?
 - package-merge Huffman codes ?
 - gestion erreurs unpack ?
-
+- quid qtables gimp ?
 
 
 
