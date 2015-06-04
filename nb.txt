@@ -14,7 +14,9 @@ Quests :
 todo :
 
 - package-merge
-- fix bug écriture tiff.c : test2.jpg
+- fix bug tiff.c : test2.jpg, pic.jpeg ...
+- fix downsampler
+- finir lecture tiff
 
 
 Nb :

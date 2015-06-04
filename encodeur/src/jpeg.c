@@ -730,7 +730,7 @@ void compute_jpeg(struct jpeg_data *jpeg, bool *error)
                 (uint32_t*)&freq_data[1],
         };
 
-        memset(&freq_data, 0, sizeof(freq_data));
+        memset(freq_data, 0, sizeof(freq_data));
 
 
         const uint8_t nb_mcu_blocks = mcu_h_dim * mcu_v_dim + (jpeg->nb_comps - 1);
@@ -746,6 +746,9 @@ void compute_jpeg(struct jpeg_data *jpeg, bool *error)
 
         uint32_t block_idx = 0;
         uint8_t idct[mcu_h_dim * mcu_v_dim][BLOCK_SIZE];
+
+        // A commenter une fois le downsampler fonctionnel
+        memset(idct, 0, sizeof(idct));
 
 
         for (uint32_t i = 0; i < nb_mcu; i++) {

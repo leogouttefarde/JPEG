@@ -13,7 +13,12 @@
 #include <stdbool.h>
 #include <complex.h>
 #include <inttypes.h>
-#include "library.h"
+
+#define USAGE "Usage : %s <jpeg_file> [options]\n"\
+              "\n"\
+              "Options list :\n"\
+              "    -o <output_file> : Output TIFF path\n"\
+              "    -h               : Display this help\n"
 
 // defines
 #ifndef M_PI

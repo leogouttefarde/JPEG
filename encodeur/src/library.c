@@ -191,7 +191,7 @@ bool parse_args(int argc, char **argv, struct options *options)
         /* Disable default warnings */
         opterr = 0;
 
-        while ( (opt = getopt(argc, argv, "o:c:m:g")) != -1) {
+        while ( (opt = getopt(argc, argv, "o:c:m:gh")) != -1) {
 
                 switch (opt) {
                         case 'o':
@@ -208,6 +208,10 @@ bool parse_args(int argc, char **argv, struct options *options)
 
                         case 'g':
                                 gray = true;
+                                break;
+
+                        case 'h':
+                                error = true;
                                 break;
 
                         // default:

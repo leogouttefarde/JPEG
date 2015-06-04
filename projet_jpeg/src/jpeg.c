@@ -7,6 +7,7 @@
 #include "tiff.h"
 #include "conv.h"
 #include "upsampler.h"
+#include "library.h"
 
 
 static inline uint16_t mcu_per_dim(uint8_t mcu, uint16_t dim);
@@ -298,40 +299,6 @@ void read_header(struct bitstream *stream, struct jpeg_data *jpeg, bool *error)
         }
 }
 
-char* create_tiff_name(char *path)
-{
-        if (path == NULL)
-                return NULL;
-
-        char *name, *dot;
-        uint32_t len_cpy;
-        uint32_t len_tiff;
-
-
-        dot = strrchr(path, '.');
-
-        if (dot != NULL)
-                len_cpy = (uint32_t)(dot - path);
-        else
-                len_cpy = strlen(path);
-
-        len_tiff = len_cpy + 5 + 1;
-
-        // printf("len_cpy = %d\n", len_tiff);
-        // printf("len_tiff = %d\n", len_tiff);
-        name = malloc(len_tiff);
-
-        if (name != NULL) {
-                strncpy(name, path, len_cpy);
-                name[len_cpy] = 0;
-
-                strcat(name, ".tiff");
-        }
-        // printf("name = %s\n", name);
-
-        return name;
-}
-
 /* Extract then write image data to tiff file */
 void process_image(struct bitstream *stream, struct jpeg_data *jpeg, bool *error)
 {
@@ -340,7 +307,6 @@ void process_image(struct bitstream *stream, struct jpeg_data *jpeg, bool *error
                 return;
         }
 
-        char *name = NULL;
         struct tiff_file_desc *file = NULL;
         uint8_t i_c;
         uint8_t mcu_h = BLOCK_DIM;
@@ -371,8 +337,7 @@ void process_image(struct bitstream *stream, struct jpeg_data *jpeg, bool *error
         // printf("height = %d\n", height);
         // printf("nb_mcu = %d\n", nb_mcu);
 
-        name = create_tiff_name(jpeg->path);
-        file = init_tiff_file(name, jpeg->width, jpeg->height, mcu_v);
+        file = init_tiff_file(jpeg->path, jpeg->width, jpeg->height, mcu_v);
 
         if (file != NULL) {
                 uint8_t nb_blocks_h, nb_blocks_v, nb_blocks;
@@ -453,8 +418,6 @@ void process_image(struct bitstream *stream, struct jpeg_data *jpeg, bool *error
         } else
                 *error = true;
 
-
-        SAFE_FREE(name);
 
         skip_bitstream_until(stream, SECTION_HEAD);
 }

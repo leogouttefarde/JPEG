@@ -20,9 +20,9 @@
               "Supported input images : TIFF, JPEG\n"\
               "\n"\
               "Options list :\n"\
-              "    -o : output JPEG path (mandatory)\n"\
-              "    -c : compression rate [0-25] (0 : lossless, 25 : highest)\n"\
-              "    -m : output MCU sizes, either 8x8 / 16x8 / 8x16 / 16x16\n"
+              "    -c <quality>     : Compression rate [0-25] (0 : lossless, 25 : highest)\n"\
+              "    -m <mcu_size>    : Output MCU sizes, either 8x8 / 16x8 / 8x16 / 16x16\n"\
+              "    -h               : Display this help\n"
               //"    -g : encode as a gray image\n"
 
 

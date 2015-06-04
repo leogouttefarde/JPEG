@@ -1,6 +1,8 @@
 
 #include "idct.h"
 #include "common.h"
+#include "library.h"
+
 
 /* Calcul de C(e) formule page 13 du sujet */
 double C(const uint8_t x)
