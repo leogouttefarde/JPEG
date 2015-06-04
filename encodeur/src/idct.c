@@ -1,6 +1,8 @@
 
 #include "idct.h"
 #include "common.h"
+#include "library.h"
+
 
 double C(const uint8_t x)
 {

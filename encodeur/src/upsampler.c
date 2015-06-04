@@ -173,3 +173,4 @@ void downsampler(uint8_t *in,
 		out = in;
 	}
 }
+

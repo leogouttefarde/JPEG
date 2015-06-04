@@ -4,6 +4,7 @@
 
 #include "bitstream.h"
 #include "common.h"
+#include "jpeg.h"
 
 
 bool read_short_BE(struct bitstream *stream, uint16_t *value);
@@ -18,6 +19,8 @@ uint8_t double2uint8(double x);
 
 bool is_valid_jpeg(char *path);
 bool is_valid_tiff(char *path);
+
+bool parse_args(int argc, char **argv, struct options *options);
 
 
 #endif

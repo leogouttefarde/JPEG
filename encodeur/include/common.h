@@ -13,18 +13,16 @@
 #include <stdbool.h>
 #include <complex.h>
 #include <inttypes.h>
-#include "library.h"
 
 #define JPEG_COMMENT "JPEG Encoder by ND, IK & LG. Copyright 2015 Ensimag"
 
 #define USAGE "Usage : %s <input_file> -o <output_file> [options]\n"\
-              "\n"\
               "Supported input images : TIFF, JPEG\n"\
               "\n"\
-              "\n"\
-              "Options :\n"\
+              "Options list :\n"\
               "    -o : output JPEG path (mandatory)\n"\
-              "    -c : specify a compression rate [0-25] (0 : lossless, 25 : 100 %% compression)\n"
+              "    -c : compression rate [0-25] (0 : lossless, 25 : highest)\n"
+              //"    -g : encode as a gray image\n"
 
 
 // defines
@@ -42,6 +40,11 @@
 
 #define BLOCK_DIM 8
 #define BLOCK_SIZE 64
+
+#define DEFAULT_COMPRESSION 2
+
+#define DEFAULT_MCU_WIDTH BLOCK_DIM
+#define DEFAULT_MCU_HEIGHT BLOCK_DIM
 
 
 // Log

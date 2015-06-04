@@ -1,6 +1,7 @@
 
 #include "conv.h"
 #include "common.h"
+#include "library.h"
 
 
 #define BYTE(c, i)      ((c >> 8*i) & 0xFF)

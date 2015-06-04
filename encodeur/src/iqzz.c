@@ -3,13 +3,13 @@
 #include "common.h"
 
 
-#define MOVE(index, EVEN, ODD) if (index % 2) { ODD; } else { EVEN; }
-#define UP      --x; ++y;
-#define DOWN    ++x; --y;
-#define TURN if ((down = !down)) { DOWN; } else { UP; }
+// #define MOVE(index, EVEN, ODD) if (index % 2) { ODD; } else { EVEN; }
+// #define UP      --x; ++y;
+// #define DOWN    ++x; --y;
+// #define TURN if ((down = !down)) { DOWN; } else { UP; }
 
 /* Version optimisée */
-static const uint32_t zz[64] =
+static const uint8_t zz[64] =
 {
          0,  1,  5,  6, 14, 15, 27, 28,
          2,  4,  7, 13, 16, 26, 29, 42,
@@ -23,41 +23,63 @@ static const uint32_t zz[64] =
 
 void iqzz_block (int32_t in[64], int32_t out[64], uint8_t quantif[64])
 {
-        bool down = false;
-        uint8_t x = 0;
-        uint8_t y = 0;
-
-        for(uint8_t i = 0; i < 64; ++i) {
-
-                // zz[x*8 + y] = i;
-
-                out[x*8 + y] = in[i] * quantif[i];
-
-                if (x == 0 || x == 7) {
-                        MOVE(y, ++y, TURN);
-                }
-                else if (y == 0 || y == 7) {
-                        MOVE(x, TURN, ++x);
-                }
-                else if (down) {
-                        DOWN;
-                }
-                else {
-                        UP;
-                }
-        }
-
-        // uint8_t j = 0;
+        // bool down = false;
+        // uint8_t x = 0;
+        // uint8_t y = 0;
 
         // for(uint8_t i = 0; i < 64; ++i) {
 
-        //         j = zz[i];
+        //         // zz[x*8 + y] = i;
 
-        //         out[i] = in[j] * quantif[j];
+        //         out[x*8 + y] = in[i] * quantif[i];
+
+        //         if (x == 0 || x == 7) {
+        //                 MOVE(y, ++y, TURN);
+        //         }
+        //         else if (y == 0 || y == 7) {
+        //                 MOVE(x, TURN, ++x);
+        //         }
+        //         else if (down) {
+        //                 DOWN;
+        //         }
+        //         else {
+        //                 UP;
+        //         }
         // }
+
+        uint8_t j = 0;
+
+        for(uint8_t i = 0; i < 64; ++i) {
+
+                j = zz[i];
+
+                out[i] = in[j] * quantif[j];
+        }
 }
 
-// TODO : optimisation par précalcul table quantif dans main selon qualité
+void qzz_block (int32_t in[64], int32_t out[64], uint8_t quantif[64])
+{
+        //bool down = false;
+        //uint8_t x = 0;
+        //uint8_t y = 0;
+        //uint8_t idx = 0;
+        uint8_t j = 0;
+
+        for(uint8_t i = 0; i < 64; ++i) {
+
+                j = zz[i];
+                //idx = x*8 + y;
+                out[j] = in[i] / quantif[j];
+
+                // quantif[i] = 1 + (x + y + 1) * quality;
+                // stat_qt2[i] = 1 + (x + y + 1);
+                //out[i] = in[idx] / quantif[i];
+        }
+
+        // print_byte_block(stat_qt2);
+        // exit(0);
+}
+
 /*
  * Quality range : 0 - 25
  *
@@ -67,33 +89,38 @@ void iqzz_block (int32_t in[64], int32_t out[64], uint8_t quantif[64])
  * Quality shouldn't exceed 25 according to JPEG standard :
  * http://www-ljk.imag.fr/membres/Valerie.Perrier/SiteWeb/node10.html
  */
-void qzz_block (int32_t in[64], int32_t out[64],
-                uint8_t quantif[64], uint8_t quality)
+void quantify_qtable(uint8_t out[64], const uint8_t in[64], uint8_t quality)
 {
-        bool down = false;
-        uint8_t x = 0;
-        uint8_t y = 0;
-        uint8_t idx = 0;
+        // bool down = false;
+        // uint8_t x = 0;
+        // uint8_t y = 0;
+        // uint8_t idx = 0;
+        // print_byte_block(in);
 
         for(uint8_t i = 0; i < 64; ++i) {
 
-                idx = x*8 + y;
-                quantif[i] = 1 + (x + y + 1) * quality;
-                out[i] = in[idx] / quantif[i];
+                // idx = x*8 + y;
+                // quantif[i] = 1 + (x + y + 1) * quality;
+                // in[i] = (x + y + 1);
+                // out[i] = 1 + in[i] * quality;
+                out[i] = 1 + (in[i] - 1) * quality;
+                // out[i] = in[idx] / quantif[i];
 
-                if (x == 0 || x == 7) {
-                        MOVE(y, ++y, TURN);
-                }
-                else if (y == 0 || y == 7) {
-                        MOVE(x, TURN, ++x);
-                }
-                else if (down) {
-                        DOWN;
-                }
-                else {
-                        UP;
-                }
+                // if (x == 0 || x == 7) {
+                //         MOVE(y, ++y, TURN);
+                // }
+                // else if (y == 0 || y == 7) {
+                //         MOVE(x, TURN, ++x);
+                // }
+                // else if (down) {
+                //         DOWN;
+                // }
+                // else {
+                //         UP;
+                // }
         }
+        // print_byte_block(out);
+        // exit(0);
 }
 
 
