@@ -658,8 +658,7 @@ void compute_jpeg(struct jpeg_data *jpeg, bool *error)
 
                         upsampled = mcu_YCbCr[i_c];
 			
-                        downsampler(upsampled, nb_blocks_h, nb_blocks_v, (uint8_t*)idct, mcu_h_dim, mcu_v_dim);
-
+                        downsampler(upsampled, mcu_h_dim, mcu_v_dim, (uint8_t*)idct, nb_blocks_h, nb_blocks_v);
 
                         // printf("nb_blocks = %d\n", nb_blocks);
                         for (uint8_t n = 0; n < nb_blocks; n++) {

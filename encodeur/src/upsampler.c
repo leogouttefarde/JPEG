@@ -121,6 +121,7 @@ static inline uint8_t pixel_mean(uint8_t *in, uint8_t *in_pixel,
 	for(uint16_t j = 0; j < nb_blocks_h*nb_blocks_v; j++) {
 		sum += in[in_pixel[j] + offset];
 		//printf("%#04x ", in[in_pixel[j] + offset]);
+		printf("%u ", in_pixel[j] + offset);
 	}
 	
 	return sum/(nb_blocks_h*nb_blocks_v);
@@ -144,13 +145,15 @@ void downsampler(uint8_t *in,
 	
 	printf("nb_blocks_in_h = %u\n", nb_blocks_in_h);
 	printf("nb_blocks_in_v = %u\n", nb_blocks_in_v);
-	
-	printf("H_SIZE = %u\n", H_SIZE);
+
+	printf("nb_blocks_h = %u\n", nb_blocks_h);
+	printf("nb_blocks_v = %u\n", nb_blocks_v);
 	*/
+	printf("H_SIZE = %u\n", H_SIZE);
+	
 
 	// Cas sous échantillonnage réalisé
-	if(nb_blocks_h*nb_blocks_v != 1){
-		//uint16_t sum = 0;
+	if(nb_blocks_h*nb_blocks_v > 1){
 		uint8_t offset = 0;
 
 		uint8_t *in_pixel = malloc(sizeof(uint8_t)*nb_blocks_h*nb_blocks_v);
@@ -160,16 +163,28 @@ void downsampler(uint8_t *in,
 		init_in_pixel(in_pixel, H_SIZE, nb_blocks_h, nb_blocks_v);
 
 		for(uint16_t i = 0; i < BLOCK_SIZE; i++){
-
+			
+			if(i % 8 == 0)
+				printf("\n");
+			
 			out[i] = pixel_mean(in, in_pixel, offset,
 					    nb_blocks_h, nb_blocks_v);
+			if(i != 0 && i % BLOCK_DIM == BLOCK_DIM - 1 && nb_blocks_in_v != 1) {
+				offset += H_SIZE;
+				printf("OK\n");
+			}
+	
 			offset += 2;
+			//printf("%u ", offset);
 			//printf("%#04x ", out[i]);
 		}
 
 		SAFE_FREE(in_pixel);	
 	// Cas sous échantillonnage non réalisé	
+	} else if (nb_blocks_h*nb_blocks_v == 1){
+		for (uint16_t i = 0; i < nb_blocks_in_h*nb_blocks_in_h*BLOCK_SIZE; i++)
+			out[i] = in[i];
 	} else {
-		out = in;
+		printf("ERROR : nb_blocks_h = 0 or nb_blocks_v = 0 \n");
 	}
 }
