@@ -13,7 +13,6 @@ Quests :
 
 todo :
 
-- fix bug tiff.c : test2.jpg, pic.jpeg ...
 - fix downsampler
 - finir lecture tiff
 - fonction de changement de taille des mcus (pour changer celles d'un jpeg décodé ou permettre sa transformation en gris)

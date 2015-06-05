@@ -220,14 +220,27 @@ struct tiff_file_desc *init_tiff_file (const char *file_name,
 
 	uint32_t indice_dans_buffer = 90+2*tfd -> nb_strips;
 	// --> Ptr StripByteCounts
-	for (uint32_t i =0; i < tfd -> nb_strips-1; i++){
+
+        for (uint32_t i =0; i < tfd -> nb_strips - 1; i++){
 		buffer[indice_dans_buffer+2*i] = taille_ligne;
 		buffer[indice_dans_buffer+2*i+1] = (taille_ligne >> 16);
 	}
-	
+
+
 	// Taille de la dernière ligne
 	indice_dans_buffer = indice_dans_buffer+2*(tfd -> nb_strips-1);
-	taille_ligne = (tfd -> height % tfd -> rows_per_strip)*tfd->width*3;
+
+
+        // Fix0 du bug de dernière ligne manquante
+        // Description du bug : tout fichier dont la hauteur est multiple de la taille de la mcu n'avait pas de dernière ligne
+        uint32_t hauteur_ligne = tfd -> height % tfd -> rows_per_strip;
+
+        if (tfd -> height > 0  && hauteur_ligne == 0)
+                hauteur_ligne = tfd -> rows_per_strip;
+
+	taille_ligne = hauteur_ligne * tfd->width*3;
+
+
 	buffer[indice_dans_buffer] = taille_ligne;
 	buffer[indice_dans_buffer+1] = (taille_ligne >> 16);
 
@@ -266,7 +279,7 @@ void write_tiff_file (struct tiff_file_desc *tfd,
 	/* } */
 
 	//On passe à la ligne suivante s'il n'y a plus de place pour mettre la MCU
-	if (tfd -> current_line + tfd -> next_pos_mcu + (nb_blocks_v*MCU_SIZE-1)*tfd -> row_size >= tfd -> current_line + tfd -> size_line){
+	if (tfd -> next_pos_mcu + (nb_blocks_v*MCU_SIZE-1)*tfd -> row_size >= tfd -> size_line){
 		tfd -> current_line += tfd -> size_line;
 		tfd -> next_pos_mcu = 0;
 	}

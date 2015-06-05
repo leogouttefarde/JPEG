@@ -19,9 +19,9 @@
 #define USAGE "Usage : %s <input_file> -o <output_file> [options]\n"\
               "\n"\
               "Options list :\n"\
-              "    -c <quality>     : Compression rate [0-25] (0 : lossless, 25 : highest)\n"\
-              "    -m <mcu_size>    : Output MCU sizes, either 8x8 / 16x8 / 8x16 / 16x16\n"\
-              "    -h               : Display this help\n"\
+              "    -c <quality>  : Compression rate [0-25] (0 : lossless, 25 : highest)\n"\
+              "    -m <mcu_size> : Output MCU sizes, either 8x8 / 16x8 / 8x16 / 16x16\n"\
+              "    -h            : Display this help\n"\
               "\n"\
               "Supported input images : TIFF, JPEG\n"
               //"    -g : encode as a gray image\n"

@@ -42,27 +42,3 @@ void idct_block(int32_t in[64], uint8_t out[64])
                 }
         }
 }
-
-double S_dct(const uint8_t i, const uint8_t j, uint8_t *in)
-{
-        double sum = 0;
-
-        for (uint8_t x = 0; x < BLOCK_DIM; x++) {
-                for (uint8_t y = 0; y < BLOCK_DIM; y++) {
-                        sum += 	cos(((2*x + 1) * i * M_PI)/ (2*BLOCK_DIM)) *
-				cos(((2*y + 1) * j * M_PI)/ (2*BLOCK_DIM)) *
-				(in[x*BLOCK_DIM + y]-128);
-                }
-        }
-
-        return sum;
-}
-
-void dct_block(uint8_t in[64], int32_t out[64])
-{
-        for (uint8_t i = 0; i < BLOCK_DIM; i++) {
-                for (uint8_t j = 0; j < BLOCK_DIM; j++) {
-                        out[i*BLOCK_DIM + j] = (int32_t)(C(i)*C(j)*S_dct(i, j, in)/4);
-                }
-        }
-}
