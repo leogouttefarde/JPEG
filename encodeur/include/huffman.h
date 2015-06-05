@@ -20,7 +20,7 @@ extern void free_huffman_table(struct huff_table *table);
 extern bool write_huffman_value(int8_t value, struct huff_table *table,
                          struct bitstream *stream);
 
-extern struct huff_table *create_huffman_tree(uint32_t freqs[0x100]);
+extern struct huff_table *create_huffman_tree(uint32_t freqs[0x100], bool *error);
 
 void write_huffman_table(struct bitstream *stream, struct huff_table **table);
 

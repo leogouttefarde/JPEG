@@ -7,42 +7,41 @@
 
 int main(int argc, char **argv)
 {
-        if (argc < 2) {
-                printf(USAGE, argv[0]);
+        bool error = false;
+        struct options options;
+
+        if (parse_args(argc, argv, &options))
                 return EXIT_FAILURE;
-        }
 
 
-        char *path = argv[1];
-
-        if (!is_valid_jpeg(path)
-                // && !is_valid_tiff(path)
-                ) {
-                printf("ERROR : Invalid file extension, .tiff .tif .jpg or .jpeg expected\n");
-                return EXIT_FAILURE;
-        }
-
-        char *dest = "out.jpg";
-        struct bitstream *stream = create_bitstream(dest, WRONLY);
+        int ret = EXIT_SUCCESS;
+        struct bitstream *stream = create_bitstream(options.output, WRONLY);
 
         if (stream != NULL) {
-                bool error = false;
-
-
                 struct jpeg_data jpeg;
                 memset(&jpeg, 0, sizeof(jpeg));
 
-                jpeg.path = path;
+                jpeg.path = options.input;
 
-                // Fake MCU definition (could be specified as option for tiff,
-                // and later used for jpeg reencoding too)
-                // Currently useless, reusing previous JPEG detected MCU sizes
-                jpeg.mcu.h = 8;
-                jpeg.mcu.v = 8;
+                // Only used for tiff encoding
+                jpeg.mcu.h = options.mcu_h;
+                jpeg.mcu.v = options.mcu_v;
+
+                jpeg.compression = options.compression;
 
 
                 /* Read input image */
                 read_image(&jpeg, &error);
+
+
+                // if (options.gray) {
+                //         jpeg.nb_comps = 1;
+
+                //         jpeg.comps[0].nb_blocks_h = 1;
+                //         jpeg.comps[0].nb_blocks_v = 1;
+                // }
+
+                // detect_mcu(&jpeg, &error);
 
 
                 /* Compute Huffman and Quantification tables */
@@ -62,13 +61,20 @@ int main(int argc, char **argv)
                 write_section(stream, EOI, NULL, &error);
 
 
-                if (error)
-                        printf("ERROR : unsupported JPEG format\n");
-                else
-                        printf("JPEG file successfully encoded\n");
-
-
                 free_bitstream(stream);
+
+
+                if (error) {
+                        printf("JPEG compression failed\n");
+                        ret = EXIT_FAILURE;
+
+                        /* Remove the invalid created file */
+                        remove(options.output);
+                }
+
+                else
+                        printf("JPEG successfully encoded\n");
+
 
                 /* Free compressed JPEG data */
                 SAFE_FREE(jpeg.mcu_data);
@@ -78,7 +84,6 @@ int main(int argc, char **argv)
         }
 
 
-        return EXIT_SUCCESS;
+        return ret;
 }
-
 

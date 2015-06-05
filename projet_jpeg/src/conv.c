@@ -1,6 +1,7 @@
 
 #include "conv.h"
 #include "common.h"
+#include "library.h"
 
 
 void YCbCr_to_ARGB(uint8_t  *mcu_YCbCr[3], uint32_t *mcu_RGB,

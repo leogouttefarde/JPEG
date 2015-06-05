@@ -38,6 +38,19 @@ enum jpeg_status {
 };
 
 
+struct options {
+
+        char *input;
+        char *output;
+
+        uint8_t mcu_h;
+        uint8_t mcu_v;
+
+        uint8_t compression;
+
+        bool gray;
+};
+
 struct comp {
 
         /* SOF0 data */
@@ -85,6 +98,8 @@ struct jpeg_data {
         /* Quantification tables */
         uint8_t qtables[MAX_QTABLES][BLOCK_SIZE];
 
+        uint8_t compression;
+
         uint8_t state;
 
         uint32_t *raw_mcu;
@@ -119,7 +134,6 @@ extern void compute_jpeg(struct jpeg_data *jpeg, bool *error);
 
 /* Writes previously compressed JPEG data */
 extern void write_blocks(struct bitstream *stream, struct jpeg_data *jpeg, bool *error);
-
 
 
 #endif

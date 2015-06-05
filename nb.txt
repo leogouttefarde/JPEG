@@ -3,21 +3,23 @@
 
 Quests :
 
-- support section DRI ?
-- DRI : faut-il / cmt détecter marqueur RSTm (very long execution time for now) ?
-- package-merge Huffman codes ?
+- DRI : faut-il / cmt détecter marqueur RSTm (source de pbs de lecture sinon) ?
+- package-merge Huffman codes ? ou 1 arbre AC/DC de Huffman pour chaque composante ?
 - gestion erreurs unpack ?
-
+- quid qtables gimp ?
 
 
 
 todo :
 
-- choix + gestion des paramètres d'encodage
-- gestion encodage tiff
+- fix downsampler
+- finir lecture tiff
+- fonction de changement de taille des mcus (pour changer celles d'un jpeg décodé ou permettre sa transformation en gris)
+
+
+secondaire :
+
 - package-merge
-- fix bug tiff.c
-- ajouter l'indice de qualité en commentaire
 
 
 Nb :
@@ -43,18 +45,5 @@ Tools :
 
 exiftool
 identify
-
-
-
-
-
-
-Options encodeur :
-
-- Fichier de destination                  [paramètre obligatoire]
-- Qualité (entier de 0 à 25)              [par défaut : 2]
-- Taille MCUs (8x8 / 16x8 / 8x16 / 16x16) [par défaut : 8x8]
-- Couleurs : RGB / Black & White          [par défaut : comme le fichier d'entrée]
-- Commentaire
 
 

@@ -188,3 +188,4 @@ void downsampler(uint8_t *in,
 		printf("ERROR : nb_blocks_h = 0 or nb_blocks_v = 0 \n");
 	}
 }
+
