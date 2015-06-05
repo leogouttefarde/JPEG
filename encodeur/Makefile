@@ -31,7 +31,7 @@ NEW_OBJ_FILES += $(OBJ_DIR)/unpack.o $(OBJ_DIR)/upsampler.o $(OBJ_DIR)/bitstream
 NEW_OBJ_FILES += $(OBJ_DIR)/idct.o
 NEW_OBJ_FILES += $(OBJ_DIR)/loeffler.o
 NEW_OBJ_FILES += $(OBJ_DIR)/jpeg.o $(OBJ_DIR)/main.o
-#NEW_OBJ_FILES += $(OBJ_DIR)/tiff.o
+NEW_OBJ_FILES += $(OBJ_DIR)/tiff.o
 NEW_OBJ_FILES += $(OBJ_DIR)/priority_queue.o
 
 EXEC=jpeg_encode
