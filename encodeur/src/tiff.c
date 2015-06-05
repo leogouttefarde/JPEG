@@ -16,7 +16,7 @@
 #define TROIS 0x0003
 
 
-#define CHECK_READ_SIZE(s)  if (read_size != s){perror("Erreur: ");exit(1);}
+#define CHECK_READ_SIZE(s)  if (read_size != s){perror("Erreur ");exit(1);}
 #define TREAT_ENDIANESS_32(valeur,is_le)  valeur = (is_le?valeur:((valeur>>24)&0xff) | ((valeur<<8)&0xff0000) | ((valeur>>8)&0xff00) | ((valeur<<24)&0xff000000))
 #define TREAT_ENDIANESS_16(valeur,is_le)  valeur = (is_le?valeur:((valeur>>24)&0xff) | ((valeur<<8)&0xff0000) | ((valeur>>8)&0xff00) | ((valeur<<24)&0xff000000))
 
@@ -211,12 +211,12 @@ void read_ifd(struct tiff_file_desc *tfd){
 		break;
 	default:
 		NULL;
-	}	
+	}
 }
 
 /* Renvoie un pointeur vers le tiff_file_desc correspondant au fichier tiff de * path file_name après la lecture du header
  */
-struct tiff_file_desc *init_tiff_file_read (const char *file_name)
+struct tiff_file_desc *init_tiff_file_read (const char *file_name, uint32_t *width, uint32_t *height, uint32_t *row_per_strip)
 {
 	struct tiff_file_desc *tfd = malloc(sizeof(struct tiff_file_desc));
 	
@@ -264,7 +264,11 @@ struct tiff_file_desc *init_tiff_file_read (const char *file_name)
 	for(uint32_t i=0; i <tfd -> ifd_count;i++){
 		read_ifd(tfd);
 	}
-	
+
+        *width = tfd -> width;
+        *height = tfd -> height;
+        *row_per_strip = tfd -> rows_per_strip;
+
 	tfd -> current_line = 0;
 	tfd -> next_pos_mcu = 0;
 	tfd -> row_size = tfd -> width * 3;

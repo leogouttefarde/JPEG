@@ -476,11 +476,17 @@ static void read_tiff(struct jpeg_data *ojpeg, bool *error)
 
         else {
                 struct tiff_file_desc *file = NULL;
-                // file = init_tiff_file(ojpeg->path, &ojpeg->width, &ojpeg->height, mcu_v);
+                uint32_t width, height, row_per_strip;
+
+                file = init_tiff_file_read(ojpeg->path, &width, &height, &row_per_strip);
 
                 if (file != NULL) {
 
                         ojpeg->nb_comps = 3;
+
+                        ojpeg->width = width;
+                        ojpeg->height = height;
+                        ojpeg->mcu.v = row_per_strip;
 
                         compute_mcu(ojpeg, error);
 
@@ -499,11 +505,11 @@ static void read_tiff(struct jpeg_data *ojpeg, bool *error)
 
                                         mcu_RGB = &(ojpeg->raw_mcu[i * ojpeg->mcu.size]);
 
-                                        // read_tiff_file(file, mcu_RGB, ojpeg->mcu.h_dim, ojpeg->mcu.v_dim);
+                                        read_tiff_file(file, mcu_RGB, ojpeg->mcu.h_dim, ojpeg->mcu.v_dim);
                                 }
                         }
 
-                        // close_tiff_file(file);
+                        close_tiff_file(file);
 
                 } else
                         *error = true;
@@ -643,6 +649,12 @@ void compute_mcu(struct jpeg_data *jpeg, bool *error)
         uint8_t mcu_v = jpeg->mcu.v;
         uint8_t mcu_h_dim = mcu_h / BLOCK_DIM;
         uint8_t mcu_v_dim = mcu_v / BLOCK_DIM;
+
+        // printf("jpeg->width = %u\n", jpeg->width);
+        // printf("jpeg->height = %u\n", jpeg->height);
+        // printf("mcu_h = %u\n", mcu_h);
+        // printf("mcu_v = %u\n", mcu_v);
+
 
         /* Various checks ensuring MCU validity */
         if (jpeg->width == 0

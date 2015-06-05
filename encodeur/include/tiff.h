@@ -13,7 +13,7 @@ struct tiff_file_desc;
 
 /* Renvoie un pointeur vers le tiff_file_desc correspondant au fichier tiff de * path file_name après la lecture du header
  */
-extern struct tiff_file_desc *init_tiff_file_read (const char *file_name);
+extern struct tiff_file_desc *init_tiff_file_read (const char *file_name, uint32_t *width, uint32_t *height, uint32_t *row_per_strip);
 
 /* Ferme le fichier associé à la structure tiff_file_desc passée en
  * paramètre et désalloue la mémoire occupée par cette structure. */

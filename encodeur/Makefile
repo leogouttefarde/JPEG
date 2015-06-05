@@ -75,7 +75,7 @@ TIFF=${IMAGE}.tiff
 OUT=out.jpg
 
 run: all
-	./${EXEC} ${JPEG} -o $(OUT)
+	./${EXEC} ${TIFF} -o $(OUT)
 	#dot -Tpng dc_tree.dot > dc_tree.png
 	#dot -Tpng ac_tree.dot > ac_tree.png
 
