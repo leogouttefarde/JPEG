@@ -98,20 +98,20 @@ void upsampler(uint8_t *in,
                 in_index += IN_LINE;
                 out_index += OUT_LINE;
         }
-	/*
-	for (uint16_t i = 0; i < nb_blocks_in_h*nb_blocks_in_v*BLOCK_SIZE; i++) {
-		if (i % (nb_blocks_in_h*nb_blocks_in_v*BLOCK_DIM) == 0)
+	
+	/*for (uint16_t i = 0; i < nb_blocks_in_h*nb_blocks_in_v*BLOCK_SIZE; i++) {
+		if (i % (nb_blocks_in_h*BLOCK_DIM) == 0)
 			printf("\n");
 		printf("%#04x ", in[i]);
 	}	
-	printf("\n");
+	printf("\n");*/
 	for (uint16_t i = 0; i < nb_blocks_out_h*nb_blocks_out_v*BLOCK_SIZE; i++) {
-		if (i % (nb_blocks_out_h*nb_blocks_out_v*BLOCK_DIM) == 0)
+		if (i % (nb_blocks_out_h*BLOCK_DIM) == 0)
 			printf("\n");
-		printf("%#04x ", out[i]);
+		printf("%u : %#04x ", i, out[i]);
 	}
 	printf("\n");printf("\n");
-	*/
+	
 	
 }
 
@@ -157,7 +157,7 @@ void downsampler(uint8_t *in,
         const uint8_t nb_blocks_v = nb_blocks_in_v / nb_blocks_out_v;
 
         const uint32_t H_SIZE = BLOCK_DIM * nb_blocks_in_h;
-	/*
+
 	printf("nb_blocks_out_h = %u\n", nb_blocks_out_h);
 	printf("nb_blocks_out_v = %u\n", nb_blocks_out_v);
 	
@@ -168,7 +168,7 @@ void downsampler(uint8_t *in,
 	printf("nb_blocks_v = %u\n", nb_blocks_v);
 	
 	printf("H_SIZE = %u\n", H_SIZE);
-	*/
+
 
 	// Cas sous échantillonnage réalisé
 	if(nb_blocks_h*nb_blocks_v > 1){
@@ -181,10 +181,10 @@ void downsampler(uint8_t *in,
 		init_in_pixel(in_pixel, H_SIZE, nb_blocks_h, nb_blocks_v);
 
 		for(uint16_t i = 0; i < BLOCK_SIZE; i++){
-			
-			/* if(i % 8 == 0) */
-			/* 	printf("\n"); */
-			
+			/*
+			if(i % 8 == 0)
+				printf("\n");
+			*/
 			out[i] = pixel_mean(in, in_pixel, offset,
 					    nb_blocks_h, nb_blocks_v);
 			if(i != 0 && i % BLOCK_DIM == BLOCK_DIM - 1 && nb_blocks_in_v != 1) {
@@ -199,14 +199,52 @@ void downsampler(uint8_t *in,
 		SAFE_FREE(in_pixel);	
 	// Cas sous échantillonnage non réalisé	
 	} else if (nb_blocks_h*nb_blocks_v == 1){
-		for (uint16_t i = 0; i < nb_blocks_in_h*nb_blocks_in_v*BLOCK_SIZE; i++){
-			/* if(i % (nb_blocks_in_h*BLOCK_DIM) == 0) */
-			/* 	printf("\n"); */
-			//out[i] = in[i];
-			//printf("%#04x ", out[i]);
+
+		if (nb_blocks_in_h == 1) {
+
+			for (uint16_t i = 0; i < nb_blocks_in_h*nb_blocks_in_v*BLOCK_SIZE; i++){
+				/*
+				if(i % (nb_blocks_in_h*BLOCK_DIM) == 0)
+					printf("\n");
+				*/
+				out[i] = in[i];
+				//printf("%u : %#04x ", i, out[i]);
+			}
+			//printf("\n");printf("\n");
+
+		} else if (nb_blocks_in_h == 2) {
+			
+			uint8_t *in_pixel = malloc(sizeof(uint8_t)*2);
+			if(in_pixel == NULL)
+				return;
+			in_pixel[0] = 0;
+			in_pixel[16] = 16;
+			uint8_t offset = 0;
+			/*
+			for (uint16_t i = 0; i < BLOCK_DIM; i+=2) {
+				for (uint16_t j = 0; j < BLOCK_DIM; j++) {
+					out[i*BLOCK_DIM+j] = in[in_pixel[0] + offset];
+					out[(i+1)*BLOCK_DIM+j] = in[in_pixel[1] + offset];
+					offset++;
+				}
+			}*/
+			
+			for (uint16_t i = 0; i < nb_blocks_in_h*nb_blocks_in_v*BLOCK_SIZE; i++){
+				if(i % (nb_blocks_in_h*BLOCK_DIM) == 0)
+					printf("\n");
+				printf("%u : %#04x ", i, out[i]);
+			}
+			printf("\n");printf("\n");
+			
+			SAFE_FREE(in_pixel);	
+			
+			
+		} else {
+			printf("ERROR in downsampler.\n");
+			return;
 		}
-		//printf("\n");printf("\n");
 	} else {
-		printf("ERROR : nb_blocks_h = 0 or nb_blocks_v = 0 \n");
+		printf("ERROR : nb_blocks_h = 0 or nb_blocks_v = 0.\n");
+		return;
 	}
 }
