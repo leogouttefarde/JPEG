@@ -7,6 +7,7 @@
 #include "tiff.h"
 #include "conv.h"
 #include "upsampler.h"
+#include "downsampler.h"
 #include "library.h"
 
 
@@ -748,7 +749,7 @@ void compute_jpeg(struct jpeg_data *jpeg, bool *error)
         uint8_t idct[mcu_h_dim * mcu_v_dim][BLOCK_SIZE];
 
         // A commenter une fois le downsampler fonctionnel
-        memset(idct, 0, sizeof(idct));
+        //memset(idct, 0, sizeof(idct));
 
 
         for (uint32_t i = 0; i < nb_mcu; i++) {
@@ -787,7 +788,6 @@ void compute_jpeg(struct jpeg_data *jpeg, bool *error)
 
 
                         upsampled = mcu_YCbCr[i_c];
-			
                         downsampler(upsampled, mcu_h_dim, mcu_v_dim, (uint8_t*)idct, nb_blocks_h, nb_blocks_v);
 
                         // printf("nb_blocks = %d\n", nb_blocks);

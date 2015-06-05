@@ -128,7 +128,7 @@ static inline uint8_t pixel_mean(uint8_t *in, uint8_t *in_pixel,
 }
 
 
-void downsampler(uint8_t *in,
+void downsampler_bis(uint8_t *in,
                 uint8_t nb_blocks_in_h, uint8_t nb_blocks_in_v,
                 uint8_t *out,
                 uint8_t nb_blocks_out_h, uint8_t nb_blocks_out_v)

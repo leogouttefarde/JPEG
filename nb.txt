@@ -1,15 +1,6 @@
 
 
 
-Quests :
-
-- DRI : faut-il / cmt détecter marqueur RSTm (source de pbs de lecture sinon) ?
-- package-merge Huffman codes ? ou 1 arbre AC/DC de Huffman pour chaque composante ?
-- gestion erreurs unpack ?
-- quid qtables gimp ?
-
-
-
 todo :
 
 - fix downsampler
@@ -20,6 +11,21 @@ todo :
 secondaire :
 
 - package-merge
+
+
+
+
+info :
+
+- DRI : faut-il / cmt détecter marqueur RSTm (source de pbs de lecture sinon) ?
+gestion DRI non demandée, marqueur RSTm = indicateur de correction d'erreurs entre blocks (gestion non demandée non plus)
+
+- package-merge valorisable comme extension
+
+- qtables gimp testable mais table compression (x+y+1) ok
+
+
+
 
 
 Nb :
