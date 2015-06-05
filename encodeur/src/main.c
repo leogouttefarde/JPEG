@@ -7,135 +7,83 @@
 
 int main(int argc, char **argv)
 {
-        if (argc < 2) {
-                printf("Usage : %s <jpeg_file>\n", argv[0]);
+        bool error = false;
+        struct options options;
+
+        if (parse_args(argc, argv, &options))
                 return EXIT_FAILURE;
-        }
 
 
-        char *path = argv[1];
+        int ret = EXIT_SUCCESS;
+        struct bitstream *stream = create_bitstream(options.output, WRONLY);
 
-        if (!is_valid_ext(path)) {
-                printf("ERROR : Invalid file extension, .jpg or .jpeg expected\n");
-                return EXIT_FAILURE;
-        }
-
-
-        struct bitstream *stream = create_bitstream(path, RDONLY);
-        struct bitstream *ostream = create_bitstream("out.jpg", WRONLY);
-
-        if (stream != NULL && ostream) {
-
-                bool error = false;
-                // uint8_t marker;
-
+        if (stream != NULL) {
                 struct jpeg_data jpeg;
-                memset(&jpeg, 0, sizeof(struct jpeg_data));
+                memset(&jpeg, 0, sizeof(jpeg));
 
-                jpeg.path = path;
+                jpeg.path = options.input;
 
+                // Only used for tiff encoding
+                jpeg.mcu.h = options.mcu_h;
+                jpeg.mcu.v = options.mcu_v;
 
-
-                /* Read header data */
-                read_header(stream, &jpeg, &error);
-
-
-                struct jpeg_data ojpeg;
-                memset(&ojpeg, 0, sizeof(struct jpeg_data));
+                jpeg.compression = options.compression;
 
 
-                ojpeg.height = jpeg.height;
-                ojpeg.width = jpeg.width;
-
-                ojpeg.nb_comps = jpeg.nb_comps;
-
-                memcpy(&ojpeg.comps, &jpeg.comps, sizeof(jpeg.comps));
-
-                for (uint8_t i = 0; i < ojpeg.nb_comps; i++) {
-                        // ojpeg.comps[i] = jpeg.comps[i];
-
-                        ojpeg.comps[i].i_dc = 0;
-                        ojpeg.comps[i].i_ac = 0;
-
-                        // /* SOF0 data */
-                        // uint8_t nb_blocks_h;
-                        // uint8_t nb_blocks_v;
-                        // uint8_t i_q;
-
-                        // /* SOS data */
-                        // uint8_t i_dc;
-                        // uint8_t i_ac;
-
-                        // /* Last DC decoded value */
-                        // int32_t last_DC;
-                }
+                /* Read input image */
+                read_image(&jpeg, &error);
 
 
-                for (uint8_t i = 0; i < ojpeg.nb_comps; i++)
-                        ojpeg.comp_order[i] = jpeg.comp_order[i];
+                // if (options.gray) {
+                //         jpeg.nb_comps = 1;
+
+                //         jpeg.comps[0].nb_blocks_h = 1;
+                //         jpeg.comps[0].nb_blocks_v = 1;
+                // }
+
+                // detect_mcu(&jpeg, &error);
 
 
+                /* Compute Huffman and Quantification tables */
+                compute_jpeg(&jpeg, &error);
 
-                //memcpy(&ojpeg.qtables, &jpeg.qtables, sizeof(jpeg.qtables));
-                memset(&ojpeg.htables, 0, sizeof(ojpeg.htables));
-
-
-                // printf("pos stream\n");
-                uint32_t pos = pos_bitstream(stream);
-
-                /* Compute raw Huffman tables */
-                process_image(stream, NULL, &jpeg, &ojpeg, &error);
+                /* Free raw image data */
+                SAFE_FREE(jpeg.raw_mcu);
 
 
-                write_header(ostream, &ojpeg, &error);
+                /* Write JPEG header */
+                write_header(stream, &jpeg, &error);
 
-                //huffman_export("dc_tree.dot", ojpeg.htables[0][0]);
-                //huffman_export("ac_tree.dot", ojpeg.htables[1][0]);
+                /* Write computed JPEG data */
+                write_blocks(stream, &jpeg, &error);
 
-
-                seek_bitstream(stream, pos);
-
-                // printf("pos stream\n");
-                // uint32_t pos2 = pos_bitstream(stream);
+                /* End JPEG file */
+                write_section(stream, EOI, NULL, &error);
 
 
-                for (uint8_t i = 0; i < jpeg.nb_comps; i++)
-                        jpeg.comps[i].last_DC = 0;
-
-                for (uint8_t i = 0; i < ojpeg.nb_comps; i++)
-                        ojpeg.comps[i].last_DC = 0;
-
-
-
-                /* Write new JPEG data */
-                process_image(stream, ostream, &jpeg, &ojpeg, &error);
-
-                write_section(ostream, EOI, NULL, &error);
-
-
-                /* EOI check */
-                if (!error) {
-                        // marker = read_section(stream, EOI, NULL, &error);
-
-                        // if (marker != EOI)
-                        //         printf("ERROR : all JPEG files must end with an EOI section\n");
-                        // else
-                                printf("JPEG file successfully encoded\n");
-                } else
-                        printf("ERROR : unsupported JPEG format\n");
-
-                free_bitstream(ostream);
-
-                /* Close input JPEG file */
                 free_bitstream(stream);
 
-                /* Free any allocated JPEG data */
+
+                if (error) {
+                        printf("JPEG compression failed\n");
+                        ret = EXIT_FAILURE;
+
+                        /* Remove the invalid created file */
+                        remove(options.output);
+                }
+
+                else
+                        printf("JPEG successfully encoded\n");
+
+
+                /* Free compressed JPEG data */
+                SAFE_FREE(jpeg.mcu_data);
+
+                /* Free JPEG Huffman trees */
                 free_jpeg_data(&jpeg);
-                free_jpeg_data(&ojpeg);
         }
 
 
-        return EXIT_SUCCESS;
+        return ret;
 }
-
 

@@ -1,6 +1,7 @@
 
 #include "conv.h"
 #include "common.h"
+#include "library.h"
 
 
 #define BYTE(c, i)      ((c >> 8*i) & 0xFF)
@@ -41,6 +42,26 @@ void YCbCr_to_ARGB(uint8_t  *mcu_YCbCr[3], uint32_t *mcu_RGB,
         }
 }
 
+void Y_to_ARGB(uint8_t *mcu_Y, uint32_t *mcu_RGB,
+                uint32_t nb_blocks_h, uint32_t nb_blocks_v)
+{
+        const uint32_t NB_PIXELS = BLOCK_SIZE * nb_blocks_h * nb_blocks_v;
+
+        uint8_t gray;
+
+        if (mcu_Y == NULL) {
+                printf("ERROR : corrupt YCbCr data\n");
+                return;
+        }
+
+        for (uint32_t i = 0; i < NB_PIXELS; ++i) {
+
+                gray = mcu_Y[i];
+
+                mcu_RGB[i] = gray << 16 | gray << 8 | gray;
+        }
+}
+
 void ARGB_to_YCbCr(uint32_t *mcu_RGB, uint8_t  *mcu_YCbCr[3],
                 uint32_t nb_blocks_h, uint32_t nb_blocks_v)
 {
@@ -69,6 +90,32 @@ void ARGB_to_YCbCr(uint32_t *mcu_RGB, uint8_t  *mcu_YCbCr[3],
                 Y[i] = 0.299 * R + 0.587 * G + 0.114 * B;
                 Cb[i] = -0.1687 * R - 0.3313 * G + 0.5 * B + 128;
                 Cr[i] = 0.5 * R - 0.4187 * G - 0.0813 * B + 128;
+        }
+}
+
+void ARGB_to_Y(uint32_t *mcu_RGB, uint8_t  *mcu_Y,
+                uint32_t nb_blocks_h, uint32_t nb_blocks_v)
+{
+        const uint32_t NB_PIXELS = BLOCK_SIZE * nb_blocks_h * nb_blocks_v;
+
+        int32_t R, G, B;
+        uint32_t pixel;
+
+        if (mcu_Y == NULL) {
+                printf("ERROR : corrupt Y data\n");
+                return;
+        }
+
+        for (uint32_t i = 0; i < NB_PIXELS; ++i) {
+
+                pixel = mcu_RGB[i];
+
+                R = RED(pixel);
+                G = GREEN(pixel);
+                B = BLUE(pixel);
+
+
+                mcu_Y[i] = (R + G + B) / 3;
         }
 }
 

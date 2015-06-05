@@ -7,6 +7,7 @@
 #include "tiff.h"
 #include "conv.h"
 #include "upsampler.h"
+#include "library.h"
 
 
 static inline uint16_t mcu_per_dim(uint8_t mcu, uint16_t dim);
@@ -130,9 +131,9 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
 
                         read_byte(stream, &jpeg->nb_comps);
 
-
-                        if (jpeg->nb_comps != 3) {
-                                printf("ERROR : this baseline JPEG decoder only supports 3 component images\n");
+                        /* Only RGB & Gray JPEG images are possible */
+                        if (jpeg->nb_comps != 3
+                            && jpeg->nb_comps != 1) {
                                 *error = true;
                         } else {
                                 for (uint8_t i = 0; i < jpeg->nb_comps; i++) {
@@ -298,40 +299,6 @@ void read_header(struct bitstream *stream, struct jpeg_data *jpeg, bool *error)
         }
 }
 
-char* create_tiff_name(char *path)
-{
-        if (path == NULL)
-                return NULL;
-
-        char *name, *dot;
-        uint32_t len_cpy;
-        uint32_t len_tiff;
-
-
-        dot = strrchr(path, '.');
-
-        if (dot != NULL)
-                len_cpy = (uint32_t)(dot - path);
-        else
-                len_cpy = strlen(path);
-
-        len_tiff = len_cpy + 5 + 1;
-
-        // printf("len_cpy = %d\n", len_tiff);
-        // printf("len_tiff = %d\n", len_tiff);
-        name = malloc(len_tiff);
-
-        if (name != NULL) {
-                strncpy(name, path, len_cpy);
-                name[len_cpy] = 0;
-
-                strcat(name, ".tiff");
-        }
-        // printf("name = %s\n", name);
-
-        return name;
-}
-
 /* Extract then write image data to tiff file */
 void process_image(struct bitstream *stream, struct jpeg_data *jpeg, bool *error)
 {
@@ -340,7 +307,6 @@ void process_image(struct bitstream *stream, struct jpeg_data *jpeg, bool *error
                 return;
         }
 
-        char *name = NULL;
         struct tiff_file_desc *file = NULL;
         uint8_t i_c;
         uint8_t mcu_h = BLOCK_DIM;
@@ -371,8 +337,7 @@ void process_image(struct bitstream *stream, struct jpeg_data *jpeg, bool *error
         // printf("height = %d\n", height);
         // printf("nb_mcu = %d\n", nb_mcu);
 
-        name = create_tiff_name(jpeg->path);
-        file = init_tiff_file(name, jpeg->width, jpeg->height, mcu_v);
+        file = init_tiff_file(jpeg->path, jpeg->width, jpeg->height, mcu_v);
 
         if (file != NULL) {
                 uint8_t nb_blocks_h, nb_blocks_v, nb_blocks;
@@ -393,9 +358,9 @@ void process_image(struct bitstream *stream, struct jpeg_data *jpeg, bool *error
 
 
                 for (uint32_t i = 0; i < nb_mcu; i++) {
-                        for (uint8_t i = 0; i < jpeg->nb_comps; i++) {
+                        for (uint8_t j = 0; j < jpeg->nb_comps; j++) {
 
-                                i_c = jpeg->comp_order[i];
+                                i_c = jpeg->comp_order[j];
 
                                 nb_blocks_h = jpeg->comps[i_c].nb_blocks_h;
                                 nb_blocks_v = jpeg->comps[i_c].nb_blocks_v;
@@ -430,9 +395,17 @@ void process_image(struct bitstream *stream, struct jpeg_data *jpeg, bool *error
                                 // printf("nb_h = %d\n", nb_h);
                                 // printf("nb_v = %d\n", nb_v);
                                 upsampler((uint8_t*)idct, nb_blocks_h, nb_blocks_v, upsampled, mcu_h_dim, mcu_v_dim);
+				downsampler(upsampled, mcu_h_dim, mcu_v_dim, (uint8_t*)idct, nb_blocks_h, nb_blocks_v);
+				upsampler((uint8_t*)idct, nb_blocks_h, nb_blocks_v, upsampled, mcu_h_dim, mcu_v_dim);
                         }
 
-                        YCbCr_to_ARGB(mcu_YCbCr, mcu_RGB, mcu_h_dim, mcu_v_dim);
+                        if (jpeg->nb_comps == 3)
+                                YCbCr_to_ARGB(mcu_YCbCr, mcu_RGB, mcu_h_dim, mcu_v_dim);
+
+                        else if (jpeg->nb_comps == 1)
+                                Y_to_ARGB(mcu_YCbCr[0], mcu_RGB, mcu_h_dim, mcu_v_dim);
+                        else
+                                *error = true;
 
                         // printf("tfd = %x\n", tfd);
                         // printf("mcu_RGB = %x\n", mcu_RGB);
@@ -447,8 +420,6 @@ void process_image(struct bitstream *stream, struct jpeg_data *jpeg, bool *error
         } else
                 *error = true;
 
-
-        SAFE_FREE(name);
 
         skip_bitstream_until(stream, SECTION_HEAD);
 }

@@ -227,15 +227,23 @@ bool write_huffman_value(int8_t value, struct huff_table *table,
         return success;
 }
 
-void compute_huffman_codes(struct huff_table *parent)
+void compute_huffman_codes(struct huff_table *parent, bool *error)
 {
-        if (parent != NULL && parent->type != LEAF) {
+        if (parent != NULL && parent->type != LEAF && !*error) {
                 uint32_t code = parent->code << 1;
                 uint8_t size = parent->size + 1;
 
 
-                if (size > 16)
-                        printf("FATAL ERROR, size > 16\n");
+                /*
+                 * The package-merge Huffman creation algorithm
+                 * could prevent this issue from happening
+                 */
+                if (size > 16) {
+                        printf("Unable to create Huffman tree, try a higher compression rate\n");
+                        *error = true;
+
+                        return;
+                }
 
                 struct huff_table **left, **right;
 
@@ -247,14 +255,14 @@ void compute_huffman_codes(struct huff_table *parent)
                         (*left)->code = code;
                         (*left)->size = size;
 
-                        compute_huffman_codes(*left);
+                        compute_huffman_codes(*left, error);
                 }
 
                 if (*right != NULL) {
                         (*right)->code = code | 1;
                         (*right)->size = size;
 
-                        compute_huffman_codes(*right);
+                        compute_huffman_codes(*right, error);
                 }
         }
 }
@@ -275,8 +283,12 @@ void delete_node(struct huff_table **table, struct huff_table *del)
         }
 }
 
-struct huff_table *create_huffman_tree(uint32_t freqs[0x100])
+struct huff_table *create_huffman_tree(uint32_t freqs[0x100], bool *error)
 {
+        if (error != NULL && *error)
+                return NULL;
+
+
         // printf("\ncreate_queue\n");
         struct priority_queue *queue = create_queue(0x100);
         struct huff_table *node = NULL, *fake = NULL;
@@ -346,7 +358,7 @@ struct huff_table *create_huffman_tree(uint32_t freqs[0x100])
         /* Delete the fake node ensuring no code has only ones */
         delete_node(&tree, fake);
 
-        compute_huffman_codes(tree);
+        compute_huffman_codes(tree, error);
 
 
         return tree;
@@ -358,7 +370,6 @@ void forge_huffman_values(struct huff_table *table, uint8_t **values, uint8_t *p
                 if (table->type == LEAF){
                         uint8_t i = table->size - 1;
 
-                        // TODO : fix construction arbres huffman pour interdire tailles > 16
                         if (i > 16)
                                 printf("FATAL ERROR, code_size > 16\n");
 

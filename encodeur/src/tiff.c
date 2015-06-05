@@ -1,6 +1,10 @@
+
 #include "tiff.h"
 #include "common.h"
 
+
+
+// Macros pour l'écriture dans le fichier
 
 #define SHORT 0x0003
 #define LONG 0x0004
@@ -11,11 +15,12 @@
 #define DEUX 0x0002
 #define TROIS 0x0003
 
+
 #define CHECK_READ_SIZE(s)  if (read_size != s){perror("Erreur: ");exit(1);}
 #define TREAT_ENDIANESS_32(valeur,is_le)  valeur = (is_le?valeur:((valeur>>24)&0xff) | ((valeur<<8)&0xff0000) | ((valeur>>8)&0xff00) | ((valeur<<24)&0xff000000))
 #define TREAT_ENDIANESS_16(valeur,is_le)  valeur = (is_le?valeur:((valeur>>24)&0xff) | ((valeur<<8)&0xff0000) | ((valeur>>8)&0xff00) | ((valeur<<24)&0xff000000))
 
-/*struct tiff_file_desc {
+struct tiff_file_desc {
 	FILE *file;
 	bool is_le; // Vaut true si le fichier est en little endian
 	uint32_t ptr_ifd;
@@ -44,7 +49,7 @@
 	uint32_t row_size;
 	uint32_t nb_strips;
 
-	};*/
+	};
 
 /* lit une ifd et met à jour les bons champs dans tfd */
 void read_ifd(struct tiff_file_desc *tfd){
@@ -278,6 +283,7 @@ void close_tiff_file(struct tiff_file_desc *tfd)
 	SAFE_FREE(tfd);
 }
 
+
 /* Initialisation du fichier TIFF résultat, avec les paramètres suivants:
    - width: la largeur de l'image ;
    - height: la hauteur de l'image ;
@@ -376,14 +382,16 @@ struct tiff_file_desc *init_tiff_file (const char *file_name,
 	buffer[34] = ZERO;
 
 	// StripOffsets
+
 	uint32_t ptr_ligne = 0x00B4+8* tfd -> nb_strips;
 	tfd -> strip_offsets_count = tfd -> nb_strips;
 	tfd -> strip_offsets = malloc(tfd -> strip_offsets_count*sizeof(uint32_t));
-	
+
 	buffer[35] = 0x0111;
 	buffer[36] = LONG;
 	buffer[37] = tfd -> nb_strips;
 	buffer[38] = tfd -> nb_strips >> 16;
+
 
 	if (tfd -> strip_offsets_count > 1){
 		buffer[39] = 0x00B4;
@@ -393,6 +401,7 @@ struct tiff_file_desc *init_tiff_file (const char *file_name,
 		buffer[40] = (ptr_ligne >> 16);
 		tfd -> strip_offsets[0] = ptr_ligne;
 	}
+
 
 	// SamplesPerPixel
 	buffer[41] = 0x0115;
@@ -411,6 +420,7 @@ struct tiff_file_desc *init_tiff_file (const char *file_name,
 	buffer[52] = tfd -> rows_per_strip >> 16;
 
 	// StripByteCounts
+
 	uint32_t hauteur_ligne = tfd -> height % tfd -> rows_per_strip;
 
         if (tfd -> height > 0  && hauteur_ligne == 0)
@@ -421,10 +431,7 @@ struct tiff_file_desc *init_tiff_file (const char *file_name,
 	tfd -> strip_bytes_count = tfd -> nb_strips;
 	tfd -> strip_bytes = malloc(tfd -> strip_bytes_count*sizeof(uint32_t));
 	
-	buffer[53] = 0x0117;
-	buffer[54] = LONG;
-	buffer[55] = tfd -> nb_strips;
-	buffer[56] = tfd -> nb_strips >> 16;
+
 	
 	if (tfd -> strip_bytes_count > 1){
 		taille_ligne = tfd -> rows_per_strip*tfd->width*3;
@@ -436,6 +443,7 @@ struct tiff_file_desc *init_tiff_file (const char *file_name,
 		buffer[58] = (taille_ligne >> 16);
 	}
 	
+
 
 	// XResolution
 	buffer[59] = 0x011a;
@@ -482,9 +490,11 @@ struct tiff_file_desc *init_tiff_file (const char *file_name,
 	buffer[89] = ZERO;
 
 	// --> Ptr StripOffsets
+
 	
 	// Initialisation des informations necéssaires pour l'écriture au format TIFF
 	tfd -> current_line = 0;
+
 	tfd -> size_line = taille_ligne;
 	tfd -> row_size = tfd->width*3;
 	// Initialisation de la position de la 1ere mcu
@@ -493,12 +503,15 @@ struct tiff_file_desc *init_tiff_file (const char *file_name,
 	for (uint32_t i =0; i < tfd -> nb_strips; i ++){
 		buffer[90+2*i] = ptr_ligne;
 		buffer[90+2*i+1] = (ptr_ligne >> 16);
+
 		tfd -> strip_offsets[i] = ptr_ligne;
+
 		ptr_ligne += taille_ligne;
 	}
 
 	uint32_t indice_dans_buffer = 90+2*tfd -> nb_strips;
 	// --> Ptr StripByteCounts
+
 	for (uint32_t i =0; i < tfd -> nb_strips - 1; i++){
 		buffer[indice_dans_buffer+2*i] = taille_ligne;
 		buffer[indice_dans_buffer+2*i+1] = (taille_ligne >> 16);
@@ -517,6 +530,7 @@ struct tiff_file_desc *init_tiff_file (const char *file_name,
 	buffer[indice_dans_buffer+1] = (taille_ligne >> 16);
 	tfd -> strip_bytes[tfd -> nb_strips - 1] = taille_ligne;
 	
+
 	fwrite(buffer,sizeof(uint16_t),taille_buffer,tfd -> file);
 
 	SAFE_FREE(buffer);
@@ -524,6 +538,7 @@ struct tiff_file_desc *init_tiff_file (const char *file_name,
 	return tfd;
 	
 }
+
 
 /* Lit une MCU composée de nb_blocks_h et nb_blocks_v 
  * blocs 8x8  en horizontal et en vertical à partir du 
@@ -591,6 +606,7 @@ void read_tiff_file (struct tiff_file_desc *tfd, uint32_t *mcu_rgb,
 	}
 	
 	
+
 }
 
 /* Ecrit le contenu de la MCU passée en paramètre dans le fichier TIFF
@@ -603,11 +619,6 @@ void write_tiff_file (struct tiff_file_desc *tfd,
 			 uint8_t nb_blocks_v)
 {
 
-	/* for(uint32_t i = 0; i < nb_blocks_h*nb_blocks_v*BLOCK_DIM*BLOCK_DIM; i++){ */
-	/* 	if(i % (nb_blocks_h*BLOCK_DIM) == 0) */
-	/* 		printf("\n"); */
-	/* 	printf("%#08x ", mcu_rgb[i]); */
-	/* } */
 
 	//On passe à la strip suivante s'il n'y a plus de place pour mettre la MCU
 	if ((tfd -> current_line < (tfd -> nb_strips-1)) &&(tfd -> strip_offsets[tfd -> current_line] + tfd -> next_pos_mcu + (nb_blocks_v*BLOCK_DIM-1)*tfd -> row_size >= tfd -> strip_offsets[tfd -> current_line+1])){
@@ -651,3 +662,4 @@ void write_tiff_file (struct tiff_file_desc *tfd,
 	
 	SAFE_FREE(rgb_mcu_row);
 }
+

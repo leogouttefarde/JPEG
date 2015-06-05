@@ -1,6 +1,7 @@
 
 #include "conv.h"
 #include "common.h"
+#include "library.h"
 
 
 void YCbCr_to_ARGB(uint8_t  *mcu_YCbCr[3], uint32_t *mcu_RGB,
@@ -30,8 +31,28 @@ void YCbCr_to_ARGB(uint8_t  *mcu_YCbCr[3], uint32_t *mcu_RGB,
                 G = Y[i] - 0.3436954 * (Cb[i] - 128) - 0.7141690 * (Cr[i] - 128);
                 B = Y[i] + 1.7721604 * (Cb[i] - 128) + 0.0009902 * (Cr[i] - 128);
 
-		/* Fonction truncate déclarée dans library.h */
+                /* Fonction truncate déclarée dans library.h */
                 mcu_RGB[i] = truncate(R) << 16 | truncate(G) << 8 | truncate(B);
+        }
+}
+
+void Y_to_ARGB(uint8_t *mcu_Y, uint32_t *mcu_RGB,
+                uint32_t nb_blocks_h, uint32_t nb_blocks_v)
+{
+        const uint32_t NB_PIXELS = BLOCK_SIZE * nb_blocks_h * nb_blocks_v;
+
+        uint8_t gray;
+
+        if (mcu_Y == NULL) {
+                printf("ERROR : corrupt YCbCr data\n");
+                return;
+        }
+
+        for (uint32_t i = 0; i < NB_PIXELS; ++i) {
+
+                gray = mcu_Y[i];
+
+                mcu_RGB[i] = gray << 16 | gray << 8 | gray;
         }
 }
 

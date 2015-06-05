@@ -3,6 +3,7 @@
 #define __JPEG_H__
 
 #include "common.h"
+#include "bitstream.h"
 
 #define MAX_COMPS 3
 #define MAX_HTABLES 4
@@ -35,6 +36,12 @@ enum jpeg_status {
         ALL_OK = 7
 };
 
+
+struct options {
+
+        char *input;
+        char *output;
+};
 
 struct comp {
 

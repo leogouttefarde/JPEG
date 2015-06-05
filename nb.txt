@@ -3,16 +3,23 @@
 
 Quests :
 
-- support niveau de gris (1 composante au lieu de 3) ?
-- extension fonctions bitstream encodeur ?
-- choix tables quantification (différentes calculées à chaque bloc) : table moyenne ?
-- support section DRI ? tiff.o fourni gère DRI sans pb, us not
-- DRI : faut-il / cmt détecter marqueur RSTm (very long execution time for now) ?
+- DRI : faut-il / cmt détecter marqueur RSTm (source de pbs de lecture sinon) ?
+- package-merge Huffman codes ? ou 1 arbre AC/DC de Huffman pour chaque composante ?
 - gestion erreurs unpack ?
-- réencodage JPEG : stockage données heap après freqs ou fseek ?
-- package-merge Huffman codes ?
+- quid qtables gimp ?
 
 
+
+todo :
+
+- fix downsampler
+- finir lecture tiff
+- fonction de changement de taille des mcus (pour changer celles d'un jpeg décodé ou permettre sa transformation en gris)
+
+
+secondaire :
+
+- package-merge
 
 
 Nb :

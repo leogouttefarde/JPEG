@@ -3,25 +3,18 @@
 #include "bitstream.h"
 #include "jpeg.h"
 #include "huffman.h"
+#include "library.h"
 
 
 int main(int argc, char **argv)
 {
-        if (argc < 2) {
-                printf("Usage : %s <jpeg_file>\n", argv[0]);
+        struct options options;
+
+        if (parse_args(argc, argv, &options))
                 return EXIT_FAILURE;
-        }
 
 
-        char *path = argv[1];
-
-        if (!is_valid_ext(path)) {
-                printf("ERROR : Invalid file extension, .jpg or .jpeg expected\n");
-                return EXIT_FAILURE;
-        }
-
-
-        struct bitstream *stream = create_bitstream(path);
+        struct bitstream *stream = create_bitstream(options.input);
 
         if (stream != NULL) {
 
@@ -31,14 +24,11 @@ int main(int argc, char **argv)
                 struct jpeg_data jpeg;
                 memset(&jpeg, 0, sizeof(struct jpeg_data));
 
-                jpeg.path = path;
+                jpeg.path = options.output;
 
 
                 /* Read header data */
                 read_header(stream, &jpeg, &error);
-
-                //huffman_export("dc_new.dot", jpeg.htables[0][0]);
-                //huffman_export("ac_new.dot", jpeg.htables[1][0]);
 
                 /* Extract then write image data to tiff file */
                 process_image(stream, &jpeg, &error);
@@ -50,6 +40,7 @@ int main(int argc, char **argv)
 
                         if (marker != EOI)
                                 printf("ERROR : all JPEG files must end with an EOI section\n");
+
                         else
                                 printf("JPEG file successfully decoded\n");
                 } else
@@ -61,7 +52,12 @@ int main(int argc, char **argv)
 
                 /* Free any allocated JPEG data */
                 free_jpeg_data(&jpeg);
-        }
+
+        } else
+                printf("ERROR : Invalid input JPEG path\n");
+
+
+        SAFE_FREE(options.output);
 
 
         return EXIT_SUCCESS;
