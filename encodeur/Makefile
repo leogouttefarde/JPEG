@@ -48,6 +48,11 @@ TEST_DCT_O = test_dct $(OBJ_DIR)/test_dct.o $(OBJ_DIR)/idct.o $(OBJ_DIR)/library
 test_dct: $@ $(OBJ_DIR)/test_dct.o $(OBJ_DIR)/idct.o $(OBJ_DIR)/library.o $(OBJ_DIR)/bitstream.o
 	$(LD) -o $@ $(OBJ_DIR)/test_dct.o $(OBJ_DIR)/idct.o $(OBJ_DIR)/library.o $(OBJ_DIR)/bitstream.o $(LDFLAGS)
 
+TEST_TIFF_O = test_tiff $(OBJ_DIR)/test_tiff.o $(OBJ_DIR)/tiff.o $(OBJ_DIR)/library.o $(OBJ_DIR)/bitstream.o
+
+test_tiff: $@ $(OBJ_DIR)/test_tiff.o $(OBJ_DIR)/tiff.o  $(OBJ_DIR)/library.o $(OBJ_DIR)/bitstream.o
+	$(LD) -o $@ $(OBJ_DIR)/test_tiff.o $(OBJ_DIR)/tiff.o $(OBJ_DIR)/library.o $(OBJ_DIR)/bitstream.o $(LDFLAGS)
+
 
 # Edition de lien des executables
 ${EXEC} : $(OBJ_FILES)
@@ -59,7 +64,7 @@ ${OBJ_DIR}/%.o: ${SRC_DIR}/%.c
 	$(CC) $(CFLAGS) ${INC} $< -o $@ -c
 
 clean:
-	rm -f ${EXEC} $(NEW_OBJ_FILES) gmon.out *.tiff out.jpg $(TEST_FILE_O)
+	rm -f ${EXEC} $(NEW_OBJ_FILES) gmon.out *.tiff out.jpg $(TEST_FILE_O) $(TEST_DCT_O) $(TEST_TIFF_O)
 
 
 # IMAGE=tests/shaun_the_sheep
