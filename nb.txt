@@ -3,8 +3,7 @@
 
 Quests :
 
-- support section DRI ?
-- DRI : faut-il / cmt détecter marqueur RSTm (very long execution time for now) ?
+- DRI : faut-il / cmt détecter marqueur RSTm (source de pbs de lecture sinon) ?
 - package-merge Huffman codes ? ou 1 arbre AC/DC de Huffman pour chaque composante ?
 - gestion erreurs unpack ?
 - quid qtables gimp ?
@@ -21,7 +20,6 @@ todo :
 secondaire :
 
 - package-merge
-- dct loeffler
 
 
 Nb :
