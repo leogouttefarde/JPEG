@@ -158,7 +158,7 @@ static inline void loeffler_dct(double vect[BLOCK_DIM])
         butterfly(vect[4], vect[6], &next[4], &next[6]);
         butterfly(vect[7], vect[5], &next[7], &next[5]);
 
-        rotation_dct(vect[2], vect[3], &next[2], &next[3], M_SQRT2, 6);
+        rotation_dct(vect[2], vect[3], &next[2], &next[3], 2, 6);
 
         swap(&vect, &next);
 
