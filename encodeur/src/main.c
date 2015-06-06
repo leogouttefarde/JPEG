@@ -44,17 +44,18 @@ int main(int argc, char **argv)
 
 
                 if (jpeg.mcu.h != options.mcu_h
-                        || jpeg.mcu.v != options.mcu_v) {
+                        || jpeg.mcu.v != options.mcu_v
+                        || jpeg.is_plain_image) {
 
-                        uint32_t *image = jpeg.raw_mcu;
+                        uint32_t *image = jpeg.raw_data;
 
-                        if (jpeg.mcu.nb > 1) {
-                                image = mcu_to_image(jpeg.raw_mcu,
+                        if (!jpeg.is_plain_image) {
+                                image = mcu_to_image(jpeg.raw_data,
                                                         &jpeg.mcu,
                                                         jpeg.width,
                                                         jpeg.height);
 
-                                SAFE_FREE(jpeg.raw_mcu);
+                                SAFE_FREE(jpeg.raw_data);
                         }
 
 
@@ -71,7 +72,7 @@ int main(int argc, char **argv)
 
                         SAFE_FREE(image);
 
-                        jpeg.raw_mcu = data;
+                        jpeg.raw_data = data;
                 }
 
 
@@ -79,7 +80,7 @@ int main(int argc, char **argv)
                 compute_jpeg(&jpeg, &error);
 
                 /* Free raw image data */
-                SAFE_FREE(jpeg.raw_mcu);
+                SAFE_FREE(jpeg.raw_data);
 
 
                 /* Write JPEG header */

@@ -47,8 +47,14 @@ void qzz_block (int32_t in[64], int32_t out[64], uint8_t quantif[64])
  */
 void quantify_qtable(uint8_t out[64], const uint8_t in[64], uint8_t quality)
 {
-        for(uint8_t i = 0; i < 64; ++i)
-                out[i] = 1 + (in[i] - 1) * quality;
+        double q_value;
+
+        for(uint8_t i = 0; i < 64; ++i) {
+
+                q_value = 1 + ((double)in[i] - 1) * (double)quality;
+
+                out[i] = double2uint8(q_value);
+        }
 }
 
 

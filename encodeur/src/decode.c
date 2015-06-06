@@ -105,7 +105,7 @@ static void read_jpeg(struct jpeg_data *ojpeg, bool *error)
 
                         scan_jpeg(stream, &jpeg, error);
 
-                        ojpeg->raw_mcu = jpeg.raw_mcu;
+                        ojpeg->raw_data = jpeg.raw_data;
 
 
                         free_bitstream(stream);
@@ -416,39 +416,29 @@ static void read_tiff(struct jpeg_data *ojpeg, bool *error)
                         ojpeg->width = width;
                         ojpeg->height = height;
 
-                        if (row_per_strip == 8 || row_per_strip == 16) {
-                                ojpeg->mcu.v = row_per_strip;
-                                compute_mcu(ojpeg, error);
-                        } else if (row_per_strip == 0) {
-                                ojpeg->mcu.h = width;
-                                ojpeg->mcu.v = height;
-                                ojpeg->mcu.h_dim = 1;
-                                ojpeg->mcu.v_dim = 1;
-                                ojpeg->mcu.nb = 1;
-                                ojpeg->mcu.nb_h = 1;
-                                ojpeg->mcu.nb_v = 1;
-                                ojpeg->mcu.size = width * height;
-                        } else
-                                *error = true;
+                        compute_mcu(ojpeg, error);
+
+
+                        ojpeg->is_plain_image = true;
 
 
                         if (!*error) {
                                 uint32_t *mcu_RGB = NULL;
 
-                                const uint32_t nb_pixels_max = ojpeg->mcu.size * ojpeg->mcu.nb;
-                                ojpeg->raw_mcu = malloc(nb_pixels_max * sizeof(uint32_t));
+                                const uint32_t nb_pixels_max = ojpeg->width * ojpeg->height;
+                                ojpeg->raw_data = malloc(nb_pixels_max * sizeof(uint32_t));
                                 // printf("nb_pixels_max = %u\n", nb_pixels_max);
 
 
-                                if (ojpeg->raw_mcu == NULL)
+                                if (ojpeg->raw_data == NULL)
                                         *error = true;
 
                                 else {
-                                        for (uint32_t i = 0; i < ojpeg->mcu.nb; i++) {
+                                        for (uint32_t i = 0; i < ojpeg->height; i++) {
 
-                                                mcu_RGB = &(ojpeg->raw_mcu[i * ojpeg->mcu.size]);
+                                                mcu_RGB = &(ojpeg->raw_data[i * ojpeg->width]);
 
-                                                read_tiff_file(file, mcu_RGB, ojpeg->mcu.h_dim, ojpeg->mcu.v_dim);
+                                                read_tiff_line(file, mcu_RGB);
                                         }
                                 }
                         }
@@ -496,9 +486,9 @@ static void scan_jpeg(struct bitstream *stream, struct jpeg_data *jpeg, bool *er
         };
 
         const uint32_t nb_pixels_max = mcu_size * nb_mcu;
-        jpeg->raw_mcu = malloc(nb_pixels_max * sizeof(uint32_t));
+        jpeg->raw_data = malloc(nb_pixels_max * sizeof(uint32_t));
 
-        if (jpeg->raw_mcu == NULL) {
+        if (jpeg->raw_data == NULL) {
                 *error = true;
                 return;
         }
@@ -508,7 +498,7 @@ static void scan_jpeg(struct bitstream *stream, struct jpeg_data *jpeg, bool *er
 
 
         for (uint32_t i = 0; i < nb_mcu; i++) {
-                mcu_RGB = &jpeg->raw_mcu[i * mcu_size];
+                mcu_RGB = &jpeg->raw_data[i * mcu_size];
 
                 for (uint8_t j = 0; j < jpeg->nb_comps; j++) {
 

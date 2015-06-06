@@ -90,7 +90,9 @@ struct jpeg_data {
 
         uint8_t state;
 
-        uint32_t *raw_mcu;
+        uint32_t *raw_data;
+
+        bool is_plain_image;
 
         struct mcu_info mcu;
 

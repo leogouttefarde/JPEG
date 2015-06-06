@@ -27,6 +27,10 @@ extern void read_tiff_file (struct tiff_file_desc *tfd, uint32_t *mcu_rgb,
 			  uint8_t nb_blocks_h,
 			    uint8_t nb_blocks_v);
 
+
+extern void read_tiff_line(struct tiff_file_desc *tfd, uint32_t *line_rgb);
+
+
 /* Initialisation du fichier TIFF résultat, avec les paramètres suivants:
    - width: la largeur de l'image ;
    - height: la hauteur de l'image ;

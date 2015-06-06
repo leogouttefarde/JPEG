@@ -86,7 +86,7 @@ void compute_jpeg(struct jpeg_data *jpeg, bool *error)
 
         for (uint32_t i = 0; i < nb_mcu; i++) {
 
-                mcu_RGB = &(jpeg->raw_mcu[i * jpeg->mcu.size]);
+                mcu_RGB = &(jpeg->raw_data[i * jpeg->mcu.size]);
                 // printf("mcu_RGB = %X\n", mcu_RGB);
                 // printf("mcu = %X\n", jpeg->raw_mcu);
                 // printf("i = %u\n", i);

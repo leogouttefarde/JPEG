@@ -50,6 +50,7 @@ struct tiff_file_desc {
 	uint32_t size_line;
 	uint32_t row_size;
 	uint32_t nb_strips;
+        uint32_t read_lines;
 
 	};
 
@@ -207,7 +208,12 @@ void read_ifd(struct tiff_file_desc *tfd){
 
 		// RowsPerStrip
 	case 0x0116:
-		tfd -> rows_per_strip = value;
+
+                if (value > 0xFFFFFF)
+                        value = 0;
+
+                tfd -> rows_per_strip = value;
+
 		break;
 
 		// StripByteCounts
@@ -340,14 +346,21 @@ struct tiff_file_desc *init_tiff_file_read (const char *file_name, uint32_t *wid
         *width = tfd -> width;
         *height = tfd -> height;
         *row_per_strip = tfd -> rows_per_strip;
+
         // printf("width = %u\n", *width);
         // printf("height = %u\n", *height);
-        // printf("row_per_strip = %u\n", *row_per_strip);
-        // printf("samples_per_pixels = %u\n", tfd -> samples_per_pixels);
+        printf("row_per_strip = %u\n", *row_per_strip);
+        printf("samples_per_pixels = %u\n", tfd -> samples_per_pixels);
 
 	tfd -> current_line = 0;
 	tfd -> next_pos_mcu = 0;
 	tfd -> row_size = tfd -> width * 3;
+
+        tfd->read_lines = 0;
+
+        if (tfd->strip_offsets != NULL)
+                fseek(tfd->file, tfd->strip_offsets[tfd->current_line], SEEK_SET);
+
 			  
 	SAFE_FREE(buffer);
 	return tfd;
@@ -614,8 +627,41 @@ struct tiff_file_desc *init_tiff_file (const char *file_name,
 	fwrite(buffer,sizeof(uint16_t),taille_buffer,tfd -> file);
 
 	SAFE_FREE(buffer);
-	
+
+
 	return tfd;
+}
+
+void read_tiff_line(struct tiff_file_desc *tfd, uint32_t *line_rgb)
+{
+        if (tfd->rows_per_strip > 0)
+        if (tfd->read_lines >= tfd->rows_per_strip) {
+
+                if (++tfd->current_line < tfd->nb_strips) {
+                        fseek(tfd->file, tfd->strip_offsets[tfd->current_line], SEEK_SET);
+
+                        tfd->read_lines = 0;
+                }
+        }
+
+
+        uint32_t i = 0;
+        char buf[4];
+        memset(buf, 0, sizeof(buf));
+
+
+        // printf("?\n");
+        for (uint32_t w = 0; w < tfd->width; w++) {
+
+                fread(buf, 1, tfd->samples_per_pixels, tfd->file);
+
+                if (tfd->samples_per_pixels == 1)
+                        buf[1] = buf[2] = buf[0];
+
+                line_rgb[i++] = ((buf[0] & 0xFF) << 16) | ((buf[1] & 0xFF) << 8) | (buf[2] & 0xFF);
+        }
+
+        tfd->read_lines++;
 }
 
 
