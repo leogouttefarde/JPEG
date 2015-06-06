@@ -14,6 +14,8 @@
 #include <complex.h>
 #include <inttypes.h>
 
+
+// Defines
 #define JPEG_COMMENT "JPEG Encoder by ND, IK & LG. Ensimag 2015"
 
 #define USAGE "Usage : %s <input_file> -o <output_file> [options]\n"\
@@ -21,13 +23,22 @@
               "Options list :\n"\
               "    -c <quality>  : Compression rate [0-25] (0 : lossless, 25 : highest)\n"\
               "    -m <mcu_size> : Output MCU sizes, either 8x8 / 16x8 / 8x16 / 16x16\n"\
+              "    -g            : encode as a gray image\n"\
               "    -h            : Display this help\n"\
               "\n"\
               "Supported input images : TIFF, JPEG\n"
-              //"    -g : encode as a gray image\n"
 
 
-// defines
+
+#define BLOCK_DIM 8
+#define BLOCK_SIZE 64
+
+#define DEFAULT_COMPRESSION 3
+
+#define DEFAULT_MCU_WIDTH BLOCK_DIM*2
+#define DEFAULT_MCU_HEIGHT BLOCK_DIM*2
+
+
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
@@ -39,14 +50,6 @@
 #ifndef M_SQRT1_2
 #define M_SQRT1_2 0.70710678118654752440
 #endif
-
-#define BLOCK_DIM 8
-#define BLOCK_SIZE 64
-
-#define DEFAULT_COMPRESSION 2
-
-#define DEFAULT_MCU_WIDTH BLOCK_DIM
-#define DEFAULT_MCU_HEIGHT BLOCK_DIM
 
 
 // Log
