@@ -3,9 +3,7 @@
 
 todo :
 
-- fix downsampler
-- finir lecture tiff
-- fonction de changement de taille des mcus (pour changer celles d'un jpeg décodé ou permettre sa transformation en gris)
+- nettoyage code
 
 
 secondaire :
@@ -17,12 +15,11 @@ secondaire :
 
 info :
 
-- DRI : faut-il / cmt détecter marqueur RSTm (source de pbs de lecture sinon) ?
-gestion DRI non demandée, marqueur RSTm = indicateur de correction d'erreurs entre blocks (gestion non demandée non plus)
+- gestion DRI non demandée, marqueur RSTm = indicateur de correction d'erreurs entre blocks (gestion non demandée non plus)
 
 - package-merge valorisable comme extension
 
-- qtables gimp testable mais table compression (x+y+1) ok
+- qtables gimp testables/ essayables mais table compression (x+y+1) ok
 
 
 
@@ -42,7 +39,7 @@ libjpeg :
 */
 
 =>
-Interdiction de créer des codes avec que des 1 !
+Pas le droit de créer des codes avec que des 1
 Restriction supplémentaires à la construction des arbres
 
 

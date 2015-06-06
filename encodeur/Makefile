@@ -19,7 +19,7 @@ LDFLAGS = -lm
 OBJ_FILES = $(OBJ_DIR)/main.o $(OBJ_DIR)/conv.o $(OBJ_DIR)/iqzz.o
 OBJ_FILES += $(OBJ_DIR)/upsampler.o $(OBJ_DIR)/huffman.o $(OBJ_DIR)/unpack.o
 OBJ_FILES += $(OBJ_DIR)/tiff.o $(OBJ_DIR)/library.o $(OBJ_DIR)/bitstream.o
-OBJ_FILES += $(OBJ_DIR)/jpeg.o $(OBJ_DIR)/downsampler.o
+OBJ_FILES += $(OBJ_DIR)/encode.o $(OBJ_DIR)/decode.o $(OBJ_DIR)/downsampler.o
 OBJ_FILES += $(OBJ_DIR)/loeffler.o
 # OBJ_FILES += $(OBJ_DIR)/idct.o
 OBJ_FILES += $(OBJ_DIR)/priority_queue.o
@@ -28,7 +28,7 @@ OBJ_FILES += $(OBJ_DIR)/priority_queue.o
 NEW_OBJ_FILES = $(OBJ_DIR)/main.o $(OBJ_DIR)/iqzz.o $(OBJ_DIR)/conv.o
 NEW_OBJ_FILES += $(OBJ_DIR)/library.o $(OBJ_DIR)/huffman.o
 NEW_OBJ_FILES += $(OBJ_DIR)/unpack.o $(OBJ_DIR)/upsampler.o $(OBJ_DIR)/bitstream.o
-NEW_OBJ_FILES += $(OBJ_DIR)/jpeg.o $(OBJ_DIR)/downsampler.o
+NEW_OBJ_FILES += $(OBJ_DIR)/encode.o $(OBJ_DIR)/decode.o $(OBJ_DIR)/downsampler.o
 NEW_OBJ_FILES += $(OBJ_DIR)/loeffler.o
 NEW_OBJ_FILES += $(OBJ_DIR)/idct.o
 NEW_OBJ_FILES += $(OBJ_DIR)/tiff.o
@@ -75,7 +75,8 @@ TIFF=${IMAGE}.tiff
 OUT=out.jpg
 
 run: all
-	./${EXEC} ${TIFF} -o $(OUT)
+	./${EXEC} ${JPEG} -o $(OUT)
+	# ./${EXEC} ${TIFF} -o $(OUT)
 	#dot -Tpng dc_tree.dot > dc_tree.png
 	#dot -Tpng ac_tree.dot > ac_tree.png
 

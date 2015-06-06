@@ -1,7 +1,8 @@
 
 #include "common.h"
 #include "bitstream.h"
-#include "jpeg.h"
+#include "encode.h"
+#include "decode.h"
 #include "library.h"
 
 
@@ -34,14 +35,44 @@ int main(int argc, char **argv)
                 read_image(&jpeg, &error);
 
 
-                // if (options.gray) {
-                //         jpeg.nb_comps = 1;
+                if (options.gray) {
+                        jpeg.nb_comps = 1;
 
-                //         jpeg.comps[0].nb_blocks_h = 1;
-                //         jpeg.comps[0].nb_blocks_v = 1;
-                // }
+                        options.mcu_h = BLOCK_DIM;
+                        options.mcu_v = BLOCK_DIM;
+                }
 
-                // detect_mcu(&jpeg, &error);
+
+                if (jpeg.mcu.h != options.mcu_h
+                        || jpeg.mcu.v != options.mcu_v) {
+
+                        uint32_t *image = jpeg.raw_mcu;
+
+                        if (jpeg.mcu.nb > 1) {
+                                image = mcu_to_image(jpeg.raw_mcu,
+                                                        &jpeg.mcu,
+                                                        jpeg.width,
+                                                        jpeg.height);
+
+                                SAFE_FREE(jpeg.raw_mcu);
+                        }
+
+
+                        jpeg.mcu.h = options.mcu_h;
+                        jpeg.mcu.v = options.mcu_v;
+
+                        compute_mcu(&jpeg, &error);
+
+
+                        uint32_t *data = image_to_mcu(image,
+                                                        &jpeg.mcu,
+                                                        jpeg.width,
+                                                        jpeg.height);
+
+                        SAFE_FREE(image);
+
+                        jpeg.raw_mcu = data;
+                }
 
 
                 /* Compute Huffman and Quantification tables */

@@ -1,6 +1,7 @@
 
 #include "idct.h"
 #include "common.h"
+#include "library.h"
 
 
 static inline void rotation(double i0, double i1, double *out0, double *out1, uint8_t k, uint8_t n)

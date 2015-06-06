@@ -395,8 +395,6 @@ void process_image(struct bitstream *stream, struct jpeg_data *jpeg, bool *error
                                 // printf("nb_h = %d\n", nb_h);
                                 // printf("nb_v = %d\n", nb_v);
                                 upsampler((uint8_t*)idct, nb_blocks_h, nb_blocks_v, upsampled, mcu_h_dim, mcu_v_dim);
-				downsampler(upsampled, mcu_h_dim, mcu_v_dim, (uint8_t*)idct, nb_blocks_h, nb_blocks_v);
-				upsampler((uint8_t*)idct, nb_blocks_h, nb_blocks_v, upsampled, mcu_h_dim, mcu_v_dim);
                         }
 
                         if (jpeg->nb_comps == 3)

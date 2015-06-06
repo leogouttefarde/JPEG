@@ -4,7 +4,7 @@
 
 #include "bitstream.h"
 #include "common.h"
-#include "jpeg.h"
+#include "encode.h"
 
 
 bool read_short_BE(struct bitstream *stream, uint16_t *value);
@@ -21,6 +21,15 @@ bool is_valid_jpeg(char *path);
 bool is_valid_tiff(char *path);
 
 bool parse_args(int argc, char **argv, struct options *options);
+
+
+uint32_t *mcu_to_image(
+        uint32_t *data, struct mcu_info *mcu,
+        uint32_t width, uint32_t height);
+
+uint32_t *image_to_mcu(
+        uint32_t *image, struct mcu_info *mcu,
+        uint32_t width, uint32_t height);
 
 
 #endif

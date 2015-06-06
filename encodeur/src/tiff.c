@@ -6,6 +6,8 @@
 
 // Macros pour l'écriture dans le fichier
 
+#define BYTE 0x0001
+#define ASCII 0x0002
 #define SHORT 0x0003
 #define LONG 0x0004
 #define RATI 0x0005
@@ -17,8 +19,8 @@
 
 
 #define CHECK_READ_SIZE(s)  if (read_size != s){perror("Erreur ");exit(1);}
-#define TREAT_ENDIANESS_32(valeur,is_le)  valeur = (is_le?valeur:((valeur>>24)&0xff) | ((valeur<<8)&0xff0000) | ((valeur>>8)&0xff00) | ((valeur<<24)&0xff000000))
-#define TREAT_ENDIANESS_16(valeur,is_le)  valeur = (is_le?valeur:((valeur>>24)&0xff) | ((valeur<<8)&0xff0000) | ((valeur>>8)&0xff00) | ((valeur<<24)&0xff000000))
+#define TREAT_ENDIANESS_32(valeur,is_le)  valeur = is_le ? valeur : ((valeur & 0xFF000000) >> 24 | (valeur & 0xFF) << 24 | ((valeur >> 8) & 0xff00) | ((valeur << 8) & 0xff0000))
+#define TREAT_ENDIANESS_16(valeur,is_le)  valeur = is_le ? valeur : ((valeur & 0xFF) << 8 | ((valeur >> 8) & 0xFF))
 
 struct tiff_file_desc {
 	FILE *file;
@@ -62,22 +64,84 @@ void read_ifd(struct tiff_file_desc *tfd){
 	// Tag d'identification
 	read_size = fread(&tag,1,2, tfd->file);
 	CHECK_READ_SIZE(2);
+        // printf("tag = %X\n", tag);
 	TREAT_ENDIANESS_16(tag,tfd ->is_le);
+        // printf("tag = %X\n", tag);
 
 	// Type
 	read_size = fread(&type,1,2, tfd->file);
 	CHECK_READ_SIZE(2);
+        // printf("type = %X\n", type);
 	TREAT_ENDIANESS_16(type,tfd ->is_le);
+        // printf("type = %X\n", type);
 
 	// Nombre des valeurs
 	read_size = fread(&count,1,4, tfd->file);
 	CHECK_READ_SIZE(4);
+        // printf("count = %X\n", count);
 	TREAT_ENDIANESS_32(count,tfd ->is_le);
+        // printf("count = %X\n", count);
+
+        char buf[8];
+        uint8_t val_size;
+
+        switch (type) {
+        case BYTE:
+        case ASCII:
+                val_size = 1;
+                break;
+
+        case SHORT:
+                val_size = 2;
+                break;
+
+        case LONG:
+                val_size = 4;
+                break;
+
+        case RATI:
+                val_size = 8;
+                break;
+
+        default:
+                val_size = 1;
+                break;
+        }
 
 	// Valeur
-	read_size = fread(&value,1,4, tfd->file);
-	CHECK_READ_SIZE(4);
-	TREAT_ENDIANESS_32(value,tfd ->is_le);
+	read_size = fread(buf, 1, val_size, tfd->file);
+	CHECK_READ_SIZE(val_size);
+
+        switch (type) {
+        case BYTE:
+        case ASCII:
+                value = 1;
+                break;
+
+        case SHORT:
+                value = *((uint16_t*)buf);
+                // printf("value = %X\n", value);
+                TREAT_ENDIANESS_16(value,tfd ->is_le);
+                break;
+
+        case LONG:
+                value = *((uint32_t*)buf);
+                // printf("value = %X\n", value);
+                TREAT_ENDIANESS_32(value,tfd ->is_le);
+                break;
+
+        case RATI:
+                value = 1;
+                break;
+
+        default:
+                value = 1;
+                break;
+        }
+        // printf("value = %X\n", value);
+
+        if (val_size < 4)
+                fseek(tfd->file, 4 - val_size, SEEK_CUR);
 
 	
 	uint32_t current_pos;
@@ -209,8 +273,8 @@ void read_ifd(struct tiff_file_desc *tfd){
 	case 0x0128:
 		tfd -> resolution_unit = value;
 		break;
-	default:
-		NULL;
+	// default:
+	// 	NULL;
 	}
 }
 
@@ -223,7 +287,7 @@ struct tiff_file_desc *init_tiff_file_read (const char *file_name, uint32_t *wid
 
 	tfd -> file = fopen(file_name,"rb");
 	if (tfd -> file == NULL){
-		perror("Erreur: ");
+		perror("Erreur ");
 		exit(1);
 	}
 
@@ -244,8 +308,11 @@ struct tiff_file_desc *init_tiff_file_read (const char *file_name, uint32_t *wid
 
 	// 42
 	read_size = fread(buffer,1,2, tfd->file);
-	CHECK_READ_SIZE(2);
-	if (*buffer != 0x2a){
+        CHECK_READ_SIZE(2);
+        // printf("buffer = %X\n", *buffer);
+        TREAT_ENDIANESS_16(*buffer,tfd ->is_le);
+        // printf("buffer = %X\n", *buffer);
+	if (*buffer != 42){
 		printf("ERROR : Not a TIFF file\n");
                 exit(1);
 	}
@@ -253,13 +320,18 @@ struct tiff_file_desc *init_tiff_file_read (const char *file_name, uint32_t *wid
 	// Ptr IFD
 	read_size = fread(&(tfd ->ptr_ifd),1,4, tfd->file);
 	CHECK_READ_SIZE(4);
-	TREAT_ENDIANESS_16(tfd ->ptr_ifd,tfd ->is_le);
+        // printf("tfd ->ptr_ifd = %X\n", tfd ->ptr_ifd);
+	TREAT_ENDIANESS_32(tfd ->ptr_ifd,tfd ->is_le);
+        // printf("tfd ->ptr_ifd = %X\n", tfd ->ptr_ifd);
+        // printf("tfd ->ptr_ifd = %X\n", tfd ->ptr_ifd);
 
 	// IFD count
-	fseek(tfd -> file, tfd -> ptr_ifd, 0);
+	fseek(tfd -> file, tfd -> ptr_ifd, SEEK_SET);
 	read_size = fread(&(tfd ->ifd_count),1,2, tfd->file);
 	CHECK_READ_SIZE(2);
+        // printf("tfd ->ifd_count = %X\n", tfd ->ifd_count);
 	TREAT_ENDIANESS_16(tfd ->ifd_count,tfd ->is_le);
+        // printf("tfd ->ifd_count = %X\n", tfd ->ifd_count);
 	
 	for(uint32_t i=0; i <tfd -> ifd_count;i++){
 		read_ifd(tfd);
@@ -268,6 +340,10 @@ struct tiff_file_desc *init_tiff_file_read (const char *file_name, uint32_t *wid
         *width = tfd -> width;
         *height = tfd -> height;
         *row_per_strip = tfd -> rows_per_strip;
+        // printf("width = %u\n", *width);
+        // printf("height = %u\n", *height);
+        // printf("row_per_strip = %u\n", *row_per_strip);
+        // printf("samples_per_pixels = %u\n", tfd -> samples_per_pixels);
 
 	tfd -> current_line = 0;
 	tfd -> next_pos_mcu = 0;
@@ -540,7 +616,6 @@ struct tiff_file_desc *init_tiff_file (const char *file_name,
 	SAFE_FREE(buffer);
 	
 	return tfd;
-	
 }
 
 
@@ -550,20 +625,37 @@ struct tiff_file_desc *init_tiff_file (const char *file_name,
  * tiff_file_desc tfd. */
 void read_tiff_file (struct tiff_file_desc *tfd, uint32_t *mcu_rgb,
 			  uint8_t nb_blocks_h,
-			  uint8_t nb_blocks_v){
-
+			  uint8_t nb_blocks_v)
+{
 	uint32_t read_size;
 	uint32_t current_position;
-	
 
-	printf("Nb  Strips   : %u \n",tfd -> nb_strips); 
-	printf("CurrntStrp   : %u \n",tfd -> current_line);
+        if (tfd -> rows_per_strip == 0) {
+                current_position = tfd -> strip_offsets[0];
+
+                uint32_t i = 0;
+                fseek(tfd -> file, current_position, SEEK_SET);
+
+                for (uint32_t h = 0; h < tfd->height; h++) {
+                        for (uint32_t w = 0; w < tfd->width; w++) {
+                                char buf[4];
+
+                                fread(buf, 1, tfd->samples_per_pixels, tfd->file);
+                                mcu_rgb[i++] = ((buf[0] & 0xFF) << 16) | ((buf[1] & 0xFF) << 8) | (buf[2] & 0xFF);
+                        }
+                }
+
+                return;
+        }
+
+
+	//printf("Nb  Strips   : %u \n",tfd -> nb_strips); 
+	//printf("CurrntStrp   : %u \n",tfd -> current_line);
 	if ((tfd -> current_line < (tfd -> nb_strips-1)) && (tfd -> strip_offsets[tfd -> current_line] + tfd -> next_pos_mcu + (nb_blocks_v*BLOCK_DIM-1)*tfd -> row_size >= tfd -> strip_offsets[tfd -> current_line+1])){
 		
 		tfd -> current_line++;
 		tfd -> next_pos_mcu = 0;
-		printf("New Line   : %u \n",tfd -> current_line); 
-		
+		//printf("New Line   : %u \n",tfd -> current_line); 
 	}
 
 	current_position= tfd -> strip_offsets[tfd -> current_line] + tfd -> next_pos_mcu;
@@ -580,9 +672,9 @@ void read_tiff_file (struct tiff_file_desc *tfd, uint32_t *mcu_rgb,
 
 	nb_read_v = ((nb_blocks_v*BLOCK_DIM) > (tfd -> strip_bytes[tfd -> current_line] / tfd -> row_size)?(tfd -> strip_bytes[tfd -> current_line] / tfd -> row_size) : (nb_blocks_v*BLOCK_DIM));
 	
-	printf("Strip Bytes : %u \n",tfd -> strip_bytes[tfd -> current_line]); 
-	printf("nb_read_v   : %u \n",nb_read_v);
-	printf("nb_read_h   : %u \n",nb_read_h);
+	//printf("Strip Bytes : %u \n",tfd -> strip_bytes[tfd -> current_line]); 
+	//printf("nb_read_v   : %u \n",nb_read_v);
+	//printf("nb_read_h   : %u \n",nb_read_h);
 	
 	for(uint32_t i=0; i < nb_read_v;i++){
 		fseek(tfd -> file, current_position, 0);

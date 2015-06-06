@@ -1,9 +1,10 @@
 
-#ifndef __JPEG_H__
-#define __JPEG_H__
+#ifndef __DECODE_H__
+#define __DECODE_H__
 
 #include "common.h"
 #include "bitstream.h"
+#include "encode.h"
 
 #define MAX_COMPS 3
 #define MAX_HTABLES 4
@@ -38,19 +39,6 @@ enum jpeg_status {
 };
 
 
-struct options {
-
-        char *input;
-        char *output;
-
-        uint8_t mcu_h;
-        uint8_t mcu_v;
-
-        uint8_t compression;
-
-        bool gray;
-};
-
 struct comp {
 
         /* SOF0 data */
@@ -67,14 +55,14 @@ struct comp {
 };
 
 struct mcu_info {
-        uint8_t h;
-        uint8_t v;
+        uint32_t h;
+        uint32_t v;
         uint8_t h_dim;
         uint8_t v_dim;
         uint32_t nb_h;
         uint32_t nb_v;
         uint32_t nb;
-        uint16_t size;
+        uint32_t size;
 };
 
 struct jpeg_data {
@@ -110,7 +98,6 @@ struct jpeg_data {
 };
 
 
-
 /* Read a section */
 extern uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                         struct jpeg_data *jpeg, bool *error);
@@ -118,22 +105,8 @@ extern uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
 /* Read header data */
 extern void read_header(struct bitstream *stream, struct jpeg_data *jpeg, bool *error);
 
-
-extern void free_jpeg_data(struct jpeg_data *jpeg);
-
-extern void write_section(struct bitstream *stream, enum jpeg_section section,
-                        struct jpeg_data *jpeg, bool *error);
-
-extern void write_header(struct bitstream *stream, struct jpeg_data *jpeg, bool *error);
-
 /* Extract raw image data */
 extern void read_image(struct jpeg_data *jpeg, bool *error);
-
-/* Compresses raw mcu data, and computes Huffman / Quantification tables */
-extern void compute_jpeg(struct jpeg_data *jpeg, bool *error);
-
-/* Writes previously compressed JPEG data */
-extern void write_blocks(struct bitstream *stream, struct jpeg_data *jpeg, bool *error);
 
 
 #endif
