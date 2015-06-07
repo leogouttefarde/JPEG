@@ -15,8 +15,7 @@
 #include <inttypes.h>
 
 
-// Defines
-#define JPEG_COMMENT "JPEG Encoder by ND, IK & LG. Ensimag 2015"
+#define COMMENT "JPEG Encoder by ND, IK & LG. Ensimag 2015"
 
 #define USAGE "Usage : %s <input_file> -o <output_file> [options]\n"\
               "\n"\

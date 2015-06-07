@@ -85,8 +85,7 @@ void idct_block(int32_t in[64], uint8_t out[64])
         double vector[BLOCK_DIM];
         double matrix[BLOCK_SIZE];
 
-        /* Apply loeffler on the matrix's lines */
-        /* Application sur les lignes de la matrice */
+        /* Apply Loeffler on the matrix's lines */
         for (uint8_t x = 0; x < BLOCK_DIM; ++x) {
 
                 for (uint8_t y = 0; y < BLOCK_DIM; ++y)
@@ -98,7 +97,7 @@ void idct_block(int32_t in[64], uint8_t out[64])
                         matrix[x*BLOCK_DIM + y] = vector[y];
         }
 
-        /* Apply loeffler on its transposition's lines */
+        /* Apply Loeffler on its transposition's lines */
         for (uint8_t y = 0; y < BLOCK_DIM; ++y) {
 
                 for (uint8_t x = 0; x < BLOCK_DIM; ++x)

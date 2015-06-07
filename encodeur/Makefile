@@ -43,16 +43,6 @@ TEST_FILE_O= test_file $(OBJ_DIR)/test_file.o $(OBJ_DIR)/priority_queue.o
 test_file: $@ $(OBJ_DIR)/test_file.o $(OBJ_DIR)/priority_queue.o
 	$(LD) -o $@ $(OBJ_DIR)/test_file.o $(OBJ_DIR)/priority_queue.o $(LDFLAGS)
 
-TEST_DCT_O = test_dct $(OBJ_DIR)/test_dct.o $(OBJ_DIR)/idct.o $(OBJ_DIR)/library.o $(OBJ_DIR)/bitstream.o
-
-test_dct: $@ $(OBJ_DIR)/test_dct.o $(OBJ_DIR)/idct.o $(OBJ_DIR)/library.o $(OBJ_DIR)/bitstream.o
-	$(LD) -o $@ $(OBJ_DIR)/test_dct.o $(OBJ_DIR)/idct.o $(OBJ_DIR)/library.o $(OBJ_DIR)/bitstream.o $(LDFLAGS)
-
-TEST_TIFF_O = test_tiff $(OBJ_DIR)/test_tiff.o $(OBJ_DIR)/tiff.o $(OBJ_DIR)/library.o $(OBJ_DIR)/bitstream.o
-
-test_tiff: $@ $(OBJ_DIR)/test_tiff.o $(OBJ_DIR)/tiff.o  $(OBJ_DIR)/library.o $(OBJ_DIR)/bitstream.o
-	$(LD) -o $@ $(OBJ_DIR)/test_tiff.o $(OBJ_DIR)/tiff.o $(OBJ_DIR)/library.o $(OBJ_DIR)/bitstream.o $(LDFLAGS)
-
 
 # Edition de lien des executables
 ${EXEC} : $(OBJ_FILES)

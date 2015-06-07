@@ -256,7 +256,7 @@ void write_section(struct bitstream *stream, enum jpeg_section section,
 
         case COM:
                 {
-                        const char *comment = JPEG_COMMENT;
+                        const char *comment = COMMENT;
                         const uint16_t len = strlen(comment);
 
                         for (uint16_t i = 0; i < len; i++)
