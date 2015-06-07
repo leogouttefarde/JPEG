@@ -297,4 +297,71 @@ bool parse_args(int argc, char **argv, struct options *options)
         return error;
 }
 
+uint32_t *mcu_to_image(
+        uint32_t *data, struct mcu_info *mcu,
+        uint32_t width, uint32_t height)
+{
+        uint32_t index;
+        uint32_t pos = 0;
+        uint32_t *image = malloc(width * height * sizeof(uint32_t));
+
+        if (image == NULL)
+                return NULL;
+
+
+        for (uint32_t nb_v = 0; nb_v < mcu->nb_v; nb_v++)
+        for (uint32_t v = 0; v < mcu->v; v++)
+        for (uint32_t nb_h = 0; nb_h < mcu->nb_h; nb_h++)
+        for (uint32_t h = 0; h < mcu->h; h++) {
+
+                /* Check for image overlapping */
+                if (nb_h * mcu->h + h < width) {
+
+                        /* Additionnal image buffer check */
+                        if (pos < width * height) {
+
+                                index = (nb_v * mcu->nb_h + nb_h) * mcu->size + v * mcu->h + h;
+                                image[pos++] = data[index];
+                        }
+                }
+        }
+
+        return image;
+}
+
+uint32_t *image_to_mcu(
+        uint32_t *image, struct mcu_info *mcu,
+        uint32_t width, uint32_t height)
+{
+        uint32_t index, pixel;
+        uint32_t pos = 0;
+        uint32_t *data = malloc(mcu->size * mcu->nb * sizeof(uint32_t));
+
+        if (data == NULL)
+                return NULL;
+
+
+        for (uint32_t nb_v = 0; nb_v < mcu->nb_v; nb_v++)
+        for (uint32_t v = 0; v < mcu->v; v++)
+        for (uint32_t nb_h = 0; nb_h < mcu->nb_h; nb_h++)
+        for (uint32_t h = 0; h < mcu->h; h++) {
+
+                /* Set default pixel value to 0 */
+                pixel = 0;
+
+                /* Check for image overlapping */
+                if (nb_h * mcu->h + h < width) {
+
+                        /* Additionnal image buffer check */
+                        if (pos < width * height)
+                                pixel = image[pos++];
+                }
+
+                index = (nb_v * mcu->nb_h + nb_h) * mcu->size + v * mcu->h + h;
+                data[index] = pixel;
+        }
+
+        return data;
+}
+
 

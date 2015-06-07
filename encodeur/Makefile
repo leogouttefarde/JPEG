@@ -19,18 +19,18 @@ LDFLAGS = -lm
 OBJ_FILES = $(OBJ_DIR)/main.o $(OBJ_DIR)/conv.o $(OBJ_DIR)/iqzz.o
 OBJ_FILES += $(OBJ_DIR)/upsampler.o $(OBJ_DIR)/huffman.o $(OBJ_DIR)/unpack.o
 OBJ_FILES += $(OBJ_DIR)/tiff.o $(OBJ_DIR)/library.o $(OBJ_DIR)/bitstream.o
+OBJ_FILES += $(OBJ_DIR)/encode.o $(OBJ_DIR)/decode.o $(OBJ_DIR)/downsampler.o
 OBJ_FILES += $(OBJ_DIR)/loeffler.o
 # OBJ_FILES += $(OBJ_DIR)/idct.o
-OBJ_FILES += $(OBJ_DIR)/jpeg.o
 OBJ_FILES += $(OBJ_DIR)/priority_queue.o
 
 # Liste des objets realises
-NEW_OBJ_FILES = $(OBJ_DIR)/iqzz.o $(OBJ_DIR)/conv.o
+NEW_OBJ_FILES = $(OBJ_DIR)/main.o $(OBJ_DIR)/iqzz.o $(OBJ_DIR)/conv.o
 NEW_OBJ_FILES += $(OBJ_DIR)/library.o $(OBJ_DIR)/huffman.o
 NEW_OBJ_FILES += $(OBJ_DIR)/unpack.o $(OBJ_DIR)/upsampler.o $(OBJ_DIR)/bitstream.o
-NEW_OBJ_FILES += $(OBJ_DIR)/idct.o
+NEW_OBJ_FILES += $(OBJ_DIR)/encode.o $(OBJ_DIR)/decode.o $(OBJ_DIR)/downsampler.o
 NEW_OBJ_FILES += $(OBJ_DIR)/loeffler.o
-NEW_OBJ_FILES += $(OBJ_DIR)/jpeg.o $(OBJ_DIR)/main.o
+NEW_OBJ_FILES += $(OBJ_DIR)/idct.o
 NEW_OBJ_FILES += $(OBJ_DIR)/tiff.o
 NEW_OBJ_FILES += $(OBJ_DIR)/priority_queue.o
 
@@ -48,6 +48,11 @@ TEST_DCT_O = test_dct $(OBJ_DIR)/test_dct.o $(OBJ_DIR)/idct.o $(OBJ_DIR)/library
 test_dct: $@ $(OBJ_DIR)/test_dct.o $(OBJ_DIR)/idct.o $(OBJ_DIR)/library.o $(OBJ_DIR)/bitstream.o
 	$(LD) -o $@ $(OBJ_DIR)/test_dct.o $(OBJ_DIR)/idct.o $(OBJ_DIR)/library.o $(OBJ_DIR)/bitstream.o $(LDFLAGS)
 
+TEST_TIFF_O = test_tiff $(OBJ_DIR)/test_tiff.o $(OBJ_DIR)/tiff.o $(OBJ_DIR)/library.o $(OBJ_DIR)/bitstream.o
+
+test_tiff: $@ $(OBJ_DIR)/test_tiff.o $(OBJ_DIR)/tiff.o  $(OBJ_DIR)/library.o $(OBJ_DIR)/bitstream.o
+	$(LD) -o $@ $(OBJ_DIR)/test_tiff.o $(OBJ_DIR)/tiff.o $(OBJ_DIR)/library.o $(OBJ_DIR)/bitstream.o $(LDFLAGS)
+
 
 # Edition de lien des executables
 ${EXEC} : $(OBJ_FILES)
@@ -59,7 +64,7 @@ ${OBJ_DIR}/%.o: ${SRC_DIR}/%.c
 	$(CC) $(CFLAGS) ${INC} $< -o $@ -c
 
 clean:
-	rm -f ${EXEC} $(NEW_OBJ_FILES) gmon.out *.tiff out.jpg $(TEST_FILE_O)
+	rm -f ${EXEC} $(NEW_OBJ_FILES) gmon.out *.tiff out.jpg $(TEST_FILE_O) $(TEST_DCT_O) $(TEST_TIFF_O)
 
 
 # IMAGE=tests/shaun_the_sheep
@@ -71,6 +76,7 @@ OUT=out.jpg
 
 run: all
 	./${EXEC} ${JPEG} -o $(OUT)
+	# ./${EXEC} ${TIFF} -o $(OUT)
 	#dot -Tpng dc_tree.dot > dc_tree.png
 	#dot -Tpng ac_tree.dot > ac_tree.png
 

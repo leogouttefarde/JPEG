@@ -1,25 +1,29 @@
 
 
 
-Quests :
-
-- DRI : faut-il / cmt détecter marqueur RSTm (source de pbs de lecture sinon) ?
-- package-merge Huffman codes ? ou 1 arbre AC/DC de Huffman pour chaque composante ?
-- gestion erreurs unpack ?
-- quid qtables gimp ?
-
-
-
 todo :
 
-- fix downsampler
-- finir lecture tiff
-- fonction de changement de taille des mcus (pour changer celles d'un jpeg décodé ou permettre sa transformation en gris)
+- nettoyage code
 
 
 secondaire :
 
 - package-merge
+- ajout option décodage à l'encodeur
+
+
+
+
+info :
+
+- gestion DRI non demandée, marqueur RSTm = indicateur de correction d'erreurs entre blocks (gestion non demandée non plus)
+
+- package-merge valorisable comme extension
+
+- qtables gimp testables/ essayables mais table compression (x+y+1) ok
+
+
+
 
 
 Nb :
@@ -36,7 +40,7 @@ libjpeg :
 */
 
 =>
-Interdiction de créer des codes avec que des 1 !
+Pas le droit de créer des codes avec que des 1
 Restriction supplémentaires à la construction des arbres
 
 
