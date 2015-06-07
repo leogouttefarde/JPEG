@@ -405,9 +405,9 @@ static void read_tiff(struct jpeg_data *ojpeg, bool *error)
 
         else {
                 struct tiff_file_desc *file = NULL;
-                uint32_t width, height, row_per_strip;
+                uint32_t width, height;
 
-                file = init_tiff_file_read(ojpeg->path, &width, &height, &row_per_strip);
+                file = init_tiff_read(ojpeg->path, &width, &height);
 
                 if (file != NULL) {
 
@@ -438,7 +438,7 @@ static void read_tiff(struct jpeg_data *ojpeg, bool *error)
 
                                                 mcu_RGB = &(ojpeg->raw_data[i * ojpeg->width]);
 
-                                                read_tiff_line(file, mcu_RGB);
+                                                *error |= read_tiff_line(file, mcu_RGB);
                                         }
                                 }
                         }

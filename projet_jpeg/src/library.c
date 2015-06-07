@@ -88,14 +88,7 @@ bool skip_bitstream(struct bitstream *stream, uint32_t nb_bytes)
         return error;
 }
 
-uint32_t truncate(int32_t s)
-{
-        s = (s > 255) ? 255 : ( (s < 0) ? 0 : s );
-
-        return (uint32_t)s;
-}
-
-uint8_t double2uint8(double x)
+uint8_t truncate(double x)
 {
         uint8_t res;
 

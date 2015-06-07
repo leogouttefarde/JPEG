@@ -49,26 +49,28 @@ int8_t next_bit(struct bitstream *stream, bool byte_stuffing)
         uint32_t size = 0;
         int8_t bit;
         uint8_t *byte = &stream->byte;
-	
-	/* Cas de la lecture de l'octet suivant */
+
+        /* Reads a new byte */
         if (stream->index == 0) {
                 uint8_t last = *byte;
                 size = fread(byte, 1, 1, stream->file);
-		
-		/* Cas du byte_stuffing */
+
+                /* Byte_stuffing */
                 if (byte_stuffing && last == 0xFF) {
                         if (*byte != 0x00)
                                 return -1;
 
                         size = fread(byte, 1, 1, stream->file);
                 }
-		/* Cas lecture non réussi */
+
+                /* Error handling */
                 if (size == 0)
                         return -2;
 
                 stream->index = 8;
         }
-	/* Retourne le prochain bit */
+
+        /* Compute the next bit */
         bit = 1 & (*byte >> --stream->index);
 
         return bit;
@@ -85,7 +87,7 @@ uint8_t read_bitstream(struct bitstream *stream,
         if (stream == NULL || stream->file == NULL || dest == NULL)
                 return 0;
 
-	/* Lecture bit à bit du fichier avec next_bit */
+        /* Read each required bit */
         for (uint8_t i = 0; i < nb_bits; i++) {
                 bit = next_bit(stream, byte_stuffing);
 
@@ -103,14 +105,19 @@ uint8_t read_bitstream(struct bitstream *stream,
 bool skip_bitstream_until(struct bitstream *stream, uint8_t byte)
 {
         if (stream != NULL && stream->file != NULL) {
-                if (stream->index == 8 && stream->byte == byte) {
-			/* L'octet courant est l'octet recherché */
+
+                /* The current byte is our goal */
+                if (stream->index == 8 && stream->byte == byte)
                         return true;
-                }
+
                 else {
                         uint8_t *cur_byte = &stream->byte;
                         uint32_t size = 1;
-			/* Lecture des octets jusqu'a byte ou la fin du fichier */
+
+                        /*
+                         * Skips bytes until the value
+                         * is found or the end of file
+                         */
                         while (*cur_byte != byte && size > 0) {
                                 size = fread(cur_byte, 1, 1, stream->file);
                         }

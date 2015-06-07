@@ -1,6 +1,7 @@
 
 #include "iqzz.h"
 #include "common.h"
+#include "library.h"
 
 
 /* Version optimisée */

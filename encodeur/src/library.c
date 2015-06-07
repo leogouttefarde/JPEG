@@ -346,7 +346,10 @@ uint32_t *image_to_mcu(
         for (uint32_t nb_h = 0; nb_h < mcu->nb_h; nb_h++)
         for (uint32_t h = 0; h < mcu->h; h++) {
 
-                /* Set default pixel value to 0 */
+                /*
+                 * Set unused pixels to 0,
+                 * maximizing compression
+                 */
                 pixel = 0;
 
                 /* Check for image overlapping */
