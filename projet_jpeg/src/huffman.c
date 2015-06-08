@@ -2,18 +2,27 @@
 #include "huffman.h"
 #include "common.h"
 
-
+/*
+ * Internal node structure
+ */
 struct node {
         struct huff_table *left;
         struct huff_table *right;
 };
 
+/*
+ * Node type :
+ * leaf or internal node
+ */
 enum node_type {
         NODE,
         LEAF,
         NB_NODE_TYPES
 };
 
+/*
+ * Huffman table node structure
+ */
 struct huff_table {
         enum node_type type;
 
@@ -24,6 +33,10 @@ struct huff_table {
 };
 
 
+/*
+ * Creates a Huffman table node
+ * according to the "type" argument.
+ */
 struct huff_table* create_node(enum node_type type, int8_t val)
 {
         struct huff_table *node = malloc(sizeof(struct huff_table));
@@ -42,11 +55,18 @@ struct huff_table* create_node(enum node_type type, int8_t val)
         return node;
 }
 
+/*
+ * Recursively adds a Huffman value to a Huffman tree.
+ */
 int8_t add_huffman_code(int8_t value, uint8_t code_size, struct huff_table *parent)
 {
         int8_t error = 0;
 
-
+        /*
+         * If we attempt to insert
+         * a value on a leaf or a NULL pointer,
+         * return an error.
+         */
         if (parent == NULL || parent->type == LEAF)
                 error = 1;
 
@@ -57,6 +77,10 @@ int8_t add_huffman_code(int8_t value, uint8_t code_size, struct huff_table *pare
                 right = &parent->u.node.right;
 
 
+                /*
+                 * Once the value to insert is deep enough,
+                 * add it as a new leaf.
+                 */
                 if (code_size == 0) {
                         if (*left == NULL)
                                 *left = create_node(LEAF, value);
@@ -67,6 +91,11 @@ int8_t add_huffman_code(int8_t value, uint8_t code_size, struct huff_table *pare
                         else
                                 error = -1;
                 }
+
+                /*
+                 * Else recursively add it deeper and
+                 * create non-existant internal nodes
+                 */
                 else {
                         if (*left == NULL)
                                 *left = create_node(NODE, 0);
@@ -85,6 +114,9 @@ int8_t add_huffman_code(int8_t value, uint8_t code_size, struct huff_table *pare
         return error;
 }
 
+/*
+ * Loads a Huffman table from the input stream.
+ */
 struct huff_table *load_huffman_table(
                 struct bitstream *stream, uint16_t *nb_byte_read)
 {
@@ -100,14 +132,12 @@ struct huff_table *load_huffman_table(
         *nb_byte_read = -1;
 
 
+        /* Read the number of symbols per size */
         for (uint8_t i = 0; i < 16; i++) {
                 size_read += read_bitstream(stream, 8, &dest, false);
                 code_sizes[i] = dest & 0xFF;
-		nb_codes += code_sizes[i];
+                nb_codes += code_sizes[i];
         }
-
-        
-                
 
 
         /* There must be less than 256 different codes */
@@ -115,11 +145,16 @@ struct huff_table *load_huffman_table(
                 return NULL;
 
         else {
-		table = calloc(1, sizeof(struct huff_table));
+                /* Allocate the Huffman tree */
+                table = calloc(1, sizeof(struct huff_table));
                 if (table == NULL)
                         return NULL;
         }
 
+        /*
+         * Read all values and add them to the Huffman tree,
+         * with their corresponding size.
+         */
         for (uint8_t i = 0; i < sizeof(code_sizes); ++i) {
                 for (uint8_t j = 0; j < code_sizes[i]; ++j) {
                         size_read += read_bitstream(stream, 8, &dest, false);
@@ -133,6 +168,9 @@ struct huff_table *load_huffman_table(
         return table;
 }
 
+/*
+ * Reads a Huffman value from the input stream.
+ */
 int8_t next_huffman_value(struct huff_table *table, 
                 struct bitstream *stream)
 {
@@ -140,28 +178,38 @@ int8_t next_huffman_value(struct huff_table *table,
         int8_t result = 0;
         uint32_t dest;
 
+        /* Advance in the Huffman tree
+         * according to each read stream bit
+         * until a leaf is found */
         while (table && table->type == NODE) {
                 read_bitstream(stream, 1, &dest, true);
                 bit = dest & 1;
 
+                /* Go right if it's a 1 */
                 if (bit)
                         table = table->u.node.right;
 
+                /* Go left if it's a 0 */
                 else
                         table = table->u.node.left;
         }
 
         if (table != NULL)
-            result = table->u.val;
+                result = table->u.val;
         else
                 printf("FATAL ERROR : no Huffman value found\n");
 
         return result;
 }
 
+/*
+ * Recursively free a Huffman table.
+ */
 void free_huffman_table(struct huff_table *table)
 {
         if (table != NULL) {
+
+                /* If it's an internal node, free it recursively */
                 if (table->type == NODE) {
                         free_huffman_table(table->u.node.left);
                         free_huffman_table(table->u.node.right);
@@ -171,6 +219,9 @@ void free_huffman_table(struct huff_table *table)
         }
 }
 
+/*
+ * huffman_export's recursive dot export function.
+ */
 void huffman_export_rec(FILE *file, struct huff_table *table, uint32_t *index)
 {
         if (table != NULL && index) {
@@ -181,7 +232,8 @@ void huffman_export_rec(FILE *file, struct huff_table *table, uint32_t *index)
                 fprintf(file, " -- %u", cur);
 
                 if (table->type == LEAF) {
-                        fprintf(file, "    %u [label=\"S : C => %2X\"]\n", cur, (uint8_t)table->u.val);
+                        fprintf(file, "    %u [label=\"S : C => %2X\"]\n",
+                                cur, (uint8_t)table->u.val);
                 } else {
                         huffman_export_rec(file, table->u.node.left, index);
                         fprintf(file, "    %u [label=\"C\"]\n", cur);
@@ -193,6 +245,10 @@ void huffman_export_rec(FILE *file, struct huff_table *table, uint32_t *index)
         }
 }
 
+/*
+ * Exports the input Huffman table to
+ * a dot tree file (for debugging).
+ */
 void huffman_export(char *dest, struct huff_table *table)
 {
         FILE *file = NULL;
@@ -205,7 +261,8 @@ void huffman_export(char *dest, struct huff_table *table)
                 fprintf(file, "\ngraph {\n");
 
                 if (table->type == LEAF) {
-                        fprintf(file, "    %u [label=\"%i\"]\n", cur, table->u.val);
+                        fprintf(file, "    %u [label=\"%i\"]\n",
+                                cur, table->u.val);
                 } else {
                         fprintf(file, "    %u \n", cur);
                         fprintf(file, "    %u [label=\"ε\"]\n", cur);
