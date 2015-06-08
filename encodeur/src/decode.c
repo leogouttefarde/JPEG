@@ -40,7 +40,8 @@ void read_image(struct jpeg_data *jpeg, bool *error)
 
         if (!*error) {
 
-                uint8_t *Y_qtable = (uint8_t*)&jpeg->qtables[0];
+                uint8_t *qtable = (uint8_t*)&jpeg->qtables[0];
+                // uint8_t *Y_qtable = (uint8_t*)&jpeg->qtables[0];
                 // uint8_t *CbCr_qtable = (uint8_t*)&jpeg->qtables[1];
                 uint8_t i_q = 0;
 
@@ -58,11 +59,9 @@ void read_image(struct jpeg_data *jpeg, bool *error)
                         jpeg->comps[i].i_q = i_q;
                 }
 
-                // print_byte_block(stat_qt);
-                quantify_qtable(Y_qtable, generic_qt, jpeg->compression);
-                // compute_qtable(CbCr_qtable, stat_qt, 3);
-                // compute_qtable(Y_qtable, Y_gimp, 2);
-                // compute_qtable(CbCr_qtable, CbCr_gimp, 2);
+                quantify_qtable(qtable, generic_qt, jpeg->compression);
+                // quantify_qtable(Y_qtable, Y_gimp, jpeg->compression);
+                // quantify_qtable(CbCr_qtable, CbCr_gimp, jpeg->compression);
 
 
                 /* Initialize components's SOS order */
@@ -110,6 +109,10 @@ static void read_jpeg(struct jpeg_data *ojpeg, bool *error)
 
                         free_bitstream(stream);
                         free_jpeg_data(&jpeg);
+
+
+                        if (*error)
+                                printf("ERROR : invalid input JPEG file\n");
 
                 } else
                         *error = true;
@@ -445,8 +448,10 @@ static void read_tiff(struct jpeg_data *ojpeg, bool *error)
 
                         close_tiff_file(file);
 
-                } else
+                } else {
+                        printf("ERROR : invalid input TIFF file\n");
                         *error = true;
+                }
         }
 }
 

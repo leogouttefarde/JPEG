@@ -22,61 +22,21 @@ int main(int argc, char **argv)
                 struct jpeg_data jpeg;
                 memset(&jpeg, 0, sizeof(jpeg));
 
+                /* Retrieve options */
                 jpeg.path = options.input;
-
-                // Only used for tiff encoding
+                jpeg.compression = options.compression;
                 jpeg.mcu.h = options.mcu_h;
                 jpeg.mcu.v = options.mcu_v;
-
-                jpeg.compression = options.compression;
 
 
                 /* Read input image */
                 read_image(&jpeg, &error);
 
-
-                if (options.gray) {
-                        jpeg.nb_comps = 1;
-
-                        options.mcu_h = BLOCK_DIM;
-                        options.mcu_v = BLOCK_DIM;
-                }
+                /* Enable specific options */
+                process_options(&options, &jpeg, &error);
 
 
-                if (jpeg.mcu.h != options.mcu_h
-                        || jpeg.mcu.v != options.mcu_v
-                        || jpeg.is_plain_image) {
-
-                        uint32_t *image = jpeg.raw_data;
-
-                        if (!jpeg.is_plain_image) {
-                                image = mcu_to_image(jpeg.raw_data,
-                                                        &jpeg.mcu,
-                                                        jpeg.width,
-                                                        jpeg.height);
-
-                                SAFE_FREE(jpeg.raw_data);
-                        }
-
-
-                        jpeg.mcu.h = options.mcu_h;
-                        jpeg.mcu.v = options.mcu_v;
-
-                        compute_mcu(&jpeg, &error);
-
-
-                        uint32_t *data = image_to_mcu(image,
-                                                        &jpeg.mcu,
-                                                        jpeg.width,
-                                                        jpeg.height);
-
-                        SAFE_FREE(image);
-
-                        jpeg.raw_data = data;
-                }
-
-
-                /* Compute Huffman and Quantification tables */
+                /* Compute Huffman tables */
                 compute_jpeg(&jpeg, &error);
 
                 /* Free raw image data */

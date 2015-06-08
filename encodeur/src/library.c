@@ -1,5 +1,6 @@
 
 #include "library.h"
+#include "decode.h"
 #include <unistd.h>
 #include <getopt.h>
 
@@ -197,9 +198,6 @@ bool parse_args(int argc, char **argv, struct options *options)
                         case 'h':
                                 error = true;
                                 break;
-
-                        // default:
-                                // printf ("Unrecognized option : %c\n", c);
                 }
         }
 
@@ -233,8 +231,6 @@ bool parse_args(int argc, char **argv, struct options *options)
                 if (!error) {
                         mcu_h = affect_mcu(h_val, &error);
                         mcu_v = affect_mcu(v_val, &error);
-
-                        // printf("New MCUs : h=%d v=%d\n", mcu_h, mcu_v);
                 }
         }
 
@@ -243,14 +239,6 @@ bool parse_args(int argc, char **argv, struct options *options)
         if (optind < argc) {
                 input = argv[optind];
                 optind++;
-
-                // if (optind < argc) {
-                //         printf ("Paramètres non reconnus : ");
-                //         while (optind < argc)
-                //                 printf ("%s ", argv[optind++]);
-
-                //         printf ("\n");
-                // }
         }
 
 
@@ -349,6 +337,53 @@ uint32_t *image_to_mcu(
         }
 
         return data;
+}
+
+void process_options(struct options *options, struct jpeg_data *jpeg, bool *error)
+{
+        if (options == NULL || jpeg == NULL || error == NULL || *error)
+                return;
+
+
+        if (options->gray) {
+                jpeg->nb_comps = 1;
+
+                options->mcu_h = BLOCK_DIM;
+                options->mcu_v = BLOCK_DIM;
+        }
+
+
+        if (jpeg->mcu.h != options->mcu_h
+                || jpeg->mcu.v != options->mcu_v
+                || jpeg->is_plain_image) {
+
+                uint32_t *image = jpeg->raw_data;
+
+                if (!jpeg->is_plain_image) {
+                        image = mcu_to_image(jpeg->raw_data,
+                                                &jpeg->mcu,
+                                                jpeg->width,
+                                                jpeg->height);
+
+                        SAFE_FREE(jpeg->raw_data);
+                }
+
+
+                jpeg->mcu.h = options->mcu_h;
+                jpeg->mcu.v = options->mcu_v;
+
+                compute_mcu(jpeg, error);
+
+
+                uint32_t *data = image_to_mcu(image,
+                                                &jpeg->mcu,
+                                                jpeg->width,
+                                                jpeg->height);
+
+                SAFE_FREE(image);
+
+                jpeg->raw_data = data;
+        }
 }
 
 

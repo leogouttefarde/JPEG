@@ -27,17 +27,18 @@ void YCbCr_to_ARGB(uint8_t  *mcu_YCbCr[3], uint32_t *mcu_RGB,
 
         for (uint32_t i = 0; i < NB_PIXELS; ++i) {
 
-                /* Conversion moins précise */
+                /* Least accurate version (subject p15) */
                 // R = Y[i] + 1.402 * (Cr[i] - 128);
                 // G = Y[i] - 0.34414 * (Cb[i] - 128) - 0.71414 * (Cr[i] - 128);
                 // B = Y[i] + 1.772 * (Cb[i] - 128);
 
-                /* Conversion plus précise */
+                /* Most accurate version (subject p15) */
                 R = Y[i] - 0.0009267 * (Cb[i] - 128) + 1.4016868 * (Cr[i] - 128);
                 G = Y[i] - 0.3436954 * (Cb[i] - 128) - 0.7141690 * (Cr[i] - 128);
                 B = Y[i] + 1.7721604 * (Cb[i] - 128) + 0.0009902 * (Cr[i] - 128);
 
 
+                /* Convert each color to uint8_t */
                 mcu_RGB[i] = TRUNCATE(R) << 16 | TRUNCATE(G) << 8 | TRUNCATE(B);
         }
 }

@@ -33,5 +33,7 @@ uint32_t *image_to_mcu(
         uint32_t *image, struct mcu_info *mcu,
         uint32_t width, uint32_t height);
 
+void process_options(struct options *options, struct jpeg_data *jpeg, bool *error);
+
 
 #endif
