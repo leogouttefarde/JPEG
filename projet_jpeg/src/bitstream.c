@@ -14,14 +14,15 @@ struct bitstream {
         uint8_t buf_idx;
 };
 
-
+/* Initialize the bitstream structure with the file filename */
 struct bitstream *create_bitstream(const char *filename)
 {
         struct bitstream *stream = NULL;
-
+	/* Open the filename file in binary reading */
         if (filename != NULL) {
                 FILE *file = fopen(filename, "rb");
-
+		
+		/* Create and initialize the filename stream */
                 if (file != NULL) {
                         stream = malloc(sizeof(struct bitstream));
 
@@ -40,6 +41,7 @@ struct bitstream *create_bitstream(const char *filename)
         return stream;
 }
 
+/* Return true if eof is reach */
 bool end_of_bitstream(struct bitstream *stream)
 {
         bool end = true;
@@ -51,11 +53,13 @@ bool end_of_bitstream(struct bitstream *stream)
         return end;
 }
 
+/* Read the next byte in the stream */
 uint8_t next_byte(struct bitstream *stream, bool *error)
 {
         uint8_t byte = 0;
         size_t ret;
-
+	
+	/* Reads BUFFER_SIZE bytes in the stream */
         if (stream->buf_idx >= stream->buffer_size) {
                 ret = fread(stream->buffer, 1, BUFFER_SIZE, stream->file);
 
@@ -67,6 +71,7 @@ uint8_t next_byte(struct bitstream *stream, bool *error)
                         *error = true;
         }
 
+	/* Return the current byte from the buffer */
         if (stream->buf_idx < stream->buffer_size)
                 byte = stream->buffer[stream->buf_idx++];
         else
@@ -75,6 +80,7 @@ uint8_t next_byte(struct bitstream *stream, bool *error)
         return byte;
 }
 
+/* Read the next bit in the stream */
 static inline int8_t next_bit(struct bitstream *stream, bool byte_stuffing)
 {
         int8_t bit;
@@ -108,6 +114,10 @@ static inline int8_t next_bit(struct bitstream *stream, bool byte_stuffing)
         return bit;
 }
 
+/* 
+ * Read nb_bits in the stream and return those bits in dest 
+ * byte_stuffing indicate if we have to take account of the byte_stuffing
+ */
 uint8_t read_bitstream(struct bitstream *stream,
                 uint8_t nb_bits, uint32_t *dest,
                 bool byte_stuffing)
@@ -119,7 +129,12 @@ uint8_t read_bitstream(struct bitstream *stream,
         if (stream == NULL || stream->file == NULL || dest == NULL || !nb_bits)
                 return 0;
 
-
+	/* 
+	 * Read bit per bit if :
+	 * - nb_bits < 8
+	 * - there are still bits in stream->byte buffer
+	 * - nb_bits not divisible by 8
+	 */
         if (byte_stuffing || stream->index != 8 || nb_bits % 8) {
 
                 /* Read each required bit */
@@ -132,11 +147,12 @@ uint8_t read_bitstream(struct bitstream *stream,
                                 break;
                 }
         }
+	/* Read byte per byte otherwise */
         else {
                 bool error = false;
-
+		/* Retrieve bits from byte buffer */
                 out = stream->byte;
-
+		/* Reads byte per byte until nb_bits is reach */
                 if (nb_bits > 8) {
                         out = out << 8 | next_byte(stream, &error);
 
@@ -160,6 +176,7 @@ uint8_t read_bitstream(struct bitstream *stream,
         return nb_bit_read;
 }
 
+/* Read in the stream until the value "byte" is found or the end of file */
 bool skip_bitstream_until(struct bitstream *stream, uint8_t byte)
 {
         if (stream != NULL && stream->file != NULL) {
@@ -173,7 +190,7 @@ bool skip_bitstream_until(struct bitstream *stream, uint8_t byte)
                         bool error = false;
 
                         /*
-                         * Skips bytes until the value
+                         * Skips bytes until the value byte
                          * is found or the end of file
                          */
                         while (*cur_byte != byte && !error)
@@ -192,6 +209,7 @@ bool skip_bitstream_until(struct bitstream *stream, uint8_t byte)
         return false;
 }
 
+/* Close the stream and free the memory of the stream */
 void free_bitstream(struct bitstream *stream)
 {
         if (stream != NULL) {
