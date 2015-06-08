@@ -22,7 +22,8 @@
               "Options list :\n"\
               "    -c <quality>  : Compression rate [0-25] (0 : lossless, 25 : highest)\n"\
               "    -m <mcu_size> : Output MCU sizes, either 8x8 / 16x8 / 8x16 / 16x16\n"\
-              "    -g            : encode as a gray image\n"\
+              "    -g            : Encode as a gray image\n"\
+              "    -d            : Decode to TIFF instead of encoding\n"\
               "    -h            : Display this help\n"\
               "\n"\
               "Supported input images : TIFF, JPEG\n"
