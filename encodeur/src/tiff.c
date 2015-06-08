@@ -483,14 +483,34 @@ struct tiff_file_desc *init_tiff_file (const char *file_name,
 {
         FILE *file = NULL;
         struct tiff_file_desc *tfd = calloc(1, sizeof(struct tiff_file_desc));
+        uint32_t line_size;
 
         if (tfd == NULL)
                 return NULL;
 
-        tfd->row_size = width * 3;
-        tfd->write_buf = malloc(tfd->row_size);
 
+        /* Allocate & check write_buf */
+        tfd->row_size = width * 3;
+
+        tfd->write_buf = malloc(tfd->row_size);
         if (tfd->write_buf == NULL)
+                return NULL;
+
+
+        /* Allocate & check strip_offsets */
+        tfd->nb_strips = height / row_per_strip;
+
+        if (height % row_per_strip)
+                tfd->nb_strips++;
+
+        tfd->strip_offsets = malloc(tfd->nb_strips * sizeof(uint32_t));
+        if (tfd->strip_offsets == NULL)
+                return NULL;
+
+
+        /* Allocate & check strip_bytes */
+        tfd->strip_bytes = malloc(tfd->nb_strips * sizeof(uint32_t));
+        if (tfd->strip_bytes == NULL)
                 return NULL;
 
 
@@ -504,11 +524,6 @@ struct tiff_file_desc *init_tiff_file (const char *file_name,
         tfd->width = width;
         tfd->height = height;
         tfd->rows_per_strip = row_per_strip;
-
-        tfd->nb_strips = tfd->height / tfd->rows_per_strip;
-
-        if (tfd->height % tfd->rows_per_strip)
-                tfd->nb_strips++;
 
 
         /* Software comment definition */
@@ -574,14 +589,18 @@ struct tiff_file_desc *init_tiff_file (const char *file_name,
         write_long(tfd, tfd->nb_strips);
 
         const uint32_t strips_pos = next + 16;
-        uint32_t line_offset = strips_pos + 8 * tfd->nb_strips;
-        uint32_t line_size = tfd->rows_per_strip * tfd->width * 3;
+        uint32_t line_offset = strips_pos;
 
-        if (tfd->nb_strips > 1)
+
+        if (tfd->nb_strips > 1) {
+                line_offset += 8 * tfd->nb_strips;
                 write_long(tfd, strips_pos);
+        }
 
-        else
+        else {
                 write_long(tfd, line_offset);
+                tfd->strip_offsets[0] = line_offset;
+        }
 
 
         /* SamplesPerPixel */
@@ -601,11 +620,25 @@ struct tiff_file_desc *init_tiff_file (const char *file_name,
         write_short(tfd, LONG);
         write_long(tfd, tfd->nb_strips);
 
-        if (tfd->nb_strips > 1)
-                write_long(tfd, strips_pos + 4 * tfd->nb_strips);
 
-        else
+        /* Last line's height */
+        uint32_t line_height = tfd->height % tfd->rows_per_strip;
+
+        if (tfd->height > 0  && line_height == 0)
+                line_height = tfd->rows_per_strip;
+
+
+        if (tfd->nb_strips > 1) {
+                line_size = tfd->rows_per_strip * tfd->width * 3;
+                write_long(tfd, strips_pos + 4 * tfd->nb_strips);
+        }
+
+        else {
+                line_size = line_height * tfd->width * 3;
                 write_long(tfd, line_size);
+
+                tfd->strip_bytes[0] = line_size;
+        }
 
 
         /* XResolution */
@@ -654,7 +687,7 @@ struct tiff_file_desc *init_tiff_file (const char *file_name,
 
 
         /* Initialize internal writing data */
-        tfd->current_line = line_offset;
+        tfd->current_line = 0;
         tfd->line_size = line_size;
 
         /* Initialize the first MCU position */
@@ -664,26 +697,26 @@ struct tiff_file_desc *init_tiff_file (const char *file_name,
         if (tfd->nb_strips > 1) {
 
                 /* Write all StripOffsets */
-                for (uint32_t i = 0; i < tfd->nb_strips; i ++){
+                for (uint32_t i = 0; i < tfd->nb_strips; i++){
                         write_long(tfd, line_offset);
+                        tfd->strip_offsets[i] = line_offset;
+
                         line_offset += line_size;
                 }
 
+
                 /* StripByteCounts data */
-                for (uint32_t i = 0; i < tfd->nb_strips - 1; i++)
+                for (uint32_t i = 0; i < tfd->nb_strips - 1; i++) {
                         write_long(tfd, line_size);
+                        tfd->strip_bytes[i] = line_size;
+                }
+
+                /* Last line's size */
+                line_size = line_height * tfd->width*3;
+                tfd->strip_bytes[tfd->nb_strips-1] = line_size;
+
+                write_long(tfd, line_size);
         }
-
-
-        /* Last line's height */
-        uint32_t line_height = tfd->height % tfd->rows_per_strip;
-
-        if (tfd->height > 0  && line_height == 0)
-                line_height = tfd->rows_per_strip;
-
-        line_size = line_height * tfd->width*3;
-
-        write_long(tfd, line_size);
 
 
         return tfd;
@@ -741,52 +774,74 @@ void write_tiff_file (struct tiff_file_desc *tfd,
                 return;
 
 
-        uint32_t nb_pixels;
+        uint8_t *buf = tfd->write_buf;
         uint32_t pixel, index, k;
         uint32_t current_position;
-        uint8_t *buf = tfd->write_buf;
+        uint32_t nb_write_h, nb_write_v;
+
+
+        /* Compute required values */
+        const uint32_t row_size = tfd->row_size;
+        const uint32_t *cur_line = &tfd->current_line;
+        const uint32_t *offsets = tfd->strip_offsets;
+        const uint32_t cur_offset = offsets[*cur_line];
+        const uint32_t block_size_to_add = (nb_blocks_v * BLOCK_DIM - 1) * row_size;
+        const uint32_t new_offset = cur_offset + tfd->next_pos_mcu + block_size_to_add;
 
         /* Skip to the next line if there's no space for this MCU */
-        if (tfd->next_pos_mcu + (nb_blocks_v * BLOCK_DIM - 1) * tfd->row_size >= tfd->line_size) {
-                tfd->current_line += tfd->line_size;
+        if (*cur_line < (tfd->nb_strips - 1) && new_offset >= offsets[*cur_line+1]) {
+                tfd->current_line++;
                 tfd->next_pos_mcu = 0;
         }
 
-        current_position = tfd->current_line + tfd->next_pos_mcu;
+        current_position = offsets[*cur_line] + tfd->next_pos_mcu;
 
+
+
+        const uint32_t h_block_size = nb_blocks_h * BLOCK_DIM * 3;
+        const uint32_t size_written = tfd->next_pos_mcu % row_size;
 
         /* Compute how many RGB pixels must be written depending on row_size */
-        if (tfd->next_pos_mcu + nb_blocks_h * BLOCK_DIM * 3 > tfd->row_size)
-                nb_pixels = tfd->row_size - tfd->next_pos_mcu;
+        if (size_written + h_block_size > row_size) {
+                nb_write_h = (row_size - size_written) / 3;
+                tfd->next_pos_mcu += block_size_to_add;
+        }
+        else
+                nb_write_h = nb_blocks_h*BLOCK_DIM;
+
+        tfd->next_pos_mcu += 3 * nb_write_h;
+
+
+
+        const uint32_t strip_size = tfd->strip_bytes[*cur_line];
+        const uint32_t v_blocks_length = nb_blocks_v * BLOCK_DIM;
+        const uint32_t v_blocks_max = strip_size / row_size;
+
+        if (v_blocks_length > v_blocks_max)
+                nb_write_v = v_blocks_max;
 
         else
-                nb_pixels = nb_blocks_h * BLOCK_DIM * 3;
-
+                nb_write_v = v_blocks_length;
 
 
         /* Write the MCU */
-        for(uint32_t i = 0; i < nb_blocks_v*BLOCK_DIM; i++) {
+        for(uint32_t i = 0; i < nb_write_v; i++) {
 
                 k = 0;
                 fseek(tfd->file, current_position, SEEK_SET);
 
-                for(uint32_t j = 0; j < nb_pixels/3; j++) {
+                for(uint32_t j = 0; j < nb_write_h; j++) {
 
                                 index = i * nb_blocks_h * BLOCK_DIM + j;
-
                                 pixel = mcu_rgb[index];
 
-                                buf[k] = RED(pixel);
-                                buf[k + 1] = GREEN(pixel);
-                                buf[k + 2] = BLUE(pixel);
-
-                                k += 3;
+                                buf[k++] = RED(pixel);
+                                buf[k++] = GREEN(pixel);
+                                buf[k++] = BLUE(pixel);
                 }
 
-                fwrite(buf, 1, nb_pixels, tfd->file);
-                current_position += tfd->row_size;
+                fwrite(buf, 1, 3 * nb_write_h, tfd->file);
+                current_position += row_size;
         }
-
-        tfd->next_pos_mcu += nb_pixels;
 }
 
