@@ -3,7 +3,7 @@
 #include "common.h"
 #include "library.h"
 
-/* Convert YCbCr MCU to RGB MCU */
+/* Convert Y / Cb / Cr MCUs to RGB MCUs */
 void YCbCr_to_ARGB(uint8_t  *mcu_YCbCr[3], uint32_t *mcu_RGB,
                 uint32_t nb_blocks_h, uint32_t nb_blocks_v)
 {
@@ -19,7 +19,7 @@ void YCbCr_to_ARGB(uint8_t  *mcu_YCbCr[3], uint32_t *mcu_RGB,
                 return;
         }
 
-	/* Convertion to a RGB MCU using Y Cb Cr MCUs */
+	/* Convert MCUs to RGB using Y / Cb / Cr MCUs */
         for (uint32_t i = 0; i < NB_PIXELS; ++i) {
 
                 /* Least accurate version (subject p15) */
@@ -41,8 +41,8 @@ void YCbCr_to_ARGB(uint8_t  *mcu_YCbCr[3], uint32_t *mcu_RGB,
 }
 
 /* 
- * Convert Y MCU to RGB MCU
- * Use for Grayscale image
+ * Convert Y MCUs to RGB MCUs
+ * Used for grayscale images
  */
 void Y_to_ARGB(uint8_t *mcu_Y, uint32_t *mcu_RGB,
                 uint32_t nb_blocks_h, uint32_t nb_blocks_v)
@@ -56,10 +56,10 @@ void Y_to_ARGB(uint8_t *mcu_Y, uint32_t *mcu_RGB,
                 return;
         }
 	
-	/* Convertion to a RGB MCU using Y MCU */
+	/* Convert MCUs to RGB using Y MCUs */
         for (uint32_t i = 0; i < NB_PIXELS; ++i) {
 
-		/* Extract RGB value from Y value */
+		/* Extract RGB values from Y values */
                 gray = mcu_Y[i];
                 mcu_RGB[i] = gray << 16 | gray << 8 | gray;
         }

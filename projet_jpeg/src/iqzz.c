@@ -4,7 +4,7 @@
 
 
 /*
- * Used to optimize zigzag navigation in tables of 8x8
+ * Used to optimize zigzag navigation in 8x8 tables
  */
 static const uint8_t zz[64] = 
 {
@@ -18,9 +18,8 @@ static const uint8_t zz[64] =
         35, 36, 48, 49, 57, 58, 62, 63
 };
 
-/* 
- * Puts in out[64] the block in[64] of 8x8 pixels read in zigzag inverse 
- * multiplied by the quantification table
+/*
+ * Computes the inverse zigzag quantification.
  */
 void iqzz_block (int32_t in[64], int32_t out[64], uint8_t quantif[64])
 {
