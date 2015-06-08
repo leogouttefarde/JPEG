@@ -255,7 +255,7 @@ struct tiff_file_desc *init_tiff_file (const char *file_name,
         if (tfd->nb_strips > 1) {
 
                 /* Write all StripOffsets */
-                for (uint32_t i = 0; i < tfd->nb_strips; i ++){
+                for (uint32_t i = 0; i < tfd->nb_strips; i++){
                         write_long(tfd, line_offset);
                         line_offset += line_size;
                 }

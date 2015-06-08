@@ -7,7 +7,10 @@
 
 #define MAX_COMPS 3
 #define MAX_HTABLES 4
-#define MAX_QTABLES MAX_COMPS
+
+/* Quantification index on 4 bits => 16 Quantification tables */
+#define MAX_QTABLES 0x10 
+
 #define SECTION_HEAD 0xFF
 
 
@@ -36,13 +39,14 @@ enum jpeg_status {
         ALL_OK = 7
 };
 
-
+/* Input and Output filename */
 struct options {
 
         char *input;
         char *output;
 };
 
+/* Component information */
 struct comp {
 
         /* SOF0 data */
@@ -58,7 +62,9 @@ struct comp {
         int32_t last_DC;
 };
 
+/* JPEG information */
 struct jpeg_data {
+	/* Filename */
         char *path;
 
         uint16_t height, width;
@@ -77,24 +83,25 @@ struct jpeg_data {
 
         /* Quantification tables */
         uint8_t qtables[MAX_QTABLES][BLOCK_SIZE];
-
+	
+	/* JPEG status check */
         uint8_t state;
 };
 
 
 
-/* Read a section */
-uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
+/* Read a jpeg section */
+extern uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                         struct jpeg_data *jpeg, bool *error);
 
-/* Read header data */
-void read_header(struct bitstream *stream, struct jpeg_data *jpeg, bool *error);
+/* Read a jpeg header data */
+extern void read_header(struct bitstream *stream, struct jpeg_data *jpeg, bool *error);
 
-/* Extract then write image data to tiff file */
-void process_image(struct bitstream *stream, struct jpeg_data *jpeg, bool *error);
+/* Extract, decode jpeg data and write image data to tiff file */
+extern void process_image(struct bitstream *stream, struct jpeg_data *jpeg, bool *error);
 
-
-void free_jpeg_data(struct jpeg_data *jpeg);
+/* Free jpeg_data structure */
+extern void free_jpeg_data(struct jpeg_data *jpeg);
 
 
 

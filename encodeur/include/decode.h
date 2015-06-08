@@ -38,7 +38,7 @@ enum jpeg_status {
         ALL_OK = 7
 };
 
-
+/* Component information */
 struct comp {
 
         /* SOF0 data */
@@ -54,6 +54,7 @@ struct comp {
         int32_t last_DC;
 };
 
+/* MCU information */
 struct mcu_info {
         uint32_t h;
         uint32_t v;
@@ -65,8 +66,9 @@ struct mcu_info {
         uint32_t size;
 };
 
+/* JPEG information */
 struct jpeg_data {
-
+	/* Filename */
         char *path;
 
         uint16_t height, width;
@@ -86,25 +88,28 @@ struct jpeg_data {
         /* Quantification tables */
         uint8_t qtables[MAX_QTABLES][BLOCK_SIZE];
 
+	/* Compression rate */
         uint8_t compression;
 
+	/* JPEG status check */
         uint8_t state;
 
         uint32_t *raw_data;
 
         bool is_plain_image;
 
+	/* MCU information */
         struct mcu_info mcu;
 
         int32_t *mcu_data;
 };
 
 
-/* Read a section */
+/* Read a jpeg section */
 extern uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                         struct jpeg_data *jpeg, bool *error);
 
-/* Read header data */
+/* Read a jpeg header data */
 extern void read_header(struct bitstream *stream, struct jpeg_data *jpeg, bool *error);
 
 /* Extract raw image data */

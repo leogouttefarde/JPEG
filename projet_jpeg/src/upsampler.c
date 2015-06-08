@@ -11,7 +11,9 @@ static inline void upsample_pixel(uint8_t *in, uint32_t in_pos,
 	/* Upsampled pixel-line size */
         const uint32_t LINE = BLOCK_DIM * nb_blocks_out_h;
 
-        /* Copies the downsampled pixel as many times as required */
+        /* 
+	 * Copies the downsampled pixel as many times as required to Upsample a pixel
+	 */
         for (uint16_t v = 0; v < nb_blocks_v; ++v) {
                 memset(&out[out_index], in[in_pos], nb_blocks_h);
                 out_index += LINE;
@@ -27,7 +29,7 @@ static inline void upsample_block(uint8_t *in, uint32_t in_index,
         const uint32_t LINE = nb_blocks_v * BLOCK_DIM * nb_blocks_out_h;
         uint32_t in_pos, out_pos;
 
-        /* Upsample each pixel */
+        /* Upsample each pixel in the bloc */
         for (uint16_t j = 0; j < BLOCK_DIM; ++j) {
 
                 in_pos = in_index;
@@ -35,6 +37,7 @@ static inline void upsample_block(uint8_t *in, uint32_t in_index,
 
                 for (uint16_t i = 0; i < BLOCK_DIM; ++i) {
 
+			/* Upsample a pixel */
                         upsample_pixel(in, in_pos++, out, out_pos, nb_blocks_out_h,
                                         nb_blocks_h, nb_blocks_v);
                         out_pos += nb_blocks_h;
@@ -73,7 +76,8 @@ void upsampler(uint8_t *in,
                 out_pos = out_index;
 
                 for (uint16_t x = 0; x < nb_blocks_in_h; ++x) {
-
+			
+			/* Upsample a bloc */
                         upsample_block(in, in_pos, out, out_pos, nb_blocks_out_h,
                                         nb_blocks_h, nb_blocks_v);
 

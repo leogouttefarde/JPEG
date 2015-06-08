@@ -85,7 +85,7 @@ static void read_jpeg(struct jpeg_data *ojpeg, bool *error)
 
                 if (stream != NULL) {
 
-                        /* Read header data */
+                        /* Read jpeg header data */
                         read_header(stream, &jpeg, error);
                         ojpeg->nb_comps = jpeg.nb_comps;
 
@@ -139,7 +139,7 @@ void read_header(struct bitstream *stream, struct jpeg_data *jpeg, bool *error)
         }
 }
 
-/* Read a section */
+/* Read a jpeg section */
 uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                         struct jpeg_data *jpeg, bool *error)
 {
