@@ -48,10 +48,9 @@ void unpack_block(struct bitstream *stream,
         int16_t diff;
 
         if (table_AC == NULL || table_DC == NULL || pred_DC == NULL)
-                // Error
                 return;
 
-	/* Récupération du coefficient DC */
+	/* Retrieve the DC coefficient */
         class = next_huffman_value(table_DC, stream);
         diff = read_magnitude(stream, class);
 
@@ -59,7 +58,7 @@ void unpack_block(struct bitstream *stream,
         *pred_DC = bloc[n];
         n++;
 
-	/* Récupération des 63 coefficients AC */
+	/* Retrieve the 63 AC coefficients */
         while (n < BLOCK_SIZE) {
                 huffman_value = next_huffman_value(table_AC, stream);
 

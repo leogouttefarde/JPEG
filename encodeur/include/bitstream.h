@@ -15,7 +15,6 @@ enum stream_mode {
 struct bitstream;
 
 extern struct bitstream *create_bitstream(const char *filename, enum stream_mode mode);
-// extern struct bitstream *create_bitstream(const char *filename);
 
 extern bool end_of_bitstream(struct bitstream *stream);
 

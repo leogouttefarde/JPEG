@@ -4,12 +4,6 @@
 #include "library.h"
 
 
-#define BYTE(c, i)      ((c >> 8*i) & 0xFF)
-#define RED(c)          BYTE(c, 2)
-#define GREEN(c)        BYTE(c, 1)
-#define BLUE(c)         BYTE(c, 0)
-
-
 void YCbCr_to_ARGB(uint8_t  *mcu_YCbCr[3], uint32_t *mcu_RGB,
                 uint32_t nb_blocks_h, uint32_t nb_blocks_v)
 {
@@ -27,18 +21,19 @@ void YCbCr_to_ARGB(uint8_t  *mcu_YCbCr[3], uint32_t *mcu_RGB,
 
         for (uint32_t i = 0; i < NB_PIXELS; ++i) {
 
-                /* Conversion moins précise */
+                /* Least accurate version (subject p15) */
                 // R = Y[i] + 1.402 * (Cr[i] - 128);
                 // G = Y[i] - 0.34414 * (Cb[i] - 128) - 0.71414 * (Cr[i] - 128);
                 // B = Y[i] + 1.772 * (Cb[i] - 128);
 
-                /* Conversion plus précise */
+                /* Most accurate version (subject p15) */
                 R = Y[i] - 0.0009267 * (Cb[i] - 128) + 1.4016868 * (Cr[i] - 128);
                 G = Y[i] - 0.3436954 * (Cb[i] - 128) - 0.7141690 * (Cr[i] - 128);
                 B = Y[i] + 1.7721604 * (Cb[i] - 128) + 0.0009902 * (Cr[i] - 128);
 
 
-                mcu_RGB[i] = truncate(R) << 16 | truncate(G) << 8 | truncate(B);
+                /* Convert each color to uint8_t */
+                mcu_RGB[i] = TRUNCATE(R) << 16 | TRUNCATE(G) << 8 | TRUNCATE(B);
         }
 }
 
@@ -98,7 +93,7 @@ void ARGB_to_Y(uint32_t *mcu_RGB, uint8_t  *mcu_Y,
 {
         const uint32_t NB_PIXELS = BLOCK_SIZE * nb_blocks_h * nb_blocks_v;
 
-        int32_t R, G, B;
+        uint32_t R, G, B;
         uint32_t pixel;
 
         if (mcu_Y == NULL) {

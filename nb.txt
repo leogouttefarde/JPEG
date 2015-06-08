@@ -6,13 +6,6 @@ todo :
 - nettoyage code
 
 
-secondaire :
-
-- package-merge
-- ajout option décodage à l'encodeur
-
-
-
 
 info :
 

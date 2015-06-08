@@ -11,7 +11,8 @@ PROFILING =
 CC = gcc ${PROFILING}
 LD = gcc ${PROFILING}
 INC = -I$(INC_DIR)
-CFLAGS = $(INC) -Wall -std=c99 -g #-O3 #-Wextra -g #-O3
+CFLAGS = $(INC) -Wall -std=c99 -Wextra -g
+#CFLAGS = $(INC) -Wall -std=c99 -O3 -Wextra -s
 LDFLAGS = -lm
 
 # Liste des objets encadrants
@@ -43,16 +44,6 @@ TEST_FILE_O= test_file $(OBJ_DIR)/test_file.o $(OBJ_DIR)/priority_queue.o
 test_file: $@ $(OBJ_DIR)/test_file.o $(OBJ_DIR)/priority_queue.o
 	$(LD) -o $@ $(OBJ_DIR)/test_file.o $(OBJ_DIR)/priority_queue.o $(LDFLAGS)
 
-TEST_DCT_O = test_dct $(OBJ_DIR)/test_dct.o $(OBJ_DIR)/idct.o $(OBJ_DIR)/library.o $(OBJ_DIR)/bitstream.o
-
-test_dct: $@ $(OBJ_DIR)/test_dct.o $(OBJ_DIR)/idct.o $(OBJ_DIR)/library.o $(OBJ_DIR)/bitstream.o
-	$(LD) -o $@ $(OBJ_DIR)/test_dct.o $(OBJ_DIR)/idct.o $(OBJ_DIR)/library.o $(OBJ_DIR)/bitstream.o $(LDFLAGS)
-
-TEST_TIFF_O = test_tiff $(OBJ_DIR)/test_tiff.o $(OBJ_DIR)/tiff.o $(OBJ_DIR)/library.o $(OBJ_DIR)/bitstream.o
-
-test_tiff: $@ $(OBJ_DIR)/test_tiff.o $(OBJ_DIR)/tiff.o  $(OBJ_DIR)/library.o $(OBJ_DIR)/bitstream.o
-	$(LD) -o $@ $(OBJ_DIR)/test_tiff.o $(OBJ_DIR)/tiff.o $(OBJ_DIR)/library.o $(OBJ_DIR)/bitstream.o $(LDFLAGS)
-
 
 # Edition de lien des executables
 ${EXEC} : $(OBJ_FILES)
@@ -77,14 +68,13 @@ OUT=out.jpg
 run: all
 	./${EXEC} ${JPEG} -o $(OUT)
 	# ./${EXEC} ${TIFF} -o $(OUT)
-	#dot -Tpng dc_tree.dot > dc_tree.png
-	#dot -Tpng ac_tree.dot > ac_tree.png
 
-	# if [ -a ${OUT} ]; \
-	# then \
-	# 	display ${OUT}; \
-	# 	rm -f ${OUT}; \
-	# fi;
+	if [ -a ${OUT} ]; \
+	then \
+		display ${OUT}; \
+		rm -f ${OUT}; \
+	fi;
 
-	#rm -f ${TIFF};
+prof:
+	gprof ${EXEC} gmon.out > analysis.txt
 

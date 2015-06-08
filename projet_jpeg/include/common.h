@@ -14,13 +14,21 @@
 #include <complex.h>
 #include <inttypes.h>
 
+
+#define COMMENT "JPEG Decoder by ND, IK & LG. Ensimag 2015"
+
 #define USAGE "Usage : %s <jpeg_file> [options]\n"\
               "\n"\
               "Options list :\n"\
               "    -o <output_file> : Output TIFF path\n"\
               "    -h               : Display this help\n"
 
-// defines
+
+
+#define BLOCK_DIM 8
+#define BLOCK_SIZE 64
+
+
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
@@ -32,9 +40,6 @@
 #ifndef M_SQRT1_2
 #define M_SQRT1_2 0.70710678118654752440
 #endif
-
-#define BLOCK_DIM 8
-#define BLOCK_SIZE 64
 
 
 // Log

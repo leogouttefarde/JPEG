@@ -3,46 +3,31 @@
 #include "common.h"
 
 
-/* Procédure qui réalise la correction du sous échantillonnage sur un pixel */
+/* Upsamples a pixel */
 static inline void upsample_pixel(uint8_t *in, uint32_t in_pos,
                     uint8_t *out, uint32_t out_index, uint16_t nb_blocks_out_h,
                     uint8_t nb_blocks_h, uint8_t nb_blocks_v)
 {
-	/* Increment sur une une ligne de pixel corrigé */
+	/* Upsampled pixel-line size */
         const uint32_t LINE = BLOCK_DIM * nb_blocks_out_h;
-        //uint32_t out_pos;
-	/* Copie d'un pixel nb_blocks_h fois pour chaque bloc vertical */
+
+        /* Copies the downsampled pixel as many times as required */
         for (uint16_t v = 0; v < nb_blocks_v; ++v) {
-
-                //out_pos = out_index;
-
-
-                /*
-                 * Copie optimale
-                 */
-                memset(&out[out_index], in[in_pos], sizeof(uint8_t) * nb_blocks_h);
-
-                /*
-                 * Copie non optimale
-                 */
-                /*for (uint16_t h = 0; h < nb_blocks_h; ++h)
-                        out[out_pos++] = in[in_pos];*/
-
-
+                memset(&out[out_index], in[in_pos], nb_blocks_h);
                 out_index += LINE;
         }
 }
 
-/* Procédure qui réalise la correction du sous échantillonnage sur un bloc 8x8  */
+/* Upsamples a whole block */
 static inline void upsample_block(uint8_t *in, uint32_t in_index,
                     uint8_t *out, uint32_t out_index, uint16_t nb_blocks_out_h,
                     uint8_t nb_blocks_h, uint8_t nb_blocks_v)
 {
-	/* Increment sur une ligne du bloc corrigé */
+        /* Upsampled bloc-line size */
         const uint32_t LINE = nb_blocks_v * BLOCK_DIM * nb_blocks_out_h;
         uint32_t in_pos, out_pos;
 
-	/* Traitement pixel par pixel */
+        /* Upsample each pixel */
         for (uint16_t j = 0; j < BLOCK_DIM; ++j) {
 
                 in_pos = in_index;
@@ -60,8 +45,7 @@ static inline void upsample_block(uint8_t *in, uint32_t in_index,
         }
 }
 
-/* Procédure qui réalise la correction du sous échantillonnage */
-/* sur une composante Y, Cb ou Cr */
+/* Upsamples any input component's blocks */
 void upsampler(uint8_t *in,
                 uint8_t nb_blocks_in_h, uint8_t nb_blocks_in_v,
                 uint8_t *out,
@@ -70,17 +54,19 @@ void upsampler(uint8_t *in,
         const uint8_t nb_blocks_h = nb_blocks_out_h / nb_blocks_in_h;
         const uint8_t nb_blocks_v = nb_blocks_out_v / nb_blocks_in_v;
 
-	/* Increment sur une ligne blocs sous échantillonné */
+        /* Downsampled bloc-row size */
         const uint32_t IN_LINE = BLOCK_SIZE * nb_blocks_in_h;
-	/* Increment sur une ligne de blocs corrigées */
+
+        /* Upsampled bloc-row size */
         const uint32_t OUT_LINE = nb_blocks_v * BLOCK_SIZE * nb_blocks_out_h;
-	/* Increment sur un bloc corrigé */
+
+        /* Upsampled bloc increment */
         const uint32_t H_SIZE = BLOCK_DIM * nb_blocks_h;
 
         uint32_t in_pos, in_index = 0;
         uint32_t out_pos, out_index = 0;
 
-	/* Traitement bloc par bloc */
+        /* Upsample each bloc */
         for (uint16_t y = 0; y < nb_blocks_in_v; ++y) {
 
                 in_pos = in_index;
@@ -98,20 +84,5 @@ void upsampler(uint8_t *in,
                 in_index += IN_LINE;
                 out_index += OUT_LINE;
         }
-	/*
-	for (uint16_t i = 0; i < nb_blocks_in_h*nb_blocks_in_v*BLOCK_SIZE; i++) {
-		if (i % (nb_blocks_in_h*BLOCK_DIM) == 0)
-			printf("\n");
-		printf("%#04x ", in[i]);
-	}	
-	printf("\n");
-	for (uint16_t i = 0; i < nb_blocks_out_h*nb_blocks_out_v*BLOCK_SIZE; i++) {
-		if (i % (nb_blocks_out_h*BLOCK_DIM) == 0)
-			printf("\n");
-		printf("%u : %#04x ", i, out[i]);
-	}
-	printf("\n");printf("\n");*/
-	
-	
 }
 

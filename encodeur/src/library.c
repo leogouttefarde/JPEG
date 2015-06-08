@@ -1,5 +1,7 @@
 
 #include "library.h"
+#include "decode.h"
+#include "tiff.h"
 #include <unistd.h>
 #include <getopt.h>
 
@@ -120,25 +122,9 @@ bool skip_bitstream(struct bitstream *stream, uint32_t nb_bytes)
         return error;
 }
 
-uint32_t truncate(int32_t s)
+int32_t get_value(char *str, bool *error)
 {
-        s = (s > 255) ? 255 : ( (s < 0) ? 0 : s );
-
-        return (uint32_t)s;
-}
-
-uint8_t double2uint8(double x)
-{
-        uint8_t res;
-
-        res = (x > 255) ? 255 : ( (x < 0) ? 0 : (uint8_t)x );
-
-        return res;
-}
-
-uint32_t get_value(char *str, bool *error)
-{
-        uint32_t val;
+        int32_t val;
         char *endptr = NULL;
 
         if (str != NULL)
@@ -173,6 +159,7 @@ uint8_t affect_mcu(uint32_t val, bool *error)
 bool parse_args(int argc, char **argv, struct options *options)
 {
         bool error = false;
+        bool encode = true;
 
         char *input = NULL;
         char *output = NULL;
@@ -191,7 +178,7 @@ bool parse_args(int argc, char **argv, struct options *options)
         /* Disable default warnings */
         opterr = 0;
 
-        while ( (opt = getopt(argc, argv, "o:c:m:gh")) != -1) {
+        while ( (opt = getopt(argc, argv, "o:c:m:ghd")) != -1) {
 
                 switch (opt) {
                         case 'o':
@@ -214,15 +201,16 @@ bool parse_args(int argc, char **argv, struct options *options)
                                 error = true;
                                 break;
 
-                        // default:
-                                // printf ("Unrecognized option : %c\n", c);
+                        case 'd':
+                                encode = false;
+                                break;
                 }
         }
 
 
         /* Compression rate detection */
         if (i_comp != NULL) {
-                uint32_t val = get_value(i_comp, &error);
+                int32_t val = get_value(i_comp, &error);
 
                 if (!error) {
                         if (0 <= val && val <= 25)
@@ -249,8 +237,6 @@ bool parse_args(int argc, char **argv, struct options *options)
                 if (!error) {
                         mcu_h = affect_mcu(h_val, &error);
                         mcu_v = affect_mcu(v_val, &error);
-
-                        // printf("New MCUs : h=%d v=%d\n", mcu_h, mcu_v);
                 }
         }
 
@@ -259,14 +245,6 @@ bool parse_args(int argc, char **argv, struct options *options)
         if (optind < argc) {
                 input = argv[optind];
                 optind++;
-
-                // if (optind < argc) {
-                //         printf ("Paramètres non reconnus : ");
-                //         while (optind < argc)
-                //                 printf ("%s ", argv[optind++]);
-
-                //         printf ("\n");
-                // }
         }
 
 
@@ -283,7 +261,6 @@ bool parse_args(int argc, char **argv, struct options *options)
         }
 
 
-
         options->input = input;
         options->output = output;
 
@@ -292,6 +269,7 @@ bool parse_args(int argc, char **argv, struct options *options)
 
         options->compression = quality;
         options->gray = gray;
+        options->encode = encode;
 
 
         return error;
@@ -346,7 +324,10 @@ uint32_t *image_to_mcu(
         for (uint32_t nb_h = 0; nb_h < mcu->nb_h; nb_h++)
         for (uint32_t h = 0; h < mcu->h; h++) {
 
-                /* Set default pixel value to 0 */
+                /*
+                 * Set unused pixels to 0,
+                 * maximizing compression
+                 */
                 pixel = 0;
 
                 /* Check for image overlapping */
@@ -364,4 +345,110 @@ uint32_t *image_to_mcu(
         return data;
 }
 
+void process_options(struct options *options, struct jpeg_data *jpeg, bool *error)
+{
+        if (options == NULL || jpeg == NULL || error == NULL || *error)
+                return;
+
+
+        if (options->gray) {
+                if (options->encode) {
+                        jpeg->nb_comps = 1;
+
+                        options->mcu_h = BLOCK_DIM;
+                        options->mcu_v = BLOCK_DIM;
+                } else
+                        compute_gray(jpeg);
+        }
+
+
+        if (jpeg->mcu.h != options->mcu_h
+                || jpeg->mcu.v != options->mcu_v
+                || jpeg->is_plain_image) {
+
+                uint32_t *image = jpeg->raw_data;
+
+                if (!jpeg->is_plain_image) {
+                        image = mcu_to_image(jpeg->raw_data,
+                                                &jpeg->mcu,
+                                                jpeg->width,
+                                                jpeg->height);
+
+                        SAFE_FREE(jpeg->raw_data);
+                }
+
+
+                jpeg->mcu.h = options->mcu_h;
+                jpeg->mcu.v = options->mcu_v;
+
+                compute_mcu(jpeg, error);
+
+
+                uint32_t *data = image_to_mcu(image,
+                                                &jpeg->mcu,
+                                                jpeg->width,
+                                                jpeg->height);
+
+                SAFE_FREE(image);
+
+                jpeg->raw_data = data;
+        }
+}
+
+void export_tiff(struct jpeg_data *jpeg, bool *error)
+{
+        if (*error || jpeg == NULL) {
+                *error = true;
+                return;
+        }
+
+        struct tiff_file_desc *file = NULL;
+
+        file = init_tiff_file(jpeg->path, jpeg->width, jpeg->height, jpeg->mcu.v);
+
+        if (file != NULL) {
+                uint32_t *mcu_RGB;
+
+                for (uint32_t i = 0; i < jpeg->mcu.nb; i++) {
+                        mcu_RGB = &jpeg->raw_data[i * jpeg->mcu.size];
+                        write_tiff_file(file, mcu_RGB, jpeg->mcu.h_dim, jpeg->mcu.v_dim);
+                }
+
+                close_tiff_file(file);
+
+        } else
+                *error = true;
+}
+
+void compute_gray(struct jpeg_data *jpeg)
+{
+        if (jpeg == NULL || jpeg->raw_data == NULL)
+                return;
+
+
+        uint32_t nb_pixels, pixel;
+        uint32_t *image = jpeg->raw_data;
+        uint32_t R, G, B, gray;
+
+        if (jpeg->is_plain_image)
+                nb_pixels = jpeg->width * jpeg->height;
+
+        else
+                nb_pixels = jpeg->mcu.size * jpeg->mcu.nb;
+
+
+        for (uint32_t i = 0; i < nb_pixels; i++) {
+
+                pixel = image[i];
+
+                R = RED(pixel);
+                G = GREEN(pixel);
+                B = BLUE(pixel);
+
+                gray = (R + G + B) / 3;
+
+
+                image[i] = gray << 16 | gray << 8 | gray;
+        }
+}
 

@@ -3,7 +3,7 @@
 #include "downsampler.h"
 
 
-static inline uint8_t downsample_pixel(
+static inline uint8_t average_pixel(
                 uint8_t *in, uint32_t in_index, uint16_t nb_blocks_in_h,
                 uint8_t nb_blocks_h, uint8_t nb_blocks_v)
 {
@@ -47,8 +47,8 @@ static inline void downsample_block(
 
                 for (uint16_t i = 0; i < BLOCK_DIM; ++i) {
 
-                        pixel = downsample_pixel(in, in_pos, nb_blocks_in_h,
-                                        nb_blocks_h, nb_blocks_v);
+                        pixel = average_pixel(in, in_pos, nb_blocks_in_h,
+                                                nb_blocks_h, nb_blocks_v);
 
                         out[out_pos++] = pixel;
 

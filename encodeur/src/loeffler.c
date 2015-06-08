@@ -42,7 +42,7 @@ static inline void loeffler_idct(double vect[BLOCK_DIM])
         double *next = next_buf;
 
 
-        /* Etape 4 */
+        /* Stage 4 */
 
         butterfly(vect[1], vect[7], &next[7], &next[4]);
 
@@ -56,7 +56,7 @@ static inline void loeffler_idct(double vect[BLOCK_DIM])
         swap(&vect, &next);
 
 
-        /* Etape 3 */
+        /* Stage 3 */
 
         butterfly(vect[7], vect[5], &next[7], &next[5]);
         butterfly(vect[4], vect[6], &next[4], &next[6]);
@@ -67,7 +67,7 @@ static inline void loeffler_idct(double vect[BLOCK_DIM])
         swap(&vect, &next);
 
 
-        /* Etape 2 */
+        /* Stage 2 */
 
         butterfly(vect[0], vect[3], &next[0], &next[3]);
         butterfly(vect[1], vect[2], &next[1], &next[2]);
@@ -78,14 +78,14 @@ static inline void loeffler_idct(double vect[BLOCK_DIM])
         swap(&vect, &next);
 
 
-        /* Etape 1 */
+        /* Stage 1 */
 
         butterfly(vect[3], vect[4], &next[3], &next[4]);
         butterfly(vect[2], vect[5], &next[2], &next[5]);
         butterfly(vect[1], vect[6], &next[1], &next[6]);
         butterfly(vect[0], vect[7], &next[0], &next[7]);
 
-        /* Inutile, remet la copie locale du pointeur vect à la bonne adresse */
+        /* Useless, restaures the local vect pointer's copy to its correct value */
         //swap(&vect, &next);
 }
 
@@ -94,7 +94,7 @@ void idct_block(int32_t in[64], uint8_t out[64])
         double vector[BLOCK_DIM];
         double matrix[BLOCK_SIZE];
 
-        /* Application sur les lignes de la matrice */
+        /* Apply Loeffler on the matrix's lines */
         for (uint8_t x = 0; x < BLOCK_DIM; ++x) {
 
                 for (uint8_t y = 0; y < BLOCK_DIM; ++y)
@@ -106,7 +106,7 @@ void idct_block(int32_t in[64], uint8_t out[64])
                         matrix[x*BLOCK_DIM + y] = vector[y];
         }
 
-        /* Application sur les lignes de sa transposée */
+        /* Apply Loeffler on its transposition's lines */
         for (uint8_t y = 0; y < BLOCK_DIM; ++y) {
 
                 for (uint8_t x = 0; x < BLOCK_DIM; ++x)
@@ -114,12 +114,14 @@ void idct_block(int32_t in[64], uint8_t out[64])
 
                 loeffler_idct(vector);
 
-                /* Avec Loeffler on multiplie par sqrt(2) donc
-                 * après chaque application il faut diviser par
-                 * sqrt(BLOCK_DIM) au lieu de sqrt(2 * BLOCK_DIM), et donc vu qu'on
-                 * l'applique 2 fois içi il faut diviser par sqrt(BLOCK_DIM)^2 = BLOCK_DIM */
+                /*
+                 * The Loeffler algorithm produces
+                 * a result upscaled by sqrt(n),
+                 * so since we apply it twice here
+                 * we have to downscale it by sqrt(n)^2 = n = BLOCK_DIM
+                 */
                 for (uint8_t x = 0; x < BLOCK_DIM; ++x)
-                        out[x*BLOCK_DIM + y] = double2uint8( vector[x]/BLOCK_DIM + 128. );
+                        out[x*BLOCK_DIM + y] = TRUNCATE( vector[x]/BLOCK_DIM + 128. );
         }
 }
 
@@ -130,7 +132,7 @@ static inline void loeffler_dct(double vect[BLOCK_DIM])
         double *next = next_buf;
 
 
-        /* Etape 1 */
+        /* Stage 1 */
 
         butterfly(vect[3], vect[4], &next[3], &next[4]);
         butterfly(vect[2], vect[5], &next[2], &next[5]);
@@ -140,7 +142,7 @@ static inline void loeffler_dct(double vect[BLOCK_DIM])
         swap(&vect, &next);
 
 
-        /* Etape 2 */
+        /* Stage 2 */
 
         butterfly(vect[0], vect[3], &next[0], &next[3]);
         butterfly(vect[1], vect[2], &next[1], &next[2]);
@@ -151,7 +153,7 @@ static inline void loeffler_dct(double vect[BLOCK_DIM])
         swap(&vect, &next);
 
 
-        /* Etape 3 */
+        /* Stage 3 */
 
         butterfly(vect[7], vect[5], &next[7], &next[5]);
         butterfly(vect[4], vect[6], &next[4], &next[6]);
@@ -162,7 +164,7 @@ static inline void loeffler_dct(double vect[BLOCK_DIM])
         swap(&vect, &next);
 
 
-        /* Etape 4 */
+        /* Stage 4 */
 
         butterfly(vect[7], vect[4], &next[1], &next[7]);
 
@@ -173,7 +175,7 @@ static inline void loeffler_dct(double vect[BLOCK_DIM])
         next[4] = vect[1];
         next[0] = vect[0];
 
-        /* Inutile, remet la copie locale du pointeur vect à la bonne adresse */
+        /* Useless, restaures the local vect pointer's copy to its correct value */
         //swap(&vect, &next);
 }
 
@@ -182,7 +184,7 @@ void dct_block(uint8_t in[64], int32_t out[64])
         double vector[BLOCK_DIM];
         double matrix[BLOCK_SIZE];
 
-        /* Application sur les lignes de la matrice */
+        /* Apply Loeffler on the matrix's lines */
         for (uint8_t x = 0; x < BLOCK_DIM; ++x) {
 
                 for (uint8_t y = 0; y < BLOCK_DIM; ++y)
@@ -194,7 +196,7 @@ void dct_block(uint8_t in[64], int32_t out[64])
                         matrix[x*BLOCK_DIM + y] = vector[y];
         }
 
-        /* Application sur les lignes de la transposée */
+        /* Apply Loeffler on its transposition's lines */
         for (uint8_t y = 0; y < BLOCK_DIM; ++y) {
 
                 for (uint8_t x = 0; x < BLOCK_DIM; ++x)
@@ -202,10 +204,12 @@ void dct_block(uint8_t in[64], int32_t out[64])
 
                 loeffler_dct(vector);
 
-                /* Avec Loeffler on multiplie par sqrt(2) donc
-                 * après chaque application il faut diviser par
-                 * sqrt(BLOCK_DIM) au lieu de sqrt(2 * BLOCK_DIM), et donc vu qu'on
-                 * l'applique 2 fois içi il faut diviser par sqrt(BLOCK_DIM)^2 = BLOCK_DIM */
+                /*
+                 * The Loeffler algorithm produces
+                 * a result upscaled by sqrt(n),
+                 * so since we apply it twice here
+                 * we have to downscale it by sqrt(n)^2 = n = BLOCK_DIM
+                 */
                 for (uint8_t x = 0; x < BLOCK_DIM; ++x)
                         out[x*BLOCK_DIM + y] = (int32_t)(vector[x] / BLOCK_DIM);
         }

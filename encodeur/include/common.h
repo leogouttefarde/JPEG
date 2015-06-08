@@ -15,15 +15,15 @@
 #include <inttypes.h>
 
 
-// Defines
-#define JPEG_COMMENT "JPEG Encoder by ND, IK & LG. Ensimag 2015"
+#define COMMENT "JPEG Encoder by ND, IK & LG. Ensimag 2015"
 
 #define USAGE "Usage : %s <input_file> -o <output_file> [options]\n"\
               "\n"\
               "Options list :\n"\
               "    -c <quality>  : Compression rate [0-25] (0 : lossless, 25 : highest)\n"\
               "    -m <mcu_size> : Output MCU sizes, either 8x8 / 16x8 / 8x16 / 16x16\n"\
-              "    -g            : encode as a gray image\n"\
+              "    -g            : Encode as a gray image\n"\
+              "    -d            : Decode to TIFF instead of encoding\n"\
               "    -h            : Display this help\n"\
               "\n"\
               "Supported input images : TIFF, JPEG\n"
@@ -60,5 +60,13 @@
 // Other
 #define UNUSED(arg) ((void)(arg))
 #define SAFE_FREE(p) do { if (p != NULL) { free(p), p = NULL; } } while (0)
+
+/* Macros */
+#define _BYTE(c, i)       ((c >> 8*i) & 0xFF)
+#define GET_BYTE(c)       _BYTE(c, 0)
+#define RED(c)            _BYTE(c, 2)
+#define GREEN(c)          _BYTE(c, 1)
+#define BLUE(c)           GET_BYTE(c)
+
 
 #endif

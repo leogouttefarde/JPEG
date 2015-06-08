@@ -3,637 +3,197 @@
 #include "common.h"
 
 
+/* TIFF constants */
+#define BYTE              0x0001
+#define ASCII             0x0002
+#define SHORT             0x0003
+#define LONG              0x0004
+#define RATIONAL          0x0005
 
-// Macros pour l'écriture dans le fichier
+#define ZERO              0x0000
+#define UN                0x0001
+#define DEUX              0x0002
+#define TROIS             0x0003
 
-#define BYTE 0x0001
-#define ASCII 0x0002
-#define SHORT 0x0003
-#define LONG 0x0004
-#define RATI 0x0005
+/* Endianness */
+#define LITTLE_ENDIAN     0x4949
+#define BIG_ENDIAN        0x4D4D
 
-#define ZERO 0x0000
-#define UN 0x0001
-#define DEUX 0x0002
-#define TROIS 0x0003
+/* IFD tags */
+#define IMAGE_WIDTH       0x0100
+#define IMAGE_LENGTH      0x0101
+#define BITS_PER_SAMPLE   0x0102
+#define COMPRESSION       0x0103
+#define PHOTOMETRIC       0x0106
+#define STRIP_OFFSETS     0x0111
+#define SAMPLES_PER_PIXEL 0x0115
+#define ROWS_PER_STRIP    0x0116
+#define STRIP_BYTE_COUNTS 0x0117
+#define X_RESOLUTION      0x011A
+#define Y_RESOLUTION      0x011B
+#define RESOLUTION_UNIT   0x0128
+#define SOFTWARE          0x0131
+
+#define bytes2long_be(b)    (GET_BYTE(b[0]) << 24 | GET_BYTE(b[1]) << 16 | GET_BYTE(b[2]) << 8 | GET_BYTE(b[3]))
+#define bytes2long_le(b)    (GET_BYTE(b[3]) << 24 | GET_BYTE(b[2]) << 16 | GET_BYTE(b[1]) << 8 | GET_BYTE(b[0]))
+#define bytes2long(b, le)   (le ? bytes2long_le(b) : bytes2long_be(b))
+
+#define bytes2short_be(b)   (GET_BYTE(b[0]) << 8 | GET_BYTE(b[1]))
+#define bytes2short_le(b)   (GET_BYTE(b[1]) << 8 | GET_BYTE(b[0]))
+#define bytes2short(b, le)  (le ? bytes2short_le(b) : bytes2short_be(b))
 
 
-#define CHECK_READ_SIZE(s)  if (read_size != s){perror("Erreur ");exit(1);}
-#define TREAT_ENDIANESS_32(valeur,is_le)  valeur = is_le ? valeur : ((valeur & 0xFF000000) >> 24 | (valeur & 0xFF) << 24 | ((valeur >> 8) & 0xff00) | ((valeur << 8) & 0xff0000))
-#define TREAT_ENDIANESS_16(valeur,is_le)  valeur = is_le ? valeur : ((valeur & 0xFF) << 8 | ((valeur >> 8) & 0xFF))
-
-struct tiff_file_desc {
-	FILE *file;
-	bool is_le; // Vaut true si le fichier est en little endian
-	uint32_t ptr_ifd;
-	uint32_t ifd_count;
-	uint32_t width;
-	uint32_t height;
-	uint16_t bits_per_sample;
-	uint16_t compression;
-	uint16_t photometric_interpretation;
-	uint32_t strip_offsets_count;
-	uint32_t *strip_offsets;
-	uint16_t samples_per_pixels;
-	uint32_t rows_per_strip;
-	uint32_t strip_bytes_count;
-	uint32_t *strip_bytes;
-	uint32_t x_resolution_num;
-	uint32_t x_resolution_denum;
-	uint32_t y_resolution_num;
-	uint32_t y_resolution_denum;
-	uint16_t resolution_unit;
-
-	
-	uint32_t current_line;
-	uint32_t next_pos_mcu;
-	uint32_t size_line;
-	uint32_t row_size;
-	uint32_t nb_strips;
-        uint32_t read_lines;
-
-	};
-
-/* lit une ifd et met à jour les bons champs dans tfd */
-void read_ifd(struct tiff_file_desc *tfd){
-	uint16_t tag;
-	uint16_t type;
-	uint32_t count;
-	uint32_t value;
-	size_t read_size;
-	
-	// Tag d'identification
-	read_size = fread(&tag,1,2, tfd->file);
-	CHECK_READ_SIZE(2);
-        // printf("tag = %X\n", tag);
-	TREAT_ENDIANESS_16(tag,tfd ->is_le);
-        // printf("tag = %X\n", tag);
-
-	// Type
-	read_size = fread(&type,1,2, tfd->file);
-	CHECK_READ_SIZE(2);
-        // printf("type = %X\n", type);
-	TREAT_ENDIANESS_16(type,tfd ->is_le);
-        // printf("type = %X\n", type);
-
-	// Nombre des valeurs
-	read_size = fread(&count,1,4, tfd->file);
-	CHECK_READ_SIZE(4);
-        // printf("count = %X\n", count);
-	TREAT_ENDIANESS_32(count,tfd ->is_le);
-        // printf("count = %X\n", count);
-
-        char buf[8];
-        uint8_t val_size;
-
-        switch (type) {
-        case BYTE:
-        case ASCII:
-                val_size = 1;
-                break;
-
-        case SHORT:
-                val_size = 2;
-                break;
-
-        case LONG:
-                val_size = 4;
-                break;
-
-        case RATI:
-                val_size = 8;
-                break;
-
-        default:
-                val_size = 1;
-                break;
-        }
-
-	// Valeur
-	read_size = fread(buf, 1, val_size, tfd->file);
-	CHECK_READ_SIZE(val_size);
-
-        switch (type) {
-        case BYTE:
-        case ASCII:
-                value = 1;
-                break;
-
-        case SHORT:
-                value = *((uint16_t*)buf);
-                // printf("value = %X\n", value);
-                TREAT_ENDIANESS_16(value,tfd ->is_le);
-                break;
-
-        case LONG:
-                value = *((uint32_t*)buf);
-                // printf("value = %X\n", value);
-                TREAT_ENDIANESS_32(value,tfd ->is_le);
-                break;
-
-        case RATI:
-                value = 1;
-                break;
-
-        default:
-                value = 1;
-                break;
-        }
-        // printf("value = %X\n", value);
-
-        if (val_size < 4)
-                fseek(tfd->file, 4 - val_size, SEEK_CUR);
-
-	
-	uint32_t current_pos;
-	
-	switch(tag){
-		// ImageWidth
-	case 0x0100:
-		tfd -> width = value;
-		break;
-
-		// ImageLength
-	case 0x0101:
-		tfd -> height = value;
-		break;
-
-		// BitsPerSample
-	case 0x0102:
-		tfd -> bits_per_sample = value;
-		break;
-
-		// Compression
-	case 0x0103:
-		tfd -> compression = value;
-		break;
-
-		// PhotometricInterpretation
-	case 0x0106:
-		tfd -> photometric_interpretation = value;
-		break;
-
-		// StripOffsets
-	case 0x0111:
-		tfd -> nb_strips = count;
-		tfd -> strip_offsets_count = count;
-		tfd -> strip_offsets = malloc(count*sizeof(uint32_t));
-		if (((count > 1) && (type == LONG)) || ((count > 2) && (type == SHORT))){
-			
-
-			current_pos = ftell(tfd ->file);
-			fseek(tfd ->file,value,0);
-			
-			for (uint32_t i =0; i <count; ++i){
-				read_size = fread(&(tfd -> strip_offsets[i]),1,4, tfd ->file);
-				CHECK_READ_SIZE(4);
-				TREAT_ENDIANESS_32(tfd -> strip_offsets[i],tfd ->is_le);
-			}
-			fseek(tfd ->file,current_pos,0);
-			
-		}else if ((type == SHORT) && (count == 2)){
-			tfd -> strip_offsets[0] = value >> 16;
-			tfd -> strip_offsets[1] = value & 0xFF;
-					
-		}else{
-			tfd -> strip_offsets[0] = value;
-		}
-		tfd -> current_line = tfd -> strip_offsets[0];
-		break;
-
-		// SamplesPerPixel
-	case 0x0115:
-		tfd -> samples_per_pixels = value;
-		break;
-
-		// RowsPerStrip
-	case 0x0116:
-
-                if (value > 0xFFFFFF)
-                        value = 0;
-
-                tfd -> rows_per_strip = value;
-
-		break;
-
-		// StripByteCounts
-	case 0x0117:
-
-		tfd -> strip_bytes_count = count;
-		tfd -> strip_bytes = malloc(count*sizeof(uint32_t));
-		if (((count > 1) && (type == LONG)) || ((count > 2) && (type == SHORT))){
-			
-
-			current_pos = ftell(tfd ->file);
-			fseek(tfd ->file,value,0);
-
-			for (uint32_t i =0; i <count; ++i){
-				read_size = fread(&(tfd -> strip_bytes[i]),1,4, tfd ->file);
-				CHECK_READ_SIZE(4);
-				TREAT_ENDIANESS_32(tfd -> strip_bytes[i],tfd ->is_le);
-			}
-			fseek(tfd ->file,current_pos,0);
-		
-		}else if ((type == SHORT) && (count == 2)){
-			tfd -> strip_bytes[0] = value >> 16;
-			tfd -> strip_bytes[1] = value & 0xFF;
-					
-		}else{
-			tfd -> strip_bytes[0] = value;
-		}
-
-		break;
-
-		// XResolution
-	case 0x011a:
-		current_pos = ftell(tfd ->file);
-
-		fseek(tfd ->file,value,0);
-		read_size = fread(&(tfd ->x_resolution_num),1,4, tfd ->file);
-		CHECK_READ_SIZE(4);
-		TREAT_ENDIANESS_32(tfd ->x_resolution_num,tfd ->is_le);
-		read_size = fread(&(tfd ->x_resolution_denum),1,4, tfd ->file);
-		CHECK_READ_SIZE(4);
-		TREAT_ENDIANESS_32(tfd ->x_resolution_denum,tfd ->is_le);
-		
-		fseek(tfd ->file,current_pos,0);
-		
-		break;
-
-		// YResolution
-	case 0x011b:
-		current_pos = ftell(tfd ->file);
-
-		fseek(tfd ->file,value,0);
-		read_size = fread(&(tfd ->y_resolution_num),1,4, tfd ->file);
-		CHECK_READ_SIZE(4);
-		TREAT_ENDIANESS_32(tfd ->y_resolution_num,tfd ->is_le);
-		read_size = fread(&(tfd ->y_resolution_denum),1,4, tfd ->file);
-		CHECK_READ_SIZE(4);
-		TREAT_ENDIANESS_32(tfd ->y_resolution_denum,tfd ->is_le);
-		
-		fseek(tfd ->file,current_pos,0);
-		break;
-
-		// ResolutionUnit
-	case 0x0128:
-		tfd -> resolution_unit = value;
-		break;
-	// default:
-	// 	NULL;
-	}
-}
-
-/* Renvoie un pointeur vers le tiff_file_desc correspondant au fichier tiff de * path file_name après la lecture du header
+/*
+ * Internal TIFF structure informations
  */
-struct tiff_file_desc *init_tiff_file_read (const char *file_name, uint32_t *width, uint32_t *height, uint32_t *row_per_strip)
+struct tiff_file_desc {
+
+        /* This tiff file's pointer */
+        FILE *file;
+
+        /* Indicates if this tiff uses little endian or not */
+        bool is_le;
+
+        /* IFD informations */
+        uint32_t ifd_offset;
+        uint32_t ifd_count;
+
+        /* Dimensions */
+        uint32_t width;
+        uint32_t height;
+
+        /* tiff informations */
+        uint16_t bits_per_sample;
+        uint16_t compression;
+        uint16_t photometric_interpretation;
+        uint16_t samples_per_pixels;
+        uint32_t rows_per_strip;
+
+        /* Strip informations */
+        uint32_t nb_strips;
+        uint32_t *strip_offsets;
+
+        /* Strip size informations */
+        uint32_t strip_bytes_count;
+        uint32_t *strip_bytes;
+
+        /* Internal informations */
+        uint32_t current_line;
+        uint32_t next_pos_mcu;
+        uint32_t line_size;
+        uint32_t row_size;
+        uint32_t read_lines;
+        uint8_t *write_buf;
+};
+
+
+static uint16_t read_short(struct tiff_file_desc *tfd, bool *error);
+
+static uint32_t read_long(struct tiff_file_desc *tfd, bool *error);
+
+static void read_ifd_entry(struct tiff_file_desc *tfd, bool *error);
+
+
+/*
+ * Initialisation de la lecture d'un fichier TIFF, avec les sorties suivantes :
+ *  - width : la largeur de l'image lue
+ *  - height: la hauteur de l'image lue
+ */
+struct tiff_file_desc *init_tiff_read (const char *path, uint32_t *width, uint32_t *height)
 {
-	struct tiff_file_desc *tfd = malloc(sizeof(struct tiff_file_desc));
-	
+        FILE *file = NULL;
+        bool error = false;
+        struct tiff_file_desc *tfd = calloc(1, sizeof(struct tiff_file_desc));
 
-	tfd -> file = fopen(file_name,"rb");
-	if (tfd -> file == NULL){
-		perror("Erreur ");
-		exit(1);
-	}
+        if (tfd == NULL)
+                return NULL;
 
-	uint16_t *buffer = malloc(sizeof(uint16_t));
-	size_t read_size;
-	
-	// Endianess
-	read_size = fread(buffer,1,2, tfd->file);
-	CHECK_READ_SIZE(2);
-	if (*buffer == 0x4949){
-		tfd -> is_le = true;
-	} else if (*buffer == 0x4D4D){
-		tfd -> is_le = false;
-	} else {
-		printf("ERROR : Invalid TIFF file\n");
-                exit(1);
-	}
 
-	// 42
-	read_size = fread(buffer,1,2, tfd->file);
-        CHECK_READ_SIZE(2);
-        // printf("buffer = %X\n", *buffer);
-        TREAT_ENDIANESS_16(*buffer,tfd ->is_le);
-        // printf("buffer = %X\n", *buffer);
-	if (*buffer != 42){
-		printf("ERROR : Not a TIFF file\n");
-                exit(1);
-	}
-	
-	// Ptr IFD
-	read_size = fread(&(tfd ->ptr_ifd),1,4, tfd->file);
-	CHECK_READ_SIZE(4);
-        // printf("tfd ->ptr_ifd = %X\n", tfd ->ptr_ifd);
-	TREAT_ENDIANESS_32(tfd ->ptr_ifd,tfd ->is_le);
-        // printf("tfd ->ptr_ifd = %X\n", tfd ->ptr_ifd);
-        // printf("tfd ->ptr_ifd = %X\n", tfd ->ptr_ifd);
+        file = fopen(path, "rb");
+        if (file == NULL)
+                return NULL;
 
-	// IFD count
-	fseek(tfd -> file, tfd -> ptr_ifd, SEEK_SET);
-	read_size = fread(&(tfd ->ifd_count),1,2, tfd->file);
-	CHECK_READ_SIZE(2);
-        // printf("tfd ->ifd_count = %X\n", tfd ->ifd_count);
-	TREAT_ENDIANESS_16(tfd ->ifd_count,tfd ->is_le);
-        // printf("tfd ->ifd_count = %X\n", tfd ->ifd_count);
-	
-	for(uint32_t i=0; i <tfd -> ifd_count;i++){
-		read_ifd(tfd);
-	}
+        tfd->file = file;
 
-        *width = tfd -> width;
-        *height = tfd -> height;
-        *row_per_strip = tfd -> rows_per_strip;
 
-        // printf("width = %u\n", *width);
-        // printf("height = %u\n", *height);
-        printf("row_per_strip = %u\n", *row_per_strip);
-        printf("samples_per_pixels = %u\n", tfd -> samples_per_pixels);
+        uint16_t endian;
 
-	tfd -> current_line = 0;
-	tfd -> next_pos_mcu = 0;
-	tfd -> row_size = tfd -> width * 3;
+        /* Endianness detection */
+        endian = read_short(tfd, &error);
 
+        if (endian == 0x4949)
+                tfd->is_le = true;
+
+        else if (endian == 0x4D4D)
+                tfd->is_le = false;
+
+        else
+                error = true;
+
+
+        /* 42 tiff marker */
+        read_short(tfd, &error);
+
+
+        /* IFD offset */
+        tfd->ifd_offset = read_long(tfd, &error);
+
+        /* Go to our IFD offset */
+        fseek(file, tfd->ifd_offset, SEEK_SET);
+
+        /* IFD count */
+        tfd->ifd_count = read_short(tfd, &error);
+
+
+        /* Default compression to none */
+        tfd->compression = 1;
+
+        for(uint32_t i = 0; i < tfd->ifd_count; i++)
+                read_ifd_entry(tfd, &error);
+
+
+        tfd->current_line = 0;
         tfd->read_lines = 0;
 
-        if (tfd->strip_offsets != NULL)
+
+        uint16_t samples = tfd->samples_per_pixels;
+        uint16_t photo = tfd->photometric_interpretation;
+
+        /* Check tiff validity / compatibility */
+        if (tfd->strip_offsets == NULL
+            || tfd->width == 0
+            || tfd->height == 0
+            || (samples != 1 && samples != 3 && samples != 4)
+            || tfd->compression != 1
+            || tfd->bits_per_sample != 8
+            || (photo != 1 && photo != 2))
+                error = true;
+
+
+        /* Cleanup on error */
+        if (error) {
+                close_tiff_file(tfd);
+                tfd = NULL;
+        }
+
+        else {
+                *width = tfd->width;
+                *height = tfd->height;
+
+                /* Move the file to the first strip to read */
                 fseek(tfd->file, tfd->strip_offsets[tfd->current_line], SEEK_SET);
+        }
 
-			  
-	SAFE_FREE(buffer);
-	return tfd;
+
+        return tfd;
 }
 
-/* Ferme le fichier associé à la structure tiff_file_desc passée en
- * paramètre et désalloue la mémoire occupée par cette structure. */
-void close_tiff_file(struct tiff_file_desc *tfd)
+/* Lit une ligne de l'image TIFF ouverte avec init_tiff_read.
+ * Renvoie true si une erreur est survenue, false si pas d'erreur. */
+bool read_tiff_line(struct tiff_file_desc *tfd, uint32_t *line_rgb)
 {
-        if (tfd != NULL && tfd->file != NULL)
-                fclose(tfd->file);
+        bool error = false;
 
-	SAFE_FREE(tfd);
-}
-
-
-/* Initialisation du fichier TIFF résultat, avec les paramètres suivants:
-   - width: la largeur de l'image ;
-   - height: la hauteur de l'image ;
-   - row_per_strip: le nombre de lignes de pixels par bande.
- */
-struct tiff_file_desc *init_tiff_file (const char *file_name,
-				       uint32_t width,
-				       uint32_t height,
-				       uint32_t row_per_strip)
-{
-        struct tiff_file_desc *tfd = malloc(sizeof(struct tiff_file_desc));
-	
-	tfd -> file = fopen(file_name,"wb");
-	if (tfd -> file == NULL){
-		perror("Erreur: ");
-		exit(1);
-	}
-	
-	tfd -> width = width;
-	tfd -> height = height;
-	tfd -> rows_per_strip = row_per_strip;
-	
-	tfd -> nb_strips = tfd -> height / tfd -> rows_per_strip;
-	tfd-> nb_strips = ((tfd -> nb_strips * tfd -> rows_per_strip) < tfd -> height ? tfd -> nb_strips + 1 : tfd -> nb_strips);
-
-	// écriture du header dans le fichier
-	//===================================
-	uint32_t taille_buffer = (90+4*tfd -> nb_strips);
-	uint16_t *buffer = malloc(taille_buffer*sizeof(uint16_t));
-	
-	// Endianness + Indentification
-	buffer[0] = 0x4949;
-	buffer[1] = 0x002A;
-	
-	// Ptr IFD
-	buffer[2] = 0x0008;
-	buffer[3] = ZERO;
-	
-	// Nombre d'entrées
-	buffer[4] = 0x000C;
-	
-	// Image Width
-	buffer[5] = 0x0100;
-	if (tfd -> width <= 0xFFFF){
-		buffer[6] = SHORT;
-		buffer[7] = UN;
-		buffer[8] = ZERO;
-		buffer[9] = tfd -> width;
-		buffer[10] = ZERO;
-	}else{
-		buffer[6] = LONG;
-		buffer[7] = UN;
-		buffer[8] = ZERO;
-		buffer[9] =  tfd -> width;
-		buffer[10] = (tfd -> width >> 16);
-	}
-
-	// Image Length
-	buffer[11] = 0x0101;
-	if (tfd -> width <= 0xFFFF){
-		buffer[12] = SHORT;
-		buffer[13] = UN;
-		buffer[14] = ZERO;
-		buffer[15] = tfd -> height;
-		buffer[16] = ZERO;
-	}else{
-		buffer[12] = LONG;
-		buffer[13] = UN;
-		buffer[14] = ZERO;
-		buffer[15] = tfd -> height;
-		buffer[16] = (tfd -> height  >> 16);
-	}
-
-	// BitsPerSample
-	buffer[17] = 0x0102;
-	buffer[18] = SHORT;
-	buffer[19] = TROIS;
-	buffer[20] = ZERO;
-	buffer[21] = 0x009E;
-	buffer[22] = ZERO;
-	
-	// Compression
-	buffer[23] = 0x0103;
-	buffer[24] = SHORT;
-	buffer[25] = UN;
-	buffer[26] = ZERO;
-	buffer[27] = UN;
-	buffer[28] = ZERO;
-
-	// PhotometricInterpretation
-	buffer[29] = 0x0106;
-	buffer[30] = SHORT;
-	buffer[31] = UN;
-	buffer[32] = ZERO;
-	buffer[33] = DEUX;
-	buffer[34] = ZERO;
-
-	// StripOffsets
-
-	uint32_t ptr_ligne = 0x00B4+8* tfd -> nb_strips;
-	tfd -> strip_offsets_count = tfd -> nb_strips;
-	tfd -> strip_offsets = malloc(tfd -> strip_offsets_count*sizeof(uint32_t));
-
-	buffer[35] = 0x0111;
-	buffer[36] = LONG;
-	buffer[37] = tfd -> nb_strips;
-	buffer[38] = tfd -> nb_strips >> 16;
-
-
-	if (tfd -> strip_offsets_count > 1){
-		buffer[39] = 0x00B4;
-		buffer[40] = ZERO;
-	} else {
-		buffer[39] = ptr_ligne;
-		buffer[40] = (ptr_ligne >> 16);
-		tfd -> strip_offsets[0] = ptr_ligne;
-	}
-
-
-	// SamplesPerPixel
-	buffer[41] = 0x0115;
-	buffer[42] = SHORT;
-	buffer[43] = UN;
-	buffer[44] = ZERO;
-	buffer[45] = TROIS;
-	buffer[46] = ZERO;
-
-	// RowsPerStrip
-	buffer[47] = 0x0116;
-	buffer[48] = LONG;
-	buffer[49] = UN;
-	buffer[50] = ZERO;
-	buffer[51] = tfd -> rows_per_strip;
-	buffer[52] = tfd -> rows_per_strip >> 16;
-
-	// StripByteCounts
-
-	uint32_t hauteur_ligne = tfd -> height % tfd -> rows_per_strip;
-
-        if (tfd -> height > 0  && hauteur_ligne == 0)
-                hauteur_ligne = tfd -> rows_per_strip;
-
-	uint32_t taille_ligne;
-	
-	tfd -> strip_bytes_count = tfd -> nb_strips;
-	tfd -> strip_bytes = malloc(tfd -> strip_bytes_count*sizeof(uint32_t));
-	
-
-	
-	if (tfd -> strip_bytes_count > 1){
-		taille_ligne = tfd -> rows_per_strip*tfd->width*3;
-		buffer[57] = (0x00B4 + tfd -> nb_strips * 0x4);
-		buffer[58] = ZERO;
-	} else {
-		taille_ligne = hauteur_ligne * tfd->width*3;
-		buffer[57] = taille_ligne;
-		buffer[58] = (taille_ligne >> 16);
-	}
-	
-
-
-	// XResolution
-	buffer[59] = 0x011a;
-	buffer[60] = RATI;
-	buffer[61] = UN;
-	buffer[62] = ZERO;
-	buffer[63] = 0x00A4;
-	buffer[64] = ZERO;
-
-	// YResolution
-	buffer[65] = 0x011b;
-	buffer[66] = RATI;
-	buffer[67] = UN;
-	buffer[68] = ZERO;
-	buffer[69] = 0x00AC;
-	buffer[70] = ZERO;
-
-	// ResolutionUnit
-	buffer[71] = 0x0128;
-	buffer[72] = SHORT;
-	buffer[73] = UN;
-	buffer[74] = ZERO;
-	buffer[75] = DEUX;
-	buffer[76] = ZERO;
-
-	// Offset suivant
-	buffer[77] = ZERO;
-	buffer[78] = ZERO;
-
-	// --> Ptr BitsPerSample
-	buffer[79] = 0x0008;
-	buffer[80] = 0x0008;
-	buffer[81] = 0x0008;
-
-	// --> Ptr XResolution & YResolution
-	buffer[82] = 0x0064;
-	buffer[83] = ZERO;
-	buffer[84] = UN;
-	buffer[85] = ZERO;
-
-	buffer[86] = 0x0064;
-	buffer[87] = ZERO;
-	buffer[88] = UN;
-	buffer[89] = ZERO;
-
-	// --> Ptr StripOffsets
-
-	
-	// Initialisation des informations necéssaires pour l'écriture au format TIFF
-	tfd -> current_line = 0;
-
-	tfd -> size_line = taille_ligne;
-	tfd -> row_size = tfd->width*3;
-	// Initialisation de la position de la 1ere mcu
-	tfd -> next_pos_mcu = 0;
-	
-	for (uint32_t i =0; i < tfd -> nb_strips; i ++){
-		buffer[90+2*i] = ptr_ligne;
-		buffer[90+2*i+1] = (ptr_ligne >> 16);
-
-		tfd -> strip_offsets[i] = ptr_ligne;
-
-		ptr_ligne += taille_ligne;
-	}
-
-	uint32_t indice_dans_buffer = 90+2*tfd -> nb_strips;
-	// --> Ptr StripByteCounts
-
-	for (uint32_t i =0; i < tfd -> nb_strips - 1; i++){
-		buffer[indice_dans_buffer+2*i] = taille_ligne;
-		buffer[indice_dans_buffer+2*i+1] = (taille_ligne >> 16);
-		tfd -> strip_bytes[i] = taille_ligne;
-	}
-	
-	// Taille de la dernière ligne
-	indice_dans_buffer = indice_dans_buffer+2*(tfd -> nb_strips-1);
-
-       
-
-	taille_ligne = hauteur_ligne * tfd->width*3;
-	
-	
-	buffer[indice_dans_buffer] = taille_ligne;
-	buffer[indice_dans_buffer+1] = (taille_ligne >> 16);
-	tfd -> strip_bytes[tfd -> nb_strips - 1] = taille_ligne;
-	
-
-	fwrite(buffer,sizeof(uint16_t),taille_buffer,tfd -> file);
-
-	SAFE_FREE(buffer);
-
-
-	return tfd;
-}
-
-void read_tiff_line(struct tiff_file_desc *tfd, uint32_t *line_rgb)
-{
         if (tfd->rows_per_strip > 0)
         if (tfd->read_lines >= tfd->rows_per_strip) {
 
@@ -648,12 +208,16 @@ void read_tiff_line(struct tiff_file_desc *tfd, uint32_t *line_rgb)
         uint32_t i = 0;
         char buf[4];
         memset(buf, 0, sizeof(buf));
+        size_t ret;
 
-
-        // printf("?\n");
         for (uint32_t w = 0; w < tfd->width; w++) {
 
-                fread(buf, 1, tfd->samples_per_pixels, tfd->file);
+                ret = fread(buf, 1, tfd->samples_per_pixels, tfd->file);
+
+                if (ret != tfd->samples_per_pixels) {
+                        error = true;
+                        break;
+                }
 
                 if (tfd->samples_per_pixels == 1)
                         buf[1] = buf[2] = buf[0];
@@ -662,93 +226,506 @@ void read_tiff_line(struct tiff_file_desc *tfd, uint32_t *line_rgb)
         }
 
         tfd->read_lines++;
+
+
+        return error;
 }
 
-
-/* Lit une MCU composée de nb_blocks_h et nb_blocks_v 
- * blocs 8x8  en horizontal et en vertical à partir du 
- * fichier fichier TIFF représenté par la structure 
- * tiff_file_desc tfd. */
-void read_tiff_file (struct tiff_file_desc *tfd, uint32_t *mcu_rgb,
-			  uint8_t nb_blocks_h,
-			  uint8_t nb_blocks_v)
+static uint16_t read_short(struct tiff_file_desc *tfd, bool *error)
 {
-	uint32_t read_size;
-	uint32_t current_position;
+        uint16_t value = -1;
 
-        if (tfd -> rows_per_strip == 0) {
-                current_position = tfd -> strip_offsets[0];
+        if (tfd != NULL && tfd->file != NULL && !*error) {
+                uint8_t buf[2];
+                size_t ret;
 
-                uint32_t i = 0;
-                fseek(tfd -> file, current_position, SEEK_SET);
+                ret = fread(buf, 1, sizeof(buf), tfd->file);
 
-                for (uint32_t h = 0; h < tfd->height; h++) {
-                        for (uint32_t w = 0; w < tfd->width; w++) {
-                                char buf[4];
+                if (ret != sizeof(buf))
+                        *error = true;
 
-                                fread(buf, 1, tfd->samples_per_pixels, tfd->file);
-                                mcu_rgb[i++] = ((buf[0] & 0xFF) << 16) | ((buf[1] & 0xFF) << 8) | (buf[2] & 0xFF);
-                        }
-                }
+                else
+                        value = bytes2short(buf, tfd->is_le);
+        }
+        else
+                *error = true;
 
+        return value;
+}
+
+static uint32_t read_long(struct tiff_file_desc *tfd, bool *error)
+{
+        uint32_t value = -1;
+
+        if (tfd != NULL && tfd->file != NULL && !*error) {
+                uint8_t buf[4];
+                size_t ret;
+
+                ret = fread(buf, 1, sizeof(buf), tfd->file);
+
+                if (ret != sizeof(buf))
+                        *error = true;
+
+                else
+                        value = bytes2long(buf, tfd->is_le);
+        }
+        else
+                *error = true;
+
+        return value;
+}
+
+/* Reads an IFD entry and updates the right tiff fields */
+static void read_ifd_entry(struct tiff_file_desc *tfd, bool *error)
+{
+        if (error == NULL || *error)
                 return;
+
+
+        uint16_t tag;
+        uint16_t type;
+        uint32_t count;
+        uint32_t value, next_value;
+        uint32_t cur_pos;
+        uint8_t buf[4];
+        size_t ret;
+
+        /* Identification tag */
+        tag = read_short(tfd, error);
+
+        /* Type */
+        type = read_short(tfd, error);
+
+        /* Number of values */
+        count = read_long(tfd, error);
+
+
+        /* Value */
+        ret = fread(buf, 1, sizeof(buf), tfd->file);
+
+        if (ret != sizeof(buf))
+                *error = true;
+
+
+        switch (type) {
+        case BYTE:
+                value = buf[0];
+                break;
+
+        case SHORT:
+                value = bytes2short(buf, tfd->is_le);
+
+                uint8_t *next_buf = &buf[2];
+                next_value = bytes2short(next_buf, tfd->is_le);
+                break;
+
+        case LONG:
+                value = bytes2long(buf, tfd->is_le);
+                break;
+
+        /* Unused values */
+        case ASCII:
+        case RATIONAL:
+        default:
+                value = 0;
         }
 
 
-	//printf("Nb  Strips   : %u \n",tfd -> nb_strips); 
-	//printf("CurrntStrp   : %u \n",tfd -> current_line);
-	if ((tfd -> current_line < (tfd -> nb_strips-1)) && (tfd -> strip_offsets[tfd -> current_line] + tfd -> next_pos_mcu + (nb_blocks_v*BLOCK_DIM-1)*tfd -> row_size >= tfd -> strip_offsets[tfd -> current_line+1])){
-		
-		tfd -> current_line++;
-		tfd -> next_pos_mcu = 0;
-		//printf("New Line   : %u \n",tfd -> current_line); 
-	}
+        switch(tag) {
 
-	current_position= tfd -> strip_offsets[tfd -> current_line] + tfd -> next_pos_mcu;
+        /* ImageWidth */
+        case 0x0100:
+                tfd->width = value;
+                break;
 
-	
-	uint32_t nb_read_h, nb_read_v;
-	if (((tfd -> next_pos_mcu%tfd -> row_size) + nb_blocks_h*BLOCK_DIM*3 > tfd -> row_size)){
-		nb_read_h = (nb_blocks_h*BLOCK_DIM*3-((tfd -> next_pos_mcu%tfd -> row_size) + nb_blocks_h*BLOCK_DIM*3-tfd -> row_size))/3;
-		tfd -> next_pos_mcu += 3*nb_read_h+(nb_blocks_v*BLOCK_DIM-1)*tfd -> row_size;
-	} else { 
-		nb_read_h = nb_blocks_h*BLOCK_DIM;
-		tfd -> next_pos_mcu += 3*nb_read_h;
-	}
+        /* ImageLength */
+        case 0x0101:
+                tfd->height = value;
+                break;
 
-	nb_read_v = ((nb_blocks_v*BLOCK_DIM) > (tfd -> strip_bytes[tfd -> current_line] / tfd -> row_size)?(tfd -> strip_bytes[tfd -> current_line] / tfd -> row_size) : (nb_blocks_v*BLOCK_DIM));
-	
-	//printf("Strip Bytes : %u \n",tfd -> strip_bytes[tfd -> current_line]); 
-	//printf("nb_read_v   : %u \n",nb_read_v);
-	//printf("nb_read_h   : %u \n",nb_read_h);
-	
-	for(uint32_t i=0; i < nb_read_v;i++){
-		fseek(tfd -> file, current_position, 0);
-		
-		for (uint32_t j=0; j < nb_read_h;j++){
-			
-			read_size = fread(&(mcu_rgb[i*nb_blocks_h*BLOCK_DIM+j]),1,3, tfd->file);
-			CHECK_READ_SIZE(3);
-			TREAT_ENDIANESS_32(mcu_rgb[i*nb_blocks_h*BLOCK_DIM+j],!tfd ->is_le);// Attention au ! avant tfd ->is_le
-			mcu_rgb[i*nb_blocks_h*BLOCK_DIM+j] = mcu_rgb[i*nb_blocks_h*BLOCK_DIM+j] >> 8;
-		}
-		//On remplie le reste de la ligne de la MCU avec des zéros
-		for (uint32_t j=nb_read_h; j < nb_blocks_h*BLOCK_DIM;j++){
-			mcu_rgb[i*nb_blocks_h*BLOCK_DIM+j] = 0;
-		}
-		
-		current_position += tfd -> row_size;	
-	}
-	
-	//On remplie le reste des lignes de la  MCU avec des zéros
-	for(uint32_t i=nb_read_v; i < nb_blocks_v*BLOCK_DIM;i++){
-		for (uint32_t j=0; j < nb_blocks_h*BLOCK_DIM;j++){
-			mcu_rgb[i*nb_blocks_h*BLOCK_DIM+j] = 0;
-		}
-	}
-	
-	
+        /* BitsPerSample */
+        case 0x0102:
 
+                if (count <= 2)
+                        tfd->bits_per_sample = value;
+                else {
+                        cur_pos = ftell(tfd->file);
+                        fseek(tfd->file, value, SEEK_SET);
+
+                        tfd->bits_per_sample = read_short(tfd, error);
+
+                        fseek(tfd->file, cur_pos, SEEK_SET);
+                }
+                break;
+
+        /* Compression */
+        case 0x0103:
+                tfd->compression = value;
+                break;
+
+        /* PhotometricInterpretation */
+        case 0x0106:
+                tfd->photometric_interpretation = value;
+                break;
+
+        /* StripOffsets */
+        case 0x0111:
+                tfd->nb_strips = count;
+                tfd->strip_offsets = calloc(count, sizeof(uint32_t));
+
+                if (tfd->strip_offsets == NULL) {
+                        *error = true;
+                        return;
+                }
+
+
+                if ((count > 1 && type == LONG) || (count > 2 && type == SHORT)) {
+
+                        cur_pos = ftell(tfd->file);
+                        fseek(tfd->file, value, SEEK_SET);
+
+                        for (uint32_t i = 0; i < count; ++i)
+                                tfd->strip_offsets[i] = read_long(tfd, error);
+
+                        fseek(tfd->file, cur_pos, SEEK_SET);
+                        
+                } else if (type == SHORT && count == 2) {
+                        tfd->strip_offsets[0] = value;
+                        tfd->strip_offsets[1] = next_value;
+                                        
+                } else
+                        tfd->strip_offsets[0] = value;
+
+                break;
+
+
+        /* SamplesPerPixel */
+        case 0x0115:
+                tfd->samples_per_pixels = value;
+                break;
+
+        /* RowsPerStrip */
+        case 0x0116:
+                /*
+                 * Big values mean infinity,
+                 * in which case there are no strips
+                 */
+                if (value > 0xFFFFFF)
+                        value = 0;
+
+                tfd->rows_per_strip = value;
+                break;
+
+        /* StripByteCounts */
+        case 0x0117:
+
+                tfd->strip_bytes_count = count;
+                tfd->strip_bytes = calloc(count, sizeof(uint32_t));
+
+                if (tfd->strip_bytes == NULL) {
+                        *error = true;
+                        return;
+                }
+
+
+                if ((count > 1 && type == LONG) || (count > 2 && type == SHORT)) {
+
+                        cur_pos = ftell(tfd->file);
+                        fseek(tfd->file, value, SEEK_SET);
+
+                        for (uint32_t i = 0; i < count; ++i)
+                                tfd->strip_bytes[i] = read_long(tfd, error);
+
+                        fseek(tfd->file, cur_pos, SEEK_SET);
+                
+                } else if (type == SHORT && count == 2) {
+                        tfd->strip_bytes[0] = value;
+                        tfd->strip_bytes[1] = next_value;
+                }
+
+                else
+                        tfd->strip_bytes[0] = value;
+        }
+}
+
+/* Ferme le fichier associé à la structure tiff_file_desc passée en
+ * paramètre et désalloue la mémoire occupée par cette structure. */
+void close_tiff_file(struct tiff_file_desc *tfd)
+{
+        if (tfd != NULL) {
+                if (tfd->file != NULL)
+                        fclose(tfd->file);
+
+                SAFE_FREE(tfd->strip_offsets);
+                SAFE_FREE(tfd->strip_bytes);
+                SAFE_FREE(tfd->write_buf);
+        }
+
+        SAFE_FREE(tfd);
+}
+
+
+
+static void write_short(struct tiff_file_desc *tfd, uint16_t value);
+
+static void write_long(struct tiff_file_desc *tfd, uint32_t value);
+
+
+/* Initialisation du fichier TIFF résultat, avec les paramètres suivants:
+   - width: la largeur de l'image ;
+   - height: la hauteur de l'image ;
+   - row_per_strip: le nombre de lignes de pixels par bande.
+ */
+struct tiff_file_desc *init_tiff_file (const char *file_name,
+                                       uint32_t width,
+                                       uint32_t height,
+                                       uint32_t row_per_strip)
+{
+        FILE *file = NULL;
+        struct tiff_file_desc *tfd = calloc(1, sizeof(struct tiff_file_desc));
+
+        if (tfd == NULL)
+                return NULL;
+
+        tfd->row_size = width * 3;
+        tfd->write_buf = malloc(tfd->row_size);
+
+        if (tfd->write_buf == NULL)
+                return NULL;
+
+
+        file = fopen(file_name, "wb");
+        if (file == NULL)
+                return NULL;
+
+        tfd->file = file;
+
+        tfd->is_le = true;
+        tfd->width = width;
+        tfd->height = height;
+        tfd->rows_per_strip = row_per_strip;
+
+        tfd->nb_strips = tfd->height / tfd->rows_per_strip;
+
+        if (tfd->height % tfd->rows_per_strip)
+                tfd->nb_strips++;
+
+
+        /* Software comment definition */
+        const char *comment = COMMENT;
+        const uint32_t comment_size = strlen(comment) + 1;
+
+
+        /* Header construction */
+        const uint32_t ifd_offset = 8 + comment_size;
+        const uint16_t entry_count = 13;
+
+        /* Endianness + TIFF identification */
+        write_short(tfd, LITTLE_ENDIAN);
+        write_short(tfd, 42);
+
+        /* IFD offset */
+        write_long(tfd, ifd_offset);
+
+        /* Software comment */
+        fwrite(comment, 1, comment_size, file);
+
+
+        uint32_t next = ifd_offset + 2 + 12 * entry_count + 4;
+
+        /* IFD data */
+        write_short(tfd, entry_count);
+
+        /* Image Width */
+        write_short(tfd, IMAGE_WIDTH);
+        write_short(tfd, LONG);
+        write_long(tfd, 1);
+        write_long(tfd, tfd->width);
+
+        /* Image Length */
+        write_short(tfd, IMAGE_LENGTH);
+        write_short(tfd, LONG);
+        write_long(tfd, 1);
+        write_long(tfd, tfd->height);
+
+
+        /* BitsPerSample */
+        write_short(tfd, BITS_PER_SAMPLE);
+        write_short(tfd, SHORT);
+        write_long(tfd, 3);
+        write_long(tfd, next);
+        next += 3 * 2;
+
+        /* Compression */
+        write_short(tfd, COMPRESSION);
+        write_short(tfd, SHORT);
+        write_long(tfd, 1);
+        write_long(tfd, 1);
+
+        /* PhotometricInterpretation */
+        write_short(tfd, PHOTOMETRIC);
+        write_short(tfd, SHORT);
+        write_long(tfd, 1);
+        write_long(tfd, 2);
+
+        /* StripOffsets */
+        write_short(tfd, STRIP_OFFSETS);
+        write_short(tfd, LONG);
+        write_long(tfd, tfd->nb_strips);
+
+        const uint32_t strips_pos = next + 16;
+        uint32_t line_offset = strips_pos + 8 * tfd->nb_strips;
+        uint32_t line_size = tfd->rows_per_strip * tfd->width * 3;
+
+        if (tfd->nb_strips > 1)
+                write_long(tfd, strips_pos);
+
+        else
+                write_long(tfd, line_offset);
+
+
+        /* SamplesPerPixel */
+        write_short(tfd, SAMPLES_PER_PIXEL);
+        write_short(tfd, SHORT);
+        write_long(tfd, 1);
+        write_long(tfd, 3);
+
+        /* RowsPerStrip */
+        write_short(tfd, ROWS_PER_STRIP);
+        write_short(tfd, LONG);
+        write_long(tfd, 1);
+        write_long(tfd, tfd->rows_per_strip);
+
+        /* StripByteCounts */
+        write_short(tfd, STRIP_BYTE_COUNTS);
+        write_short(tfd, LONG);
+        write_long(tfd, tfd->nb_strips);
+
+        if (tfd->nb_strips > 1)
+                write_long(tfd, strips_pos + 4 * tfd->nb_strips);
+
+        else
+                write_long(tfd, line_size);
+
+
+        /* XResolution */
+        write_short(tfd, X_RESOLUTION);
+        write_short(tfd, RATIONAL);
+        write_long(tfd, 1);
+        write_long(tfd, next);
+        next += 2 * 4;
+
+        /* YResolution */
+        write_short(tfd, Y_RESOLUTION);
+        write_short(tfd, RATIONAL);
+        write_long(tfd, 1);
+        write_long(tfd, next);
+        next += 2 * 4;
+
+        /* ResolutionUnit */
+        write_short(tfd, RESOLUTION_UNIT);
+        write_short(tfd, SHORT);
+        write_long(tfd, 1);
+        write_long(tfd, 2);
+
+        /* Software */
+        write_short(tfd, SOFTWARE);
+        write_short(tfd, ASCII);
+        write_long(tfd, comment_size);
+        write_long(tfd, 8);
+
+
+        /* No other IFD */
+        write_long(tfd, 0);
+
+
+        /* BitsPerSample data */
+        write_short(tfd, 8);
+        write_short(tfd, 8);
+        write_short(tfd, 8);
+
+        /* XResolution data */
+        write_long(tfd, 100);
+        write_long(tfd, 1);
+
+        /* YResolution data */
+        write_long(tfd, 100);
+        write_long(tfd, 1);
+
+
+        /* Initialize internal writing data */
+        tfd->current_line = line_offset;
+        tfd->line_size = line_size;
+
+        /* Initialize the first MCU position */
+        tfd->next_pos_mcu = 0;
+
+        /* If there are multiple strips */
+        if (tfd->nb_strips > 1) {
+
+                /* Write all StripOffsets */
+                for (uint32_t i = 0; i < tfd->nb_strips; i ++){
+                        write_long(tfd, line_offset);
+                        line_offset += line_size;
+                }
+
+                /* StripByteCounts data */
+                for (uint32_t i = 0; i < tfd->nb_strips - 1; i++)
+                        write_long(tfd, line_size);
+        }
+
+
+        /* Last line's height */
+        uint32_t line_height = tfd->height % tfd->rows_per_strip;
+
+        if (tfd->height > 0  && line_height == 0)
+                line_height = tfd->rows_per_strip;
+
+        line_size = line_height * tfd->width*3;
+
+        write_long(tfd, line_size);
+
+
+        return tfd;
+}
+
+
+static void write_short(struct tiff_file_desc *tfd, uint16_t value)
+{
+        if (tfd != NULL && tfd->file != NULL) {
+                uint8_t buf[2];
+
+                if (tfd->is_le) {
+                        buf[0] = value;
+                        buf[1] = value >> 8;
+                } else {
+                        buf[0] = value >> 8;
+                        buf[1] = value;
+                }
+
+                fwrite(buf, 1, sizeof(buf), tfd->file);
+        }
+}
+
+static void write_long(struct tiff_file_desc *tfd, uint32_t value)
+{
+        if (tfd != NULL && tfd->file != NULL) {
+                uint8_t buf[4];
+
+                if (tfd->is_le) {
+                        buf[0] = value;
+                        buf[1] = value >> 8;
+                        buf[2] = value >> 16;
+                        buf[3] = value >> 24;
+                } else {
+                        buf[0] = value >> 24;
+                        buf[1] = value >> 16;
+                        buf[2] = value >> 8;
+                        buf[3] = value;
+                }
+
+                fwrite(buf, 1, sizeof(buf), tfd->file);
+        }
 }
 
 /* Ecrit le contenu de la MCU passée en paramètre dans le fichier TIFF
@@ -756,52 +733,60 @@ void read_tiff_file (struct tiff_file_desc *tfd, uint32_t *mcu_rgb,
  * nb_blocks_v représentent les nombres de blocs 8x8 composant la MCU
  * en horizontal et en vertical. */
 void write_tiff_file (struct tiff_file_desc *tfd,
-			 uint32_t *mcu_rgb,
-			 uint8_t nb_blocks_h,
-			 uint8_t nb_blocks_v)
+                         uint32_t *mcu_rgb,
+                         uint8_t nb_blocks_h,
+                         uint8_t nb_blocks_v)
 {
+        if (tfd == NULL && tfd->file == NULL)
+                return;
 
 
-	//On passe à la strip suivante s'il n'y a plus de place pour mettre la MCU
-	if ((tfd -> current_line < (tfd -> nb_strips-1)) &&(tfd -> strip_offsets[tfd -> current_line] + tfd -> next_pos_mcu + (nb_blocks_v*BLOCK_DIM-1)*tfd -> row_size >= tfd -> strip_offsets[tfd -> current_line+1])){
-		tfd -> current_line++;
-		tfd -> next_pos_mcu = 0;
-	}
-	uint32_t current_position = tfd -> strip_offsets[tfd -> current_line] + tfd -> next_pos_mcu;
+        uint32_t nb_pixels;
+        uint32_t pixel, index, k;
+        uint32_t current_position;
+        uint8_t *buf = tfd->write_buf;
 
-	// calcul du nombre de pixel RGB à écrire dans le fichier en fonction de row_size
-	uint32_t nb_write_h, nb_write_v;
-	if (((tfd -> next_pos_mcu%tfd -> row_size) + nb_blocks_h*BLOCK_DIM*3 > tfd -> row_size)){
-		nb_write_h = (nb_blocks_h*BLOCK_DIM*3-((tfd -> next_pos_mcu%tfd -> row_size) + nb_blocks_h*BLOCK_DIM*3-tfd -> row_size))/3;
-		tfd -> next_pos_mcu += 3*nb_write_h+(nb_blocks_v*BLOCK_DIM-1)*tfd -> row_size;
-	} else { 
-		nb_write_h = nb_blocks_h*BLOCK_DIM;
-		tfd -> next_pos_mcu += 3*nb_write_h;
-	}
+        /* Skip to the next line if there's no space for this MCU */
+        if (tfd->next_pos_mcu + (nb_blocks_v * BLOCK_DIM - 1) * tfd->row_size >= tfd->line_size) {
+                tfd->current_line += tfd->line_size;
+                tfd->next_pos_mcu = 0;
+        }
 
-	nb_write_v = ((nb_blocks_v*BLOCK_DIM) > (tfd -> strip_bytes[tfd -> current_line] / tfd -> row_size)?(tfd -> strip_bytes[tfd -> current_line] / tfd -> row_size) : (nb_blocks_v*BLOCK_DIM));
-	
+        current_position = tfd->current_line + tfd->next_pos_mcu;
 
-	
-	// tableau intermédiare pour récupérer les valeurs RGB
-	uint8_t *rgb_mcu_row = malloc(sizeof(uint8_t)*nb_blocks_h*BLOCK_DIM*3);
-	
-	for(uint32_t i = 0; i < nb_write_v; i++) {
-		
-		int k=0;
-		for(uint32_t j = 0; j < nb_write_h; j++) {
-			rgb_mcu_row[k] = mcu_rgb[i*nb_blocks_h*BLOCK_DIM+j] >> 16;
-			rgb_mcu_row[k+1] = mcu_rgb[i*nb_blocks_h*BLOCK_DIM+j] >> 8;
-			rgb_mcu_row[k+2] = mcu_rgb[i*nb_blocks_h*BLOCK_DIM+j];
-			k +=3;
-		}
-		fseek(tfd -> file, current_position, 0);
-		fwrite(rgb_mcu_row, sizeof(uint8_t), 3*nb_write_h, tfd -> file);
-		current_position += tfd -> row_size;
-	}
-	
-	//tfd -> next_pos_mcu += nb_rgb_to_write;
-	
-	SAFE_FREE(rgb_mcu_row);
+
+        /* Compute how many RGB pixels must be written depending on row_size */
+        if (tfd->next_pos_mcu + nb_blocks_h * BLOCK_DIM * 3 > tfd->row_size)
+                nb_pixels = tfd->row_size - tfd->next_pos_mcu;
+
+        else
+                nb_pixels = nb_blocks_h * BLOCK_DIM * 3;
+
+
+
+        /* Write the MCU */
+        for(uint32_t i = 0; i < nb_blocks_v*BLOCK_DIM; i++) {
+
+                k = 0;
+                fseek(tfd->file, current_position, SEEK_SET);
+
+                for(uint32_t j = 0; j < nb_pixels/3; j++) {
+
+                                index = i * nb_blocks_h * BLOCK_DIM + j;
+
+                                pixel = mcu_rgb[index];
+
+                                buf[k] = RED(pixel);
+                                buf[k + 1] = GREEN(pixel);
+                                buf[k + 2] = BLUE(pixel);
+
+                                k += 3;
+                }
+
+                fwrite(buf, 1, nb_pixels, tfd->file);
+                current_position += tfd->row_size;
+        }
+
+        tfd->next_pos_mcu += nb_pixels;
 }
 

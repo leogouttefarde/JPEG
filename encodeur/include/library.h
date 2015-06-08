@@ -6,6 +6,8 @@
 #include "common.h"
 #include "encode.h"
 
+#define TRUNCATE(x) ((uint8_t)((x > 255) ? 255 : ( (x < 0) ? 0 : (uint32_t)x )))
+
 
 bool read_short_BE(struct bitstream *stream, uint16_t *value);
 bool read_byte(struct bitstream *stream, uint8_t *value);
@@ -30,6 +32,12 @@ uint32_t *mcu_to_image(
 uint32_t *image_to_mcu(
         uint32_t *image, struct mcu_info *mcu,
         uint32_t width, uint32_t height);
+
+void process_options(struct options *options, struct jpeg_data *jpeg, bool *error);
+
+void export_tiff(struct jpeg_data *jpeg, bool *error);
+
+void compute_gray(struct jpeg_data *jpeg);
 
 
 #endif

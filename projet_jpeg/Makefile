@@ -6,12 +6,13 @@ INC_DIR = include
 
 # Options de compilation 
 
-PROFILING = -p
-# PROFILING = 
+# PROFILING = -p
+PROFILING = 
 CC = gcc ${PROFILING}
 LD = gcc ${PROFILING}
 INC = -I$(INC_DIR)
-CFLAGS = $(INC) -Wall -std=c99 -g #-O3 #-Wextra -g #-O3
+CFLAGS = $(INC) -Wall -std=c99 -O3 -Wextra -s
+#CFLAGS = $(INC) -Wall -Wextra -std=c99 -g
 LDFLAGS = -lm
 
 # Liste des objets encadrants

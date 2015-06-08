@@ -9,6 +9,8 @@
 
 struct options {
 
+        bool encode;
+
         char *input;
         char *output;
 
@@ -18,6 +20,7 @@ struct options {
         uint8_t compression;
 
         bool gray;
+
 };
 
 struct jpeg_data;

@@ -27,7 +27,7 @@ struct bitstream *create_bitstream(const char *filename, enum stream_mode mode)
                 else
                         open_mode = "r+";
 
-                // printf("open_mode == %s\n", open_mode);
+
                 FILE *file = fopen(filename, open_mode);
 
                 if (file != NULL) {
@@ -196,20 +196,20 @@ void write_short_BE(struct bitstream *stream, uint16_t val)
 
 void seek_bitstream(struct bitstream *stream, uint32_t pos)
 {
-        // printf("pos = %d\n", pos);
         stream->byte = 0;
         stream->index = 0;
+
         fseek(stream->file, pos, SEEK_SET);
 }
 
 uint32_t pos_bitstream(struct bitstream *stream)
 {
-        // printf("stream->byte = %02X\n", stream->byte);
-        // printf("stream->index = %d\n", stream->index);
-        // printf("pos = %d\n", ftell(stream->file));
-        // stream->byte = 0;
-        // stream->index = 0;
-        return ftell(stream->file);
+        uint32_t pos = 0;
+
+        if (stream != NULL && stream->file != NULL)
+                pos = ftell(stream->file);
+
+        return pos;
 }
 
 void flush_bitstream(struct bitstream *stream)

@@ -4,7 +4,7 @@
 #include "library.h"
 
 
-/* Calcul de C(e) formule page 13 du sujet */
+/* Computes the C(x) formula (subject p13) */
 double C(const uint8_t x)
 {
         double res = 1;
@@ -15,7 +15,7 @@ double C(const uint8_t x)
         return res;
 }
 
-/* Calcul de S(x,y) formule page 13 du sujet */
+/* Computes the S(x,y) formula (subject p13) */
 uint8_t S(const uint8_t x, const uint8_t y, int32_t *in)
 {
         const uint8_t SQRT_16 = 4;
@@ -33,11 +33,11 @@ uint8_t S(const uint8_t x, const uint8_t y, int32_t *in)
         sum /= SQRT_16;
         sum += 128.;
 
-	/* Fonction double2uint8 déclarée dans library.h */
-        return double2uint8(sum);
+        /* Truncate the result */
+        return truncate(sum);
 }
 
-/* Calcul de la transfomée en cosinus discrète inverse */
+/* Computes the inverse discrete cosine transform */
 void idct_block(int32_t in[64], uint8_t out[64])
 {
         for (uint8_t x = 0; x < BLOCK_DIM; ++x) {

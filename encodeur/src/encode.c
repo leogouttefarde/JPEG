@@ -21,30 +21,20 @@ void compute_jpeg(struct jpeg_data *jpeg, bool *error)
                 return;
         }
 
-        // char *name = NULL;
-        // struct tiff_file_desc *file = NULL;
         uint8_t i_c;
         uint8_t mcu_h = jpeg->mcu.h;
         uint8_t mcu_v = jpeg->mcu.v;
         uint8_t mcu_h_dim = jpeg->mcu.h_dim;
         uint8_t mcu_v_dim = jpeg->mcu.v_dim;
-
-
         uint32_t nb_mcu = jpeg->mcu.nb;
-
-        // name = create_tiff_name(jpeg->path);
-
-        //file = init_tiff_file(name, jpeg->width, jpeg->height, mcu_v);
-        // file = init_tiff_file("out.tiff", jpeg->width, jpeg->height, mcu_v);
-
 
         uint8_t nb_blocks_h, nb_blocks_v, nb_blocks;
         uint8_t i_q;
         int32_t *last_DC;
 
         int32_t *block;
-        int32_t iqzz[BLOCK_SIZE];
-        uint8_t *upsampled;
+        int32_t qzz[BLOCK_SIZE];
+        uint8_t *mcu_data;
 
         uint32_t *mcu_RGB = NULL;
         uint8_t data_YCbCr[3][mcu_h * mcu_v];
@@ -54,21 +44,19 @@ void compute_jpeg(struct jpeg_data *jpeg, bool *error)
                 (uint8_t*)&data_YCbCr[2]
         };
 
-
         /* Use 1 table for each tree (AC/DC)
          * Allocate 0x100 values because Huffman values use 8 bits */
-        uint32_t freq_data[2][0x100];
-        uint32_t *freqs[2] = {
-                (uint32_t*)freq_data,
-                (uint32_t*)&freq_data[1],
+        uint32_t freq_data[MAX_COMPS][2][0x100];
+        uint32_t *freqs[MAX_COMPS][2] = {
+                { (uint32_t*)&freq_data[0][0], (uint32_t*)&freq_data[0][1] },
+                { (uint32_t*)&freq_data[1][0], (uint32_t*)&freq_data[1][1] },
+                { (uint32_t*)&freq_data[2][0], (uint32_t*)&freq_data[2][1] }
         };
 
         memset(freq_data, 0, sizeof(freq_data));
 
 
         const uint8_t nb_mcu_blocks = mcu_h_dim * mcu_v_dim + (jpeg->nb_comps - 1);
-        // printf("Nb de blocks par MCU : %d\n", nb_mcu_blocks);
-
         jpeg->mcu_data = malloc(nb_mcu * nb_mcu_blocks * BLOCK_SIZE * sizeof(int32_t));
 
         if (jpeg->mcu_data == NULL) {
@@ -76,87 +64,52 @@ void compute_jpeg(struct jpeg_data *jpeg, bool *error)
                 return;
         }
 
-
+        uint8_t *qtable;
         uint32_t block_idx = 0;
-        uint8_t idct[mcu_h_dim * mcu_v_dim][BLOCK_SIZE];
-
-        // A commenter une fois le downsampler fonctionnel
-        //memset(idct, 0, sizeof(idct));
-
+        uint8_t dct[mcu_h_dim * mcu_v_dim][BLOCK_SIZE];
 
         for (uint32_t i = 0; i < nb_mcu; i++) {
 
                 mcu_RGB = &(jpeg->raw_data[i * jpeg->mcu.size]);
-                // printf("mcu_RGB = %X\n", mcu_RGB);
-                // printf("mcu = %X\n", jpeg->raw_mcu);
-                // printf("i = %u\n", i);
 
-
-                if (jpeg->nb_comps == 3) {
+                if (jpeg->nb_comps == 3)
                         ARGB_to_YCbCr(mcu_RGB, mcu_YCbCr, mcu_h_dim, mcu_v_dim);
-                        // YCbCr_to_ARGB(mcu_YCbCr, mcu_RGB, mcu_h_dim, mcu_v_dim);
-                        // ARGB_to_YCbCr(mcu_RGB, mcu_YCbCr, mcu_h_dim, mcu_v_dim);
-                }
 
-                else if (jpeg->nb_comps == 1) {
-                        // printf("lol\n");
+                else if (jpeg->nb_comps == 1)
                         ARGB_to_Y(mcu_RGB, mcu_YCbCr[0], mcu_h_dim, mcu_v_dim);
-                        // Y_to_ARGB(mcu_YCbCr[0], mcu_RGB, mcu_h_dim, mcu_v_dim);
-                        // ARGB_to_Y(mcu_RGB, mcu_YCbCr[0], mcu_h_dim, mcu_v_dim);
-                }
+
                 else
                         *error = true;
 
 
                 for (uint8_t j = 0; j < jpeg->nb_comps; j++) {
 
-
                         i_c = jpeg->comp_order[j];
-
+                        i_q = jpeg->comps[i_c].i_q;
                         nb_blocks_h = jpeg->comps[i_c].nb_blocks_h;
                         nb_blocks_v = jpeg->comps[i_c].nb_blocks_v;
                         nb_blocks = nb_blocks_h * nb_blocks_v;
-
-                        i_q = jpeg->comps[i_c].i_q;
-
                         last_DC = &jpeg->comps[i_c].last_DC;
 
+                        mcu_data = mcu_YCbCr[i_c];
+                        downsampler(mcu_data, mcu_h_dim, mcu_v_dim, (uint8_t*)dct, nb_blocks_h, nb_blocks_v);
 
-                        upsampled = mcu_YCbCr[i_c];
-                        downsampler(upsampled, mcu_h_dim, mcu_v_dim, (uint8_t*)idct, nb_blocks_h, nb_blocks_v);
-
-                        // printf("nb_blocks = %d\n", nb_blocks);
                         for (uint8_t n = 0; n < nb_blocks; n++) {
 
-                                dct_block((uint8_t*)&idct[n], iqzz);
-                                // idct_block(iqzz, (uint8_t*)&idct[n]);
-                                // iqzz_block(block, iqzz, (uint8_t*)&jpeg->qtables[i_q]);
+                                dct_block((uint8_t*)&dct[n], qzz);
 
                                 block = &jpeg->mcu_data[block_idx];
 
+                                qtable = (uint8_t*)&jpeg->qtables[i_q];
+                                qzz_block (qzz, block, qtable);
 
-                                uint8_t *quantif = (uint8_t*)&jpeg->qtables[i_q];
+                                /* Empty pack_block execution counting frequencies */
+                                pack_block(NULL, NULL, last_DC, NULL, block, freqs[i_c]);
 
-                                qzz_block (iqzz, block, quantif);//, 3);
-
-                                pack_block(NULL, NULL, last_DC, NULL, block, freqs);
-
-
-                                // iqzz_block(block, iqzz, quantif);
-
-                                // idct_block(iqzz, (uint8_t*)&idct[n]);
-                                // test dct
-                                // dct_block((uint8_t*)&idct[n], iqzz);
-                                // idct_block(iqzz, (uint8_t*)&idct[n]);
                                 block_idx += BLOCK_SIZE;
                         }
                 }
-
-                // write_tiff_file(file, mcu_RGB, mcu_h_dim, mcu_v_dim);
         }
-        // printf("block_idx = %d\n", block_idx);
-        // printf("expected = %d\n", nb_mcu * nb_mcu_blocks * BLOCK_SIZE);
-
 
 
         /*  Reset last_DC fields so that write_blocks can work fine */
@@ -164,16 +117,11 @@ void compute_jpeg(struct jpeg_data *jpeg, bool *error)
                 jpeg->comps[i].last_DC = 0;
 
 
-        // DC table
-        jpeg->htables[0][0] = create_huffman_tree(freqs[0], error);
-        // printf("jpeg->htables[0][0] = %x\n", jpeg->htables[0][0]);
-
-        // AC table
-        jpeg->htables[1][0] = create_huffman_tree(freqs[1], error);
-        // printf("jpeg->htables[1][0] = %x\n", jpeg->htables[1][0]);
-
-
-        // close_tiff_file(file);
+        /*  Create all Huffman trees */
+        for (uint8_t i = 0; i < jpeg->nb_comps; i++) {
+                jpeg->htables[0][i] = create_huffman_tree(freqs[i][0], error);
+                jpeg->htables[1][i] = create_huffman_tree(freqs[i][1], error);
+        }
 }
 
 void write_header(struct bitstream *stream, struct jpeg_data *jpeg, bool *error)
@@ -256,7 +204,7 @@ void write_section(struct bitstream *stream, enum jpeg_section section,
 
         case COM:
                 {
-                        const char *comment = JPEG_COMMENT;
+                        const char *comment = COMMENT;
                         const uint16_t len = strlen(comment);
 
                         for (uint16_t i = 0; i < len; i++)
@@ -288,7 +236,6 @@ void write_section(struct bitstream *stream, enum jpeg_section section,
                                         mem[i_q] = true;
                                         byte = accuracy << 4;
                                         byte |= i_q & 0xF;
-                                        // byte = i_q & 0xF;
                                         write_byte(stream, byte);
                                 }
 
@@ -389,7 +336,6 @@ void write_section(struct bitstream *stream, enum jpeg_section section,
 
                         for (uint8_t i = 0; i < jpeg->nb_comps; i++) {
 
-                                // printf("i_c = %i\n", byte);
                                 i_c = jpeg->comp_order[i];
                                 write_byte(stream, i_c + 1);
 
@@ -441,60 +387,33 @@ void write_blocks(struct bitstream *stream, struct jpeg_data *jpeg, bool *error)
         }
 
         uint8_t i_c;
-
         uint32_t nb_mcu = jpeg->mcu.nb;
-
-
         uint8_t nb_blocks_h, nb_blocks_v, nb_blocks;
         int32_t *last_DC;
-
         int32_t *block;
-
         uint32_t block_idx = 0;
 
 
-        // file = init_tiff_file("out.tiff", jpeg->width, jpeg->height, mcu_v);
-
-
-
         for (uint32_t i = 0; i < nb_mcu; i++) {
-
-                // printf("i = %d\n",i);
                 for (uint8_t i = 0; i < jpeg->nb_comps; i++) {
 
                         i_c = jpeg->comp_order[i];
-
                         nb_blocks_h = jpeg->comps[i_c].nb_blocks_h;
                         nb_blocks_v = jpeg->comps[i_c].nb_blocks_v;
                         nb_blocks = nb_blocks_h * nb_blocks_v;
-
                         last_DC = &jpeg->comps[i_c].last_DC;
-                        // printf("i_c = %d\n", i_c);
-                        // printf("i_q = %d\n", i_q);
 
-
-                        // printf("nb_blocks = %d\n", nb_blocks);
                         for (uint8_t n = 0; n < nb_blocks; n++) {
-
-
                                 block = &jpeg->mcu_data[block_idx];
 
-
-
-                                pack_block(stream, jpeg->htables[0][0], last_DC,
-                                                     jpeg->htables[1][0], block, NULL);
-
-
+                                pack_block(stream, jpeg->htables[0][i_c], last_DC,
+                                                     jpeg->htables[1][i_c], block, NULL);
 
                                 block_idx += BLOCK_SIZE;
                         }
 
                 }
-
-                // write_tiff_file(file, mcu_RGB, mcu_h_dim, mcu_v_dim);
         }
-
-        // close_tiff_file(file);
 
         flush_bitstream(stream);
 }
@@ -513,10 +432,6 @@ void detect_mcu(struct jpeg_data *jpeg, bool *error)
         jpeg->mcu.h = mcu_h;
         jpeg->mcu.v = mcu_v;
 
-        //printf("mcu_h = %u\n", mcu_h);
-        //printf("mcu_v = %u\n", mcu_v);
-
-
         compute_mcu(jpeg, error);
 }
 
@@ -526,12 +441,6 @@ void compute_mcu(struct jpeg_data *jpeg, bool *error)
         uint8_t mcu_v = jpeg->mcu.v;
         uint8_t mcu_h_dim = mcu_h / BLOCK_DIM;
         uint8_t mcu_v_dim = mcu_v / BLOCK_DIM;
-
-        // printf("jpeg->width = %u\n", jpeg->width);
-        // printf("jpeg->height = %u\n", jpeg->height);
-        // printf("mcu_h = %u\n", mcu_h);
-        // printf("mcu_v = %u\n", mcu_v);
-
 
         /* Various checks ensuring MCU validity */
         if (jpeg->width == 0
