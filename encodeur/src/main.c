@@ -8,9 +8,13 @@
 
 int main(int argc, char **argv)
 {
+	/* Used to track errors */
         bool error = false;
+	
+	/* Used to stock options given by the user */
         struct options options;
 
+	/* Parse arguments and exit on failure */
         if (parse_args(argc, argv, &options))
                 return EXIT_FAILURE;
 
@@ -22,6 +26,8 @@ int main(int argc, char **argv)
                 struct bitstream *stream = create_bitstream(options.output, WRONLY);
 
                 if (stream != NULL) {
+
+			/* Initializes the jpeg object with 0s */
                         struct jpeg_data jpeg;
                         memset(&jpeg, 0, sizeof(jpeg));
 
@@ -55,7 +61,7 @@ int main(int argc, char **argv)
                         /* End JPEG file */
                         write_section(stream, EOI, NULL, &error);
 
-
+			/* Close output file */
                         free_bitstream(stream);
 
 
@@ -80,6 +86,8 @@ int main(int argc, char **argv)
 
         /* JPEG Decoding / TIFF Reencoding */
         } else {
+
+		/* Initializes the jpeg object with 0s */
                 struct jpeg_data jpeg;
                 memset(&jpeg, 0, sizeof(struct jpeg_data));
 

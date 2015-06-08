@@ -5,7 +5,9 @@
 #include <unistd.h>
 #include <getopt.h>
 
-
+/*
+ * Reads a short from stream encoded in Big Endian
+ */
 bool read_short_BE(struct bitstream *stream, uint16_t *value)
 {
         bool error = true;
@@ -25,6 +27,9 @@ bool read_short_BE(struct bitstream *stream, uint16_t *value)
         return error;
 }
 
+/*
+ * Reads a byte from stream
+ */
 bool read_byte(struct bitstream *stream, uint8_t *value)
 {
         bool error = true;
@@ -44,6 +49,9 @@ bool read_byte(struct bitstream *stream, uint8_t *value)
         return error;
 }
 
+/*
+ * Prints a block of BLOCK_DIMxBLOCK_DIM of int32_t for debug puposes.
+ */
 bool print_block(int32_t *block)
 {
         bool error = true;
@@ -60,6 +68,9 @@ bool print_block(int32_t *block)
         return error;
 }
 
+/*
+ * Prints a block of BLOCK_DIMxBLOCK_DIM of int8_t for debug puposes.
+ */
 bool print_byte_block(uint8_t *block)
 {
         bool error = true;
@@ -76,6 +87,9 @@ bool print_byte_block(uint8_t *block)
         return error;
 }
 
+/*
+ * Verifies that the filename extension is "jpg" or "jpeg"
+ */
 bool is_valid_jpeg(char *path)
 {
         bool result = false;
@@ -92,6 +106,9 @@ bool is_valid_jpeg(char *path)
         return result;
 }
 
+/*
+ * Verifies that the filename extension is "tiff" or "tif"
+ */
 bool is_valid_tiff(char *path)
 {
         bool result = false;
@@ -108,6 +125,9 @@ bool is_valid_tiff(char *path)
         return result;
 }
 
+/*
+ * Skips nb_bytes bytes in the stream
+ */
 bool skip_bitstream(struct bitstream *stream, uint32_t nb_bytes)
 {
         bool error = false;
@@ -122,7 +142,10 @@ bool skip_bitstream(struct bitstream *stream, uint32_t nb_bytes)
         return error;
 }
 
-int32_t get_value(char *str, bool *error)
+/*
+ * If it is possible converts str to an int32_t, else puts true in error
+ */
+static int32_t get_value(char *str, bool *error)
 {
         int32_t val;
         char *endptr = NULL;
@@ -138,8 +161,10 @@ int32_t get_value(char *str, bool *error)
         return val;
 }
 
-
-uint8_t affect_mcu(uint32_t val, bool *error)
+/*
+ * Verifies that MCU dimensions are 8 or 16
+ */
+static uint8_t affect_mcu(uint32_t val, bool *error)
 {
         uint8_t dim = BLOCK_DIM;
 
@@ -156,6 +181,9 @@ uint8_t affect_mcu(uint32_t val, bool *error)
         return dim;
 }
 
+/*
+ * Parses arguments given to the program and puts them in *options
+ */
 bool parse_args(int argc, char **argv, struct options *options)
 {
         bool error = false;
@@ -275,6 +303,9 @@ bool parse_args(int argc, char **argv, struct options *options)
         return error;
 }
 
+/*
+ * Converts MCU to lines representation
+ */
 uint32_t *mcu_to_image(
         uint32_t *data, struct mcu_info *mcu,
         uint32_t width, uint32_t height)
@@ -298,7 +329,8 @@ uint32_t *mcu_to_image(
                         /* Additionnal image buffer check */
                         if (pos < width * height) {
 
-                                index = (nb_v * mcu->nb_h + nb_h) * mcu->size + v * mcu->h + h;
+                                index = (nb_v * mcu->nb_h + nb_h) 
+					* mcu->size + v * mcu->h + h;
                                 image[pos++] = data[index];
                         }
                 }
@@ -307,6 +339,9 @@ uint32_t *mcu_to_image(
         return image;
 }
 
+/*
+ * Converts lines to MCU representation
+ */
 uint32_t *image_to_mcu(
         uint32_t *image, struct mcu_info *mcu,
         uint32_t width, uint32_t height)
@@ -338,13 +373,17 @@ uint32_t *image_to_mcu(
                                 pixel = image[pos++];
                 }
 
-                index = (nb_v * mcu->nb_h + nb_h) * mcu->size + v * mcu->h + h;
+                index = (nb_v * mcu->nb_h + nb_h) * mcu->size + v 
+			* mcu->h + h;
                 data[index] = pixel;
         }
 
         return data;
 }
 
+/*
+ * Process options
+ */
 void process_options(struct options *options, struct jpeg_data *jpeg, bool *error)
 {
         if (options == NULL || jpeg == NULL || error == NULL || *error)
@@ -395,6 +434,9 @@ void process_options(struct options *options, struct jpeg_data *jpeg, bool *erro
         }
 }
 
+/*
+ * Exports the jpeg to the tiff file
+ */
 void export_tiff(struct jpeg_data *jpeg, bool *error)
 {
         if (*error || jpeg == NULL) {
@@ -404,14 +446,16 @@ void export_tiff(struct jpeg_data *jpeg, bool *error)
 
         struct tiff_file_desc *file = NULL;
 
-        file = init_tiff_file(jpeg->path, jpeg->width, jpeg->height, jpeg->mcu.v);
+        file = init_tiff_file(jpeg->path, jpeg->width, jpeg->height, 
+			      jpeg->mcu.v);
 
         if (file != NULL) {
                 uint32_t *mcu_RGB;
 
                 for (uint32_t i = 0; i < jpeg->mcu.nb; i++) {
                         mcu_RGB = &jpeg->raw_data[i * jpeg->mcu.size];
-                        write_tiff_file(file, mcu_RGB, jpeg->mcu.h_dim, jpeg->mcu.v_dim);
+                        write_tiff_file(file, mcu_RGB, jpeg->mcu.h_dim, 
+					jpeg->mcu.v_dim);
                 }
 
                 close_tiff_file(file);
@@ -420,6 +464,9 @@ void export_tiff(struct jpeg_data *jpeg, bool *error)
                 *error = true;
 }
 
+/*
+ * Converts all pixels to grayscale
+ */
 void compute_gray(struct jpeg_data *jpeg)
 {
         if (jpeg == NULL || jpeg->raw_data == NULL)

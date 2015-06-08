@@ -3,7 +3,9 @@
 #include <unistd.h>
 #include <getopt.h>
 
-
+/*
+ * Reads a short from stream encoded in Big Endian
+ */
 bool read_short_BE(struct bitstream *stream, uint16_t *value)
 {
         bool error = true;
@@ -23,6 +25,9 @@ bool read_short_BE(struct bitstream *stream, uint16_t *value)
         return error;
 }
 
+/*
+ * Reads a byte from stream
+ */
 bool read_byte(struct bitstream *stream, uint8_t *value)
 {
         bool error = true;
@@ -42,6 +47,9 @@ bool read_byte(struct bitstream *stream, uint8_t *value)
         return error;
 }
 
+/*
+ * Prints a block of BLOCK_DIMxBLOCK_DIM of int32_t for debug puposes.
+ */
 bool print_block(int32_t *block)
 {
         bool error = true;
@@ -58,6 +66,9 @@ bool print_block(int32_t *block)
         return error;
 }
 
+/*
+ * Verifies that the filename extension is "jpg" or "jpeg"
+ */
 bool is_valid_ext(char *path)
 {
         bool result = false;
@@ -74,6 +85,9 @@ bool is_valid_ext(char *path)
         return result;
 }
 
+/*
+ * Skips nb_bytes bytes in the stream
+ */
 bool skip_bitstream(struct bitstream *stream, uint32_t nb_bytes)
 {
         bool error = false;
@@ -88,7 +102,10 @@ bool skip_bitstream(struct bitstream *stream, uint32_t nb_bytes)
         return error;
 }
 
-char *create_tiff_name(char *path)
+/*
+ * Generates the tiff destination file path
+ */
+static char *create_tiff_name(char *path)
 {
         if (path == NULL)
                 return NULL;
@@ -119,6 +136,9 @@ char *create_tiff_name(char *path)
         return name;
 }
 
+/*
+ * Parses arguments given to the program and puts them in *options
+ */
 bool parse_args(int argc, char **argv, struct options *options)
 {
         bool error = false;

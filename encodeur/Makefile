@@ -11,27 +11,27 @@ PROFILING =
 CC = gcc ${PROFILING}
 LD = gcc ${PROFILING}
 INC = -I$(INC_DIR)
-CFLAGS = $(INC) -Wall -std=c99 -Wextra -g
+CFLAGS = $(INC) -Werror -Wall -std=c99 -Wextra -g
 #CFLAGS = $(INC) -Wall -std=c99 -O3 -Wextra -s
 LDFLAGS = -lm
 
 # Liste des objets encadrants
 
-OBJ_FILES = $(OBJ_DIR)/main.o $(OBJ_DIR)/conv.o $(OBJ_DIR)/iqzz.o
+OBJ_FILES = $(OBJ_DIR)/main.o $(OBJ_DIR)/conv.o $(OBJ_DIR)/qzz.o
 OBJ_FILES += $(OBJ_DIR)/upsampler.o $(OBJ_DIR)/huffman.o $(OBJ_DIR)/unpack.o
 OBJ_FILES += $(OBJ_DIR)/tiff.o $(OBJ_DIR)/library.o $(OBJ_DIR)/bitstream.o
 OBJ_FILES += $(OBJ_DIR)/encode.o $(OBJ_DIR)/decode.o $(OBJ_DIR)/downsampler.o
 OBJ_FILES += $(OBJ_DIR)/loeffler.o
-# OBJ_FILES += $(OBJ_DIR)/idct.o
+# OBJ_FILES += $(OBJ_DIR)/dct.o
 OBJ_FILES += $(OBJ_DIR)/priority_queue.o
 
 # Liste des objets realises
-NEW_OBJ_FILES = $(OBJ_DIR)/main.o $(OBJ_DIR)/iqzz.o $(OBJ_DIR)/conv.o
+NEW_OBJ_FILES = $(OBJ_DIR)/main.o $(OBJ_DIR)/qzz.o $(OBJ_DIR)/conv.o
 NEW_OBJ_FILES += $(OBJ_DIR)/library.o $(OBJ_DIR)/huffman.o
 NEW_OBJ_FILES += $(OBJ_DIR)/unpack.o $(OBJ_DIR)/upsampler.o $(OBJ_DIR)/bitstream.o
 NEW_OBJ_FILES += $(OBJ_DIR)/encode.o $(OBJ_DIR)/decode.o $(OBJ_DIR)/downsampler.o
 NEW_OBJ_FILES += $(OBJ_DIR)/loeffler.o
-NEW_OBJ_FILES += $(OBJ_DIR)/idct.o
+NEW_OBJ_FILES += $(OBJ_DIR)/dct.o
 NEW_OBJ_FILES += $(OBJ_DIR)/tiff.o
 NEW_OBJ_FILES += $(OBJ_DIR)/priority_queue.o
 

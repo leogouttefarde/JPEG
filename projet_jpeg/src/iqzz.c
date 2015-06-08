@@ -3,7 +3,9 @@
 #include "common.h"
 
 
-/* Optimized path */
+/*
+ * Used to optimize zigzag navigation in tables of 8x8
+ */
 static const uint8_t zz[64] = 
 {
          0,  1,  5,  6, 14, 15, 27, 28,
@@ -16,13 +18,14 @@ static const uint8_t zz[64] =
         35, 36, 48, 49, 57, 58, 62, 63
 };
 
+/* 
+ * Puts in out[64] the block in[64] of 8x8 pixels read in zigzag inverse 
+ * multiplied by the quantification table
+ */
 void iqzz_block (int32_t in[64], int32_t out[64], uint8_t quantif[64])
 {
-        uint8_t z;
-
-	/* Optimized IQZZ */
+        uint8_t z = 0;
         for(uint8_t i = 0; i < 64; ++i) {
-
                 z = zz[i];
                 out[i] = in[z] * quantif[z];
         }

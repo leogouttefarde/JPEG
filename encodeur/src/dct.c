@@ -1,9 +1,9 @@
 
-#include "idct.h"
+#include "dct.h"
 #include "common.h"
 #include "library.h"
 
-
+/* Computes the C(x) formula (subject p13) */
 double C(const uint8_t x)
 {
         double res = 1;
@@ -14,6 +14,7 @@ double C(const uint8_t x)
         return res;
 }
 
+/* Computes the S(x,y) formula (subject p13) */
 uint8_t S(const uint8_t x, const uint8_t y, int32_t *in)
 {
         const uint8_t SQRT_16 = 4;
@@ -34,6 +35,7 @@ uint8_t S(const uint8_t x, const uint8_t y, int32_t *in)
         return double2uint8(sum);
 }
 
+/* Computes the inverse discrete cosine transform */
 void idct_block(int32_t in[64], uint8_t out[64])
 {
         for (uint8_t x = 0; x < BLOCK_DIM; ++x) {
@@ -43,7 +45,10 @@ void idct_block(int32_t in[64], uint8_t out[64])
         }
 }
 
-
+/* 
+ * Computes the S(x,y) formula for DCT
+ * http://fr.wikipedia.org/wiki/JPEG#Transform.C3.A9e_DCT
+ */
 double S_dct(const uint8_t i, const uint8_t j, uint8_t *in)
 {
         double sum = 0;
@@ -59,6 +64,7 @@ double S_dct(const uint8_t i, const uint8_t j, uint8_t *in)
         return sum;
 }
 
+/* Computes the discrete cosine transform */
 void dct_block(uint8_t in[64], int32_t out[64])
 {
         for (uint8_t i = 0; i < BLOCK_DIM; i++) {

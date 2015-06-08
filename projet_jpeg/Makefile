@@ -11,7 +11,7 @@ PROFILING =
 CC = gcc ${PROFILING}
 LD = gcc ${PROFILING}
 INC = -I$(INC_DIR)
-CFLAGS = $(INC) -Wall -std=c99 -O3 -Wextra -s
+CFLAGS = $(INC) -Werror -Wall -std=c99 -O3 -Wextra -s
 #CFLAGS = $(INC) -Wall -Wextra -std=c99 -g
 LDFLAGS = -lm
 
