@@ -32,7 +32,7 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
         /* Retrieve section marker */
         *error |= read_byte(stream, &marker);
 
-	/* Error if section ANY and the marker is not the correct one */
+	/* Error if the marker is not the correct one */
         if (section && section != marker)
                 *error = true;
 
@@ -114,6 +114,7 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                                                 }
                                         } else
                                                 *error = true;
+					
 					/* Update of jpeg status */
                                         jpeg->state |= DQT_OK;
                                 }
@@ -232,6 +233,7 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
 
 
                                 unread -= nb_byte_read;
+				
 				/* Update of jpeg status */
                                 jpeg->state |= DHT_OK;
                         }
@@ -249,7 +251,7 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
 
 			/* 
 			 * Check that the number of component is 
-			 * the same than in SOF Section
+			 * the same as in SOF Section
 			 */
                         if (nb_comps != jpeg->nb_comps) {
                                 *error = true;
@@ -269,6 +271,7 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                                 jpeg->comps[i_c].i_ac = byte & 0xF;
                         }
 
+			/* Skip unused SOS data */
                         read_byte(stream, &byte);
                         read_byte(stream, &byte);
                         read_byte(stream, &byte);
@@ -368,6 +371,7 @@ void process_image(struct bitstream *stream, struct jpeg_data *jpeg, bool *error
 
 		/* Decode and write all MCU from JPEG file to TIFF file */
                 for (uint32_t i = 0; i < nb_mcu; i++) {
+			/* Retrieve one component from jpeg file */
                         for (uint8_t j = 0; j < jpeg->nb_comps; j++) {
 				
 				/* Retrieve one component information */
@@ -389,18 +393,17 @@ void process_image(struct bitstream *stream, struct jpeg_data *jpeg, bool *error
                                         iqzz_block(block, iqzz, (uint8_t*)&jpeg->qtables[i_q]);
                                         idct_block(iqzz, (uint8_t*)&idct[n]);
                                 }
-				/* Compute upsampling on Y, Cb or Cr MCU*/
+				/* Compute upsampling on Y, Cb and Cr MCUs */
                                 upsampled = mcu_YCbCr[i_c];
                                 upsampler((uint8_t*)idct, nb_blocks_h, nb_blocks_v, 
 					  upsampled, mcu_h_dim, mcu_v_dim);
                         }
 			
+			/* Convert YCbCr to RGB for color image */
                         if (jpeg->nb_comps == 3)
-				/* Convert YCbCr to RGB for color image */
                                 YCbCr_to_ARGB(mcu_YCbCr, mcu_RGB, mcu_h_dim, mcu_v_dim);
-
+			/* Convert Y to RGB for grayscale image */
                         else if (jpeg->nb_comps == 1)
-				/* Convert Y to RGB for grayscale image */
                                 Y_to_ARGB(mcu_YCbCr[0], mcu_RGB, mcu_h_dim, mcu_v_dim);
                         else
                                 *error = true;

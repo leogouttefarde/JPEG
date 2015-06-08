@@ -10,11 +10,13 @@
 #include "downsampler.h"
 #include "library.h"
 
-
+/* Extract and decode a JPEG file */
 static void read_jpeg(struct jpeg_data *ojpeg, bool *error);
 
+/* Read a TIFF file's image data */
 static void read_tiff(struct jpeg_data *ojpeg, bool *error);
 
+/* Extract and decode raw JPEG data */
 static void scan_jpeg(struct bitstream *stream, struct jpeg_data *jpeg, bool *error);
 
 static const uint8_t generic_qt[64];
@@ -27,17 +29,20 @@ void read_image(struct jpeg_data *jpeg, bool *error)
                 *error = true;
                 return;
         }
-
+	/* Read input jpeg file */
         if (is_valid_jpeg(jpeg->path))
                 read_jpeg(jpeg, error);
-
+	/* Read input tiff file */
         else if (is_valid_tiff(jpeg->path))
                 read_tiff(jpeg, error);
 
         else
                 *error = true;
 
-
+	/* 
+	 * Initialize jpeg quantification table
+	 * and initialize component information
+	 */
         if (!*error) {
 
                 uint8_t *qtable = (uint8_t*)&jpeg->qtables[0];
@@ -88,20 +93,24 @@ static void read_jpeg(struct jpeg_data *ojpeg, bool *error)
                         /* Read jpeg header data */
                         read_header(stream, &jpeg, error);
                         ojpeg->nb_comps = jpeg.nb_comps;
-
-
+			
+			/* Extract the MCU size from jpeg structure */
                         detect_mcu(&jpeg, error);
 
-
+			/* Initialize output information */
                         ojpeg->mcu.h = jpeg.mcu.h;
                         ojpeg->mcu.v = jpeg.mcu.v;
 
                         ojpeg->height = jpeg.height;
                         ojpeg->width = jpeg.width;
 
+			/* 
+			 * Compute MCU information :
+			 * number of MCUs, size, Y Cb Cr dimension
+			 */
                         compute_mcu(ojpeg, error);
 
-
+			/* Extract and decode raw JPEG data */
                         scan_jpeg(stream, &jpeg, error);
 
                         ojpeg->raw_data = jpeg.raw_data;
@@ -119,7 +128,7 @@ static void read_jpeg(struct jpeg_data *ojpeg, bool *error)
         }
 }
 
-/* Read header data */
+/* Read a jpeg header data */
 void read_header(struct bitstream *stream, struct jpeg_data *jpeg, bool *error)
 {
         uint8_t marker = ANY;
@@ -133,6 +142,7 @@ void read_header(struct bitstream *stream, struct jpeg_data *jpeg, bool *error)
         if (marker != SOI)
                 printf("ERROR : all JPEG files must start with an SOI section\n");
 
+	/* Read all the section until the first SOS */
         while (!*error && marker != SOS) {
                 marker = read_section(stream, ANY, jpeg, error);
                 *error |= end_of_bitstream(stream);
@@ -150,7 +160,7 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                 return marker;
 
 
-        /* Check for SECTION_HEAD */
+        /* Check for SECTION_HEAD 0xFF */
         *error |= read_byte(stream, &byte);
 
         if (byte != SECTION_HEAD)
@@ -159,9 +169,11 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
         /* Retrieve section marker */
         *error |= read_byte(stream, &marker);
 
+	/* Error if marker is not the correct one */
         if (section && section != marker)
                 *error = true;
 
+	/* Nothing to do when SOI or EOI */
         if (marker == SOI || marker == EOI)
                 return marker;
 
@@ -171,6 +183,10 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
 
         /* Read section size */
         *error |= read_short_BE(stream, &size);
+	/*
+	 * Number of bits to skip (unused bits) 
+	 * Update during reading
+	 */
         unread = size - sizeof(size);
 
 
@@ -207,17 +223,23 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                         do {
                                 read_byte(stream, &byte);
                                 unread--;
-
+				
+				/* In baseline accuracy = 0 */
                                 bool accuracy = ((uint8_t)byte) >> 4;
 
                                 if (accuracy) {
-                                        printf("ERROR : this baseline JPEG decoder only supports 8 bits accuracy\n");
+                                        printf("ERROR : this baseline JPEG decoder"\
+					       " only supports 8 bits accuracy\n");
                                         *error = true;
                                 }
 
                                 else {
                                         uint8_t i_q = byte & 0xF;
-
+					/*
+					 * Read one quantification table
+					 * Error detected if there is 
+					 * more than 16 tables in the jpeg file
+					 */
                                         if (i_q < MAX_QTABLES) {
                                                 uint8_t *qtable = (uint8_t*)&jpeg->qtables[i_q];
 
@@ -227,7 +249,8 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                                                 }
                                         } else
                                                 *error = true;
-
+					
+					/* Update of jpeg status */
                                         jpeg->state |= DQT_OK;
                                 }
 
@@ -247,7 +270,7 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                                 *error = true;
                         }
 
-
+			/* Read jpeg information */
                         read_short_BE(stream, &jpeg->height);
                         read_short_BE(stream, &jpeg->width);
 
@@ -259,6 +282,7 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                             && jpeg->nb_comps != 1) {
                                 *error = true;
                         } else {
+				/* Read all component information */
                                 for (uint8_t i = 0; i < jpeg->nb_comps; i++) {
                                         uint8_t i_c, i_q;
                                         uint8_t h_sampling_factor;
@@ -266,6 +290,7 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
 
                                         *error |= read_byte(stream, &i_c);
 
+					/* Component index must be between 1 and 3 */
                                         if (i_c < 1 || i_c > 3)
                                                 *error = true;
 
@@ -280,13 +305,15 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
 
                                         if (i_q >= MAX_QTABLES)
                                                 *error = true;
-
+					
+					/* Initialize component information */
                                         if (!*error) {
                                                 jpeg->comps[i_c].nb_blocks_h = h_sampling_factor;
                                                 jpeg->comps[i_c].nb_blocks_v = v_sampling_factor;
                                                 jpeg->comps[i_c].i_q = i_q;
                                         }
-
+					
+					/* Update of jpeg status */
                                         jpeg->state |= SOF0_OK;
                                 }
                         }
@@ -323,7 +350,7 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                                 if (unused || i_h > 3 || type > 1)
                                         *error = true;
 
-
+				/* Read one Huffman Table */
                                 uint16_t nb_byte_read;
                                 struct huff_table *table;
 
@@ -339,6 +366,8 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                                         SAFE_FREE(table);
 
                                 unread -= nb_byte_read;
+				
+				/* Update of jpeg status */
                                 jpeg->state |= DHT_OK;
                         }
                 } else
@@ -354,22 +383,29 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
 
                         read_byte(stream, &nb_comps);
 
+			/* 
+			 * Check that the number of component is 
+			 * the same as in SOF Section
+			 */
                         if (nb_comps != jpeg->nb_comps) {
                                 *error = true;
                                 return SOS;
                         }
 
+			/* Initialize the last information of all components */
                         for (uint8_t i = 0; i < nb_comps; i++) {
                                 read_byte(stream, &byte);
                                 i_c = --byte;
 
                                 jpeg->comp_order[i] = i_c;
 
+				/* Initialize component index information */
                                 read_byte(stream, &byte);
                                 jpeg->comps[i_c].i_dc = byte >> 4;
                                 jpeg->comps[i_c].i_ac = byte & 0xF;
                         }
-
+			
+			/* Skip unused SOS data */
                         read_byte(stream, &byte);
                         read_byte(stream, &byte);
                         read_byte(stream, &byte);
@@ -400,15 +436,18 @@ static void read_tiff(struct jpeg_data *ojpeg, bool *error)
         else {
                 struct tiff_file_desc *file = NULL;
                 uint32_t width, height;
-
+		
+		/* Read TIFF header */
                 file = init_tiff_read(ojpeg->path, &width, &height);
 
                 if (file != NULL) {
+			/* Initialize output JPEG information */
                         ojpeg->nb_comps = 3;
                         ojpeg->is_plain_image = true;
                         ojpeg->width = width;
                         ojpeg->height = height;
 
+			/* Read all RGB raw data in the TIFF file */
                         if (!*error) {
                                 uint32_t *mcu_RGB = NULL;
 
@@ -419,8 +458,10 @@ static void read_tiff(struct jpeg_data *ojpeg, bool *error)
                                         *error = true;
 
                                 else {
+					/* Read all the RGB Line in the TIFF file */
                                         for (uint32_t i = 0; i < ojpeg->height; i++) {
-
+						
+						/* Read one RGB line in the TIFF file */
                                                 mcu_RGB = &(ojpeg->raw_data[i * ojpeg->width]);
 
                                                 *error |= read_tiff_line(file, mcu_RGB);
@@ -445,7 +486,7 @@ static void scan_jpeg(struct bitstream *stream, struct jpeg_data *jpeg, bool *er
                 return;
 
         uint8_t i_c;
-
+	/* Retrieve information of the jpeg file */
         uint8_t mcu_h = jpeg->mcu.h;
         uint8_t mcu_v = jpeg->mcu.v;
         uint8_t mcu_h_dim = jpeg->mcu.h_dim;
@@ -453,7 +494,7 @@ static void scan_jpeg(struct bitstream *stream, struct jpeg_data *jpeg, bool *er
 
         uint32_t nb_mcu = jpeg->mcu.nb;
 
-
+	/* Variable use for the reading */
         uint8_t nb_blocks_h, nb_blocks_v, nb_blocks;
         uint8_t i_dc, i_ac, i_q;
         int32_t *last_DC;
@@ -472,6 +513,7 @@ static void scan_jpeg(struct bitstream *stream, struct jpeg_data *jpeg, bool *er
                 (uint8_t*)&data_YCbCr[2]
         };
 
+	/* Buffer to save jpeg raw data */
         const uint32_t nb_pixels_max = mcu_size * nb_mcu;
         jpeg->raw_data = malloc(nb_pixels_max * sizeof(uint32_t));
 
@@ -480,12 +522,14 @@ static void scan_jpeg(struct bitstream *stream, struct jpeg_data *jpeg, bool *er
                 return;
         }
 
-
+	/* Extract and decode all MCU from JPEG file to TIFF file */
         for (uint32_t i = 0; i < nb_mcu; i++) {
                 mcu_RGB = &jpeg->raw_data[i * mcu_size];
-
+		
+		/* Retrieve one component from jpeg file */
                 for (uint8_t j = 0; j < jpeg->nb_comps; j++) {
-
+			
+			/* Retrieve one component information */
                         i_c = jpeg->comp_order[j];
 
                         nb_blocks_h = jpeg->comps[i_c].nb_blocks_h;
@@ -498,23 +542,25 @@ static void scan_jpeg(struct bitstream *stream, struct jpeg_data *jpeg, bool *er
 
                         last_DC = &jpeg->comps[i_c].last_DC;
 
-
+			/* Retrieve Y, Cb, Cr MCUs from JPEG file */
                         for (uint8_t n = 0; n < nb_blocks; n++) {
-
+				/* Retrive one block from JPEG file */
                                 unpack_block(stream, jpeg->htables[0][i_dc], last_DC,
                                                      jpeg->htables[1][i_ac], block);
-
+				/* Convert Raw data to Y, Cb or Cr MCU data */
                                 iqzz_block(block, iqzz, (uint8_t*)&jpeg->qtables[i_q]);
                                 idct_block(iqzz, (uint8_t*)&idct[n]);
                         }
-
+			/* Compute upsampling on Y, Cb and Cr MCUs */
                         upsampled = mcu_YCbCr[i_c];
-                        upsampler((uint8_t*)idct, nb_blocks_h, nb_blocks_v, upsampled, mcu_h_dim, mcu_v_dim);
+                        upsampler((uint8_t*)idct, nb_blocks_h, nb_blocks_v, 
+				  upsampled, mcu_h_dim, mcu_v_dim);
                 }
-
+		
+		/* Convert YCbCr to RGB for color image */
                 if (jpeg->nb_comps == 3)
                         YCbCr_to_ARGB(mcu_YCbCr, mcu_RGB, mcu_h_dim, mcu_v_dim);
-
+		/* Convert Y to RGB for grayscale image */
                 else if (jpeg->nb_comps == 1)
                         Y_to_ARGB(mcu_YCbCr[0], mcu_RGB, mcu_h_dim, mcu_v_dim);
 

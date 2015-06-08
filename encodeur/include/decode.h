@@ -110,7 +110,8 @@ extern uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                         struct jpeg_data *jpeg, bool *error);
 
 /* Read a jpeg header data */
-extern void read_header(struct bitstream *stream, struct jpeg_data *jpeg, bool *error);
+extern void read_header(struct bitstream *stream, 
+			struct jpeg_data *jpeg, bool *error);
 
 /* Extract raw image data */
 extern void read_image(struct jpeg_data *jpeg, bool *error);
