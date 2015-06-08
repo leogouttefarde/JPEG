@@ -91,6 +91,7 @@ struct tiff_file_desc {
         uint32_t line_size;
         uint32_t row_size;
         uint32_t read_lines;
+        uint8_t *write_buf;
 };
 
 
@@ -465,6 +466,7 @@ void close_tiff_file(struct tiff_file_desc *tfd)
 
                 SAFE_FREE(tfd->strip_offsets);
                 SAFE_FREE(tfd->strip_bytes);
+                SAFE_FREE(tfd->write_buf);
         }
 
         SAFE_FREE(tfd);
@@ -491,6 +493,12 @@ struct tiff_file_desc *init_tiff_file (const char *file_name,
         struct tiff_file_desc *tfd = calloc(1, sizeof(struct tiff_file_desc));
 
         if (tfd == NULL)
+                return NULL;
+
+        tfd->row_size = width * 3;
+        tfd->write_buf = malloc(tfd->row_size);
+
+        if (tfd->write_buf == NULL)
                 return NULL;
 
 
@@ -656,7 +664,6 @@ struct tiff_file_desc *init_tiff_file (const char *file_name,
         /* Initialize internal writing data */
         tfd->current_line = line_offset;
         tfd->line_size = line_size;
-        tfd->row_size = tfd->width * 3;
 
         /* Initialize the first MCU position */
         tfd->next_pos_mcu = 0;
@@ -738,10 +745,14 @@ void write_tiff_file (struct tiff_file_desc *tfd,
                          uint8_t nb_blocks_h,
                          uint8_t nb_blocks_v)
 {
-        uint8_t buf[3];
+        if (tfd == NULL && tfd->file == NULL)
+                return;
+
+
         uint32_t nb_pixels;
-        uint32_t pixel, index;
+        uint32_t pixel, index, k;
         uint32_t current_position;
+        uint8_t *buf = tfd->write_buf;
 
         /* Skip to the next line if there's no space for this MCU */
         if (tfd->next_pos_mcu + (nb_blocks_v * BLOCK_DIM - 1) * tfd->row_size >= tfd->line_size) {
@@ -760,9 +771,11 @@ void write_tiff_file (struct tiff_file_desc *tfd,
                 nb_pixels = nb_blocks_h * BLOCK_DIM * 3;
 
 
+
         /* Write the MCU */
         for(uint32_t i = 0; i < nb_blocks_v*BLOCK_DIM; i++) {
 
+                k = 0;
                 fseek(tfd->file, current_position, SEEK_SET);
 
                 for(uint32_t j = 0; j < nb_pixels/3; j++) {
@@ -771,13 +784,14 @@ void write_tiff_file (struct tiff_file_desc *tfd,
 
                                 pixel = mcu_rgb[index];
 
-                                buf[0] = RED(pixel);
-                                buf[1] = GREEN(pixel);
-                                buf[2] = BLUE(pixel);
+                                buf[k] = RED(pixel);
+                                buf[k + 1] = GREEN(pixel);
+                                buf[k + 2] = BLUE(pixel);
 
-                                fwrite(buf, 1, sizeof(buf), tfd->file);
+                                k += 3;
                 }
 
+                fwrite(buf, 1, nb_pixels, tfd->file);
                 current_position += tfd->row_size;
         }
 

@@ -333,7 +333,7 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
 
                                 table = load_huffman_table(stream, &nb_byte_read);
 
-                                if (nb_byte_read == -1 || table == NULL)
+                                if (nb_byte_read == (uint16_t)-1 || table == NULL)
                                         *error = true;
 
 

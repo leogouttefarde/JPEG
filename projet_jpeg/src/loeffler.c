@@ -112,7 +112,7 @@ void idct_block(int32_t in[64], uint8_t out[64])
                  * we have to downscale it by sqrt(n)^2 = n = BLOCK_DIM
                  */
                 for (uint8_t x = 0; x < BLOCK_DIM; ++x)
-                        out[x*BLOCK_DIM + y] = truncate( vector[x]/BLOCK_DIM + 128. );
+                        out[x*BLOCK_DIM + y] = TRUNCATE( vector[x]/BLOCK_DIM + 128. );
         }
 }
 

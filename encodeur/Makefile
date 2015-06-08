@@ -11,7 +11,8 @@ PROFILING =
 CC = gcc ${PROFILING}
 LD = gcc ${PROFILING}
 INC = -I$(INC_DIR)
-CFLAGS = $(INC) -Wall -std=c99 -g #-O3 #-Wextra -g #-O3
+CFLAGS = $(INC) -Wall -std=c99 -Wextra -g
+#CFLAGS = $(INC) -Wall -std=c99 -O3 -Wextra -s
 LDFLAGS = -lm
 
 # Liste des objets encadrants
@@ -77,4 +78,7 @@ run: all
 	# fi;
 
 	#rm -f ${TIFF};
+
+prof:
+	gprof ${EXEC} gmon.out > analysis.txt
 

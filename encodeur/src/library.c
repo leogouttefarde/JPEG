@@ -120,25 +120,9 @@ bool skip_bitstream(struct bitstream *stream, uint32_t nb_bytes)
         return error;
 }
 
-uint32_t truncate(int32_t s)
+int32_t get_value(char *str, bool *error)
 {
-        s = (s > 255) ? 255 : ( (s < 0) ? 0 : s );
-
-        return (uint32_t)s;
-}
-
-uint8_t double2uint8(double x)
-{
-        uint8_t res;
-
-        res = (x > 255) ? 255 : ( (x < 0) ? 0 : (uint8_t)x );
-
-        return res;
-}
-
-uint32_t get_value(char *str, bool *error)
-{
-        uint32_t val;
+        int32_t val;
         char *endptr = NULL;
 
         if (str != NULL)
@@ -222,7 +206,7 @@ bool parse_args(int argc, char **argv, struct options *options)
 
         /* Compression rate detection */
         if (i_comp != NULL) {
-                uint32_t val = get_value(i_comp, &error);
+                int32_t val = get_value(i_comp, &error);
 
                 if (!error) {
                         if (0 <= val && val <= 25)

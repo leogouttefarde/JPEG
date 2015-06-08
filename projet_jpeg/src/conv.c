@@ -12,7 +12,7 @@ void YCbCr_to_ARGB(uint8_t  *mcu_YCbCr[3], uint32_t *mcu_RGB,
         uint8_t *Y = mcu_YCbCr[0];
         uint8_t *Cb = mcu_YCbCr[1];
         uint8_t *Cr = mcu_YCbCr[2];
-        double R, G, B;
+        int32_t R, G, B;
 
         if (Y == NULL || Cb == NULL || Cr == NULL) {
                 printf("ERROR : corrupt YCbCr data\n");
@@ -32,7 +32,7 @@ void YCbCr_to_ARGB(uint8_t  *mcu_YCbCr[3], uint32_t *mcu_RGB,
                 B = Y[i] + 1.7721604 * (Cb[i] - 128) + 0.0009902 * (Cr[i] - 128);
 
                 /* Convert each color to uint8_t */
-                mcu_RGB[i] = truncate(R) << 16 | truncate(G) << 8 | truncate(B);
+                mcu_RGB[i] = TRUNCATE(R) << 16 | TRUNCATE(G) << 8 | TRUNCATE(B);
         }
 }
 

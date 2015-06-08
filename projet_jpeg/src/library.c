@@ -88,15 +88,6 @@ bool skip_bitstream(struct bitstream *stream, uint32_t nb_bytes)
         return error;
 }
 
-uint8_t truncate(double x)
-{
-        uint8_t res;
-
-        res = (x > 255) ? 255 : ( (x < 0) ? 0 : (uint8_t)x );
-
-        return res;
-}
-
 char *create_tiff_name(char *path)
 {
         if (path == NULL)

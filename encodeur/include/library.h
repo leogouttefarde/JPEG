@@ -6,6 +6,8 @@
 #include "common.h"
 #include "encode.h"
 
+#define TRUNCATE(x) ((uint8_t)((x > 255) ? 255 : ( (x < 0) ? 0 : (uint32_t)x )))
+
 
 bool read_short_BE(struct bitstream *stream, uint16_t *value);
 bool read_byte(struct bitstream *stream, uint8_t *value);
