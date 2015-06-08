@@ -220,7 +220,7 @@ void free_huffman_table(struct huff_table *table)
 }
 
 /*
- * huffman_export's recursive dot export function.
+ * Recursive dot export procedure.
  */
 void huffman_export_rec(FILE *file, struct huff_table *table, uint32_t *index)
 {

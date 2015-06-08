@@ -3,7 +3,14 @@
 
 todo :
 
-- nettoyage code
+
+nettoyage code
+
+- tiff
+- loeffler
+- hufman
+- unpack
+
 
 
 

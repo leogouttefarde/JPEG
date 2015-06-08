@@ -4,7 +4,7 @@
 #include <getopt.h>
 
 /*
- * Reads a short from stream encoded in Big Endian
+ * Reads a short from stream as Big Endian
  */
 bool read_short_BE(struct bitstream *stream, uint16_t *value)
 {
@@ -48,7 +48,7 @@ bool read_byte(struct bitstream *stream, uint8_t *value)
 }
 
 /*
- * Prints a block of BLOCK_DIMxBLOCK_DIM of int32_t for debug puposes.
+ * Prints a BLOCK_DIM x BLOCK_DIM block of int32_t for debug puposes.
  */
 bool print_block(int32_t *block)
 {
@@ -67,7 +67,7 @@ bool print_block(int32_t *block)
 }
 
 /*
- * Verifies that the filename extension is "jpg" or "jpeg"
+ * Checks that the filename extension is "jpg" or "jpeg"
  */
 bool is_valid_ext(char *path)
 {
