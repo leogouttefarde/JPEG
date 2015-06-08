@@ -333,8 +333,8 @@ void process_image(struct bitstream *stream, struct jpeg_data *jpeg, bool *error
         uint32_t nb_mcu_h = mcu_per_dim(mcu_h, jpeg->width);
         uint32_t nb_mcu_v = mcu_per_dim(mcu_v, jpeg->height);
         uint32_t nb_mcu = nb_mcu_h * nb_mcu_v;
-        // printf("width = %d\n", width);
-        // printf("height = %d\n", height);
+        // printf("width = %d\n", jpeg->width);
+        // printf("height = %d\n", jpeg->height);
         // printf("nb_mcu = %d\n", nb_mcu);
 
         file = init_tiff_file(jpeg->path, jpeg->width, jpeg->height, mcu_v);
