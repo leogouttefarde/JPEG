@@ -14,7 +14,6 @@ static inline int16_t extract_magnitude(struct bitstream *stream, uint8_t class)
         int8_t bit;
         int16_t value = 0;
         uint32_t dest;
-        // printf("extract_magnitude :  ");
 
         if (class > 0) {
                 read_bitstream(stream, 1, &dest, true);
@@ -30,7 +29,6 @@ static inline int16_t extract_magnitude(struct bitstream *stream, uint8_t class)
 
                         value = (value << 1) | bit;
                 }
-                //printf("\n");
 
                 if (negative)
                         value = -1 * ((1 << class) - 1 - value);
@@ -49,13 +47,11 @@ void unpack_block(struct bitstream *stream,
         int16_t diff;
 
         if (table_AC == NULL || table_DC == NULL || pred_DC == NULL)
-                // Error
                 return;
 
 
         class = next_huffman_value(table_DC, stream);
         diff = extract_magnitude(stream, class);
-        // printf("read DC val : %02X\n", class);
 
         bloc[n] = *pred_DC + diff;
         *pred_DC = bloc[n];
@@ -64,7 +60,6 @@ void unpack_block(struct bitstream *stream,
 
         while (n < BLOCK_SIZE) {
                 huffman_value = next_huffman_value(table_AC, stream);
-                // printf("read AC val : %02X\n", huffman_value);
 
                 switch ((uint8_t)huffman_value) {
                 case ZRL:
@@ -113,7 +108,6 @@ uint8_t write_magnitude(struct bitstream *stream, int16_t value)
 {
         uint8_t bit;
         uint8_t class = magnitude_class(value);
-        //printf("writ magnitude, c:%d, v= %02X\n", class, (uint16_t)value);
 
         if (class > 0) {
                 if (value < 0)
@@ -122,9 +116,7 @@ uint8_t write_magnitude(struct bitstream *stream, int16_t value)
                 for (uint8_t k = 0; k < class; ++k) {
                         bit = (value >> (class - 1 - k)) & 1;
                         write_bit(stream, bit, true);
-                        // printf("%d", bit);
                 }
-                //printf("\n");
         }
 
         return class;
@@ -138,11 +130,9 @@ void pack_block(struct bitstream *stream,
         uint8_t class, zeros, symbol;
         uint8_t n = 0;
         int16_t diff;
-        // printf("pack_block\n");
 
         if ( ((table_AC == NULL || table_DC == NULL) && freqs == NULL)
                 || pred_DC == NULL)
-                // Error
                 return;
 
 
@@ -153,7 +143,6 @@ void pack_block(struct bitstream *stream,
 
         class = magnitude_class(diff);
 
-        //printf("writ DC val : %02X\n", class);
         if (freqs)
                 freqs[0][class]++;
 
@@ -172,13 +161,11 @@ void pack_block(struct bitstream *stream,
                         zeros++;
 
 
-                // Si plus que des zéros
+                /* Only zeros left */
                 if (zeros >= (BLOCK_SIZE - n)) {
                         symbol = EOB;
                         n = BLOCK_SIZE;
 
-
-                        //printf("writ AC val : %02X\n", symbol);
 
                         if (freqs)
                                 freqs[1][symbol]++;
@@ -186,12 +173,12 @@ void pack_block(struct bitstream *stream,
                         else
                                 write_huffman_value(symbol, table_AC, stream);
 
-                // Si au moins 16 zéros
+                /* At least 16 zeros */
                 } else if (zeros >= 16) {
                         symbol = ZRL;
                         n += 16;
 
-                        //printf("writ AC val : %02X\n", symbol);
+
                         if (freqs)
                                 freqs[1][symbol]++;
 
@@ -204,9 +191,7 @@ void pack_block(struct bitstream *stream,
                         class = magnitude_class(bloc[n]);
                         symbol = (zeros << 4) | (class & 0xF);
 
-                        // printf("zeros = %02X\n", zeros);
-                        //printf("class = %02X\n", class);
-                        //printf("writ AC val : %02X\n", symbol);
+
                         if (freqs)
                                 freqs[1][symbol]++;
 

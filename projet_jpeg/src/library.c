@@ -107,8 +107,6 @@ char *create_tiff_name(char *path)
 
         len_tiff = len_cpy + 5 + 1;
 
-        // printf("len_cpy = %d\n", len_tiff);
-        // printf("len_tiff = %d\n", len_tiff);
         name = malloc(len_tiff);
 
         if (name != NULL) {
@@ -117,7 +115,6 @@ char *create_tiff_name(char *path)
 
                 strcat(name, ".tiff");
         }
-        // printf("name = %s\n", name);
 
         return name;
 }
@@ -145,9 +142,6 @@ bool parse_args(int argc, char **argv, struct options *options)
                         case 'h':
                                 error = true;
                                 break;
-
-                        // default:
-                                // printf ("Unrecognized option : %c\n", c);
                 }
         }
 

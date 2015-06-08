@@ -60,4 +60,12 @@
 #define UNUSED(arg) ((void)(arg))
 #define SAFE_FREE(p) do { if (p != NULL) { free(p), p = NULL; } } while (0)
 
+/* Macros */
+#define _BYTE(c, i)       ((c >> 8*i) & 0xFF)
+#define GET_BYTE(c)       _BYTE(c, 0)
+#define RED(c)            _BYTE(c, 2)
+#define GREEN(c)          _BYTE(c, 1)
+#define BLUE(c)           GET_BYTE(c)
+
+
 #endif

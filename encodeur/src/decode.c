@@ -48,9 +48,9 @@ void read_image(struct jpeg_data *jpeg, bool *error)
                 /* Initialize table indexes */
                 for (uint8_t i = 0; i < jpeg->nb_comps; i++) {
 
-                        /* Only use the first AC/DC and QT tables */
-                        jpeg->comps[i].i_dc = 0;
-                        jpeg->comps[i].i_ac = 0;
+                        /* Use one AC/DC tree per component */
+                        jpeg->comps[i].i_dc = i;
+                        jpeg->comps[i].i_ac = i;
 
 
                         //if (i > 0)
@@ -134,7 +134,6 @@ void read_header(struct bitstream *stream, struct jpeg_data *jpeg, bool *error)
                 printf("ERROR : all JPEG files must start with an SOI section\n");
 
         while (!*error && marker != SOS) {
-
                 marker = read_section(stream, ANY, jpeg, error);
                 *error |= end_of_bitstream(stream);
         }
@@ -153,7 +152,6 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
 
         /* Check for SECTION_HEAD */
         *error |= read_byte(stream, &byte);
-        // assert(byte == SECTION_HEAD);
 
         if (byte != SECTION_HEAD)
                 *error = true;
@@ -173,7 +171,6 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
 
         /* Read section size */
         *error |= read_short_BE(stream, &size);
-        // printf("size = %04lX\n", size);
         unread = size - sizeof(size);
 
 
@@ -219,13 +216,11 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                                 }
 
                                 else {
-                                        // printf("unread = %d\n", unread);
                                         uint8_t i_q = byte & 0xF;
 
                                         if (i_q < MAX_QTABLES) {
                                                 uint8_t *qtable = (uint8_t*)&jpeg->qtables[i_q];
 
-                                                // printf("unread = %d\n", unread);
                                                 for (uint8_t i = 0; i < BLOCK_SIZE; i++) {
                                                         *error |= read_byte(stream, &qtable[i]);
                                                         unread--;
@@ -233,7 +228,6 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                                         } else
                                                 *error = true;
 
-                                        // printf("unread = %d\n", unread);
                                         jpeg->state |= DQT_OK;
                                 }
 
@@ -292,8 +286,7 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                                                 jpeg->comps[i_c].nb_blocks_v = v_sampling_factor;
                                                 jpeg->comps[i_c].i_q = i_q;
                                         }
-                                        //printf("nb_blocks_h = %d\n", h_sampling_factor);
-                                        //printf("nb_blocks_v = %d\n", v_sampling_factor);
+
                                         jpeg->state |= SOF0_OK;
                                 }
                         }
@@ -346,7 +339,6 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                                         SAFE_FREE(table);
 
                                 unread -= nb_byte_read;
-                                // printf("unread = %i\n", unread);
                                 jpeg->state |= DHT_OK;
                         }
                 } else
@@ -372,7 +364,6 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                                 i_c = --byte;
 
                                 jpeg->comp_order[i] = i_c;
-                                // printf("i_c = %i\n", byte);
 
                                 read_byte(stream, &byte);
                                 jpeg->comps[i_c].i_dc = byte >> 4;
@@ -413,25 +404,16 @@ static void read_tiff(struct jpeg_data *ojpeg, bool *error)
                 file = init_tiff_read(ojpeg->path, &width, &height);
 
                 if (file != NULL) {
-
                         ojpeg->nb_comps = 3;
-
+                        ojpeg->is_plain_image = true;
                         ojpeg->width = width;
                         ojpeg->height = height;
-
-                        compute_mcu(ojpeg, error);
-
-
-                        ojpeg->is_plain_image = true;
-
 
                         if (!*error) {
                                 uint32_t *mcu_RGB = NULL;
 
                                 const uint32_t nb_pixels_max = ojpeg->width * ojpeg->height;
                                 ojpeg->raw_data = malloc(nb_pixels_max * sizeof(uint32_t));
-                                // printf("nb_pixels_max = %u\n", nb_pixels_max);
-
 
                                 if (ojpeg->raw_data == NULL)
                                         *error = true;
@@ -483,8 +465,8 @@ static void scan_jpeg(struct bitstream *stream, struct jpeg_data *jpeg, bool *er
 
         uint32_t mcu_size = mcu_h * mcu_v;
         uint32_t *mcu_RGB = NULL;
-        uint8_t data_YCbCr[3][mcu_size];
-        uint8_t *mcu_YCbCr[3] = {
+        uint8_t data_YCbCr[MAX_COMPS][mcu_size];
+        uint8_t *mcu_YCbCr[MAX_COMPS] = {
                 (uint8_t*)&data_YCbCr[0],
                 (uint8_t*)&data_YCbCr[1],
                 (uint8_t*)&data_YCbCr[2]
@@ -497,9 +479,6 @@ static void scan_jpeg(struct bitstream *stream, struct jpeg_data *jpeg, bool *er
                 *error = true;
                 return;
         }
-
-
-        // struct tiff_file_desc *file = init_tiff_file("test.tiff", jpeg->width, jpeg->height, mcu_v);
 
 
         for (uint32_t i = 0; i < nb_mcu; i++) {
@@ -533,21 +512,15 @@ static void scan_jpeg(struct bitstream *stream, struct jpeg_data *jpeg, bool *er
                         upsampler((uint8_t*)idct, nb_blocks_h, nb_blocks_v, upsampled, mcu_h_dim, mcu_v_dim);
                 }
 
-                if (jpeg->nb_comps == 3) {
+                if (jpeg->nb_comps == 3)
                         YCbCr_to_ARGB(mcu_YCbCr, mcu_RGB, mcu_h_dim, mcu_v_dim);
-                }
 
-                else if (jpeg->nb_comps == 1) {
+                else if (jpeg->nb_comps == 1)
                         Y_to_ARGB(mcu_YCbCr[0], mcu_RGB, mcu_h_dim, mcu_v_dim);
-                }
+
                 else
                         *error = true;
-
-
-                // write_tiff_file(file, mcu_RGB, mcu_h_dim, mcu_v_dim);
         }
-
-        // close_tiff_file(file);
 }
 
 

@@ -221,7 +221,7 @@ bool write_huffman_value(int8_t value, struct huff_table *table,
                 success = true;
         }
         else
-                printf("FATAL ERROR : no Huffman code for %d !\n", value);
+                printf("FATAL ERROR : no Huffman code for %d\n", value);
 
 
         return success;
@@ -233,15 +233,13 @@ void compute_huffman_codes(struct huff_table *parent, bool *error)
                 uint32_t code = parent->code << 1;
                 uint8_t size = parent->size + 1;
 
-
                 /*
-                 * The package-merge Huffman creation algorithm
-                 * could prevent this issue from happening
+                 * The package-merge Huffman construction
+                 * algorithm could improve this
                  */
                 if (size > 16) {
                         printf("Unable to create Huffman tree, try a higher compression rate\n");
                         *error = true;
-
                         return;
                 }
 
@@ -273,7 +271,6 @@ void delete_node(struct huff_table **table, struct huff_table *del)
                 if (*table == del) {
                         free_huffman_table(*table);
                         *table = NULL;
-                        // printf("delete node OK\n");
 
                 } else if ((*table)->type == NODE) {
 
@@ -289,7 +286,6 @@ struct huff_table *create_huffman_tree(uint32_t freqs[0x100], bool *error)
                 return NULL;
 
 
-        // printf("\ncreate_queue\n");
         struct priority_queue *queue = create_queue(0x100);
         struct huff_table *node = NULL, *fake = NULL;
 
@@ -303,7 +299,6 @@ struct huff_table *create_huffman_tree(uint32_t freqs[0x100], bool *error)
 
         for (uint16_t val = 0; val < 0x100; val++) {
                 if (freqs[val] > 0) {
-                        // printf("freqs[%02X] = %d\n", val, freqs[val]);
                         node = create_node(LEAF, 0, 0, val);
                         insert_queue(queue, freqs[val], node);
                 }
@@ -370,21 +365,9 @@ void forge_huffman_values(struct huff_table *table, uint8_t **values, uint8_t *p
                 if (table->type == LEAF){
                         uint8_t i = table->size - 1;
 
-                        if (i > 16)
-                                printf("FATAL ERROR, code_size > 16\n");
-
-                        // printf("i = %d\n", i);
-
                         if (pos[i] < code_sizes[i]) {
                                 values[i][pos[i]] = table->u.val;
                                 ++pos[i];       
-                        }
-                        else {
-                                printf("size %d\n", table->size);
-                                printf("code %02X\n", table->code);
-                                printf("val %02X\n", (uint8_t)table->u.val);
-                                printf("FATAL ERROR  forge %d\n", pos[i]);
-                                printf("code_sizes[%d] = %d\n", i, code_sizes[i]);
                         }
                 }
 
@@ -392,8 +375,6 @@ void forge_huffman_values(struct huff_table *table, uint8_t **values, uint8_t *p
                         forge_huffman_values(table->u.node.left, values, pos, code_sizes);
                         forge_huffman_values(table->u.node.right, values, pos, code_sizes);
                 }
-                else
-                        printf("FATAL ERROR : corrupted Huffman table forge\n");
         }
 }
 
@@ -403,19 +384,14 @@ void count_code_sizes(struct huff_table *table, uint8_t *code_sizes)
                 if (table->type == LEAF) {
                         uint8_t i = table->size - 1;
 
-                        // printf("code_sizes[%d] < 0x%02X\n", i, table->u.val);
                         if (i < 16)
                                 ++(code_sizes[i]);
-                        else
-                                printf("FATAL ERROR  count %d\n", i);
                 }
 
                 else if (table->type == NODE) {
                         count_code_sizes(table->u.node.left, code_sizes);
                         count_code_sizes(table->u.node.right, code_sizes);
                 }
-                else
-                        printf("FATAL ERROR : corrupted Huffman table\n");
         }
 }
 
@@ -439,11 +415,9 @@ void write_huffman_table(struct bitstream *stream, struct huff_table **itable)
                 nb_codes += code_sizes[i];
 
 
-        // printf("nb_codes = %d\n", nb_codes);
-
         /* There must be less than 256 different codes */
         if (nb_codes > 256) {
-                printf("write_huffman_table error : more than 256 codes : %d\n", nb_codes);
+                printf("ERROR : more than 256 codes : %d\n", nb_codes);
                 return;
         }
 
@@ -464,7 +438,8 @@ void write_huffman_table(struct bitstream *stream, struct huff_table **itable)
         free_huffman_table(table);
 
 
-        /* Rewrite the Huffman tree with smallest codes on the left */
+        /* Rewrite the Huffman tree correctly,
+         * with smallest codes on the left */
         table = calloc(1, sizeof(struct huff_table));
         *itable = table;
 

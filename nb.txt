@@ -6,12 +6,6 @@ todo :
 - nettoyage code
 
 
-secondaire :
-
-- ajout option décodage à l'encodeur
-- faire un arbre de huffman par composante
-
-
 
 info :
 

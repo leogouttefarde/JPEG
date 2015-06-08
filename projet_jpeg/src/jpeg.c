@@ -25,7 +25,6 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
 
         /* Check for SECTION_HEAD */
         *error |= read_byte(stream, &byte);
-        // assert(byte == SECTION_HEAD);
 
         if (byte != SECTION_HEAD)
                 *error = true;
@@ -45,7 +44,6 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
 
         /* Read section size */
         *error |= read_short_BE(stream, &size);
-        // printf("size = %04lX\n", size);
         unread = size - sizeof(size);
 
 
@@ -91,13 +89,11 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                                 }
 
                                 else {
-                                        // printf("unread = %d\n", unread);
                                         uint8_t i_q = byte & 0xF;
 
                                         if (i_q < MAX_QTABLES) {
                                                 uint8_t *qtable = (uint8_t*)&jpeg->qtables[i_q];
 
-                                                // printf("unread = %d\n", unread);
                                                 for (uint8_t i = 0; i < BLOCK_SIZE; i++) {
                                                         *error |= read_byte(stream, &qtable[i]);
                                                         unread--;
@@ -105,7 +101,6 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                                         } else
                                                 *error = true;
 
-                                        // printf("unread = %d\n", unread);
                                         jpeg->state |= DQT_OK;
                                 }
 
@@ -163,8 +158,7 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                                                 jpeg->comps[i_c].nb_blocks_v = v_sampling_factor;
                                                 jpeg->comps[i_c].i_q = i_q;
                                         }
-                                        //printf("nb_blocks_h = %d\n", h_sampling_factor);
-                                        //printf("nb_blocks_v = %d\n", v_sampling_factor);
+
                                         jpeg->state |= SOF0_OK;
                                 }
                         }
@@ -206,7 +200,6 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                                 struct huff_table *table;
 
                                 table = load_huffman_table(stream, &nb_byte_read);
-                                // printf("%d Huffman table loaded\n", type);
 
                                 if (nb_byte_read == (uint16_t)-1 || table == NULL)
                                         *error = true;
@@ -220,7 +213,6 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
 
 
                                 unread -= nb_byte_read;
-                                // printf("unread = %i\n", unread);
                                 jpeg->state |= DHT_OK;
                         }
                 } else
@@ -246,7 +238,6 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                                 i_c = --byte;
 
                                 jpeg->comp_order[i] = i_c;
-                                // printf("i_c = %i\n", byte);
 
                                 read_byte(stream, &byte);
                                 jpeg->comps[i_c].i_dc = byte >> 4;
@@ -289,13 +280,8 @@ void read_header(struct bitstream *stream, struct jpeg_data *jpeg, bool *error)
                 printf("ERROR : all JPEG files must start with an SOI section\n");
 
         while (!*error && marker != SOS) {
-
                 marker = read_section(stream, ANY, jpeg, error);
                 *error |= end_of_bitstream(stream);
-                // printf("Section : 0x%02X\n", marker);
-
-                // printf("end_of_bitstream(stream) : %d\n", end_of_bitstream(stream));
-                // printf("error : %d\n", error);
         }
 }
 
@@ -325,17 +311,12 @@ void process_image(struct bitstream *stream, struct jpeg_data *jpeg, bool *error
         mcu_h *= mcu_h_dim;
         mcu_v *= mcu_v_dim;
 
-        // printf("mcu_h = %d\n", mcu_h);
-        // printf("mcu_v = %d\n", mcu_v);
-
-
 
         uint32_t nb_mcu_h = mcu_per_dim(mcu_h, jpeg->width);
         uint32_t nb_mcu_v = mcu_per_dim(mcu_v, jpeg->height);
         uint32_t nb_mcu = nb_mcu_h * nb_mcu_v;
-        // printf("width = %d\n", width);
-        // printf("height = %d\n", height);
-        // printf("nb_mcu = %d\n", nb_mcu);
+
+
 
         file = init_tiff_file(jpeg->path, jpeg->width, jpeg->height, mcu_v);
 
@@ -356,44 +337,30 @@ void process_image(struct bitstream *stream, struct jpeg_data *jpeg, bool *error
                         (uint8_t*)&data_YCbCr[2]
                 };
 
+                uint8_t idct[mcu_h_dim * mcu_v_dim][BLOCK_SIZE];
+
 
                 for (uint32_t i = 0; i < nb_mcu; i++) {
                         for (uint8_t j = 0; j < jpeg->nb_comps; j++) {
 
                                 i_c = jpeg->comp_order[j];
-
+                                i_q = jpeg->comps[i_c].i_q;
+                                i_dc = jpeg->comps[i_c].i_dc;
+                                i_ac = jpeg->comps[i_c].i_ac;
                                 nb_blocks_h = jpeg->comps[i_c].nb_blocks_h;
                                 nb_blocks_v = jpeg->comps[i_c].nb_blocks_v;
                                 nb_blocks = nb_blocks_h * nb_blocks_v;
-
-                                i_dc = jpeg->comps[i_c].i_dc;
-                                i_ac = jpeg->comps[i_c].i_ac;
-                                i_q = jpeg->comps[i_c].i_q;
-
                                 last_DC = &jpeg->comps[i_c].last_DC;
-                                // printf("i_c = %d\n", i_c);
-                                // printf("i_q = %d\n", i_q);
 
-
-                                uint8_t idct[nb_blocks][BLOCK_SIZE];
-
-                                // printf("nb_blocks = %d\n", nb_blocks);
                                 for (uint8_t n = 0; n < nb_blocks; n++) {
                                         unpack_block(stream, jpeg->htables[0][i_dc], last_DC,
                                                              jpeg->htables[1][i_ac], block);
 
                                         iqzz_block(block, iqzz, (uint8_t*)&jpeg->qtables[i_q]);
-
                                         idct_block(iqzz, (uint8_t*)&idct[n]);
                                 }
 
-                                // printf("mcu_h = %d\n", mcu_h);
-                                // printf("mcu_v = %d\n", mcu_v);
-                                // upsampled = malloc(mcu_h * mcu_v);
                                 upsampled = mcu_YCbCr[i_c];
-
-                                // printf("nb_h = %d\n", nb_h);
-                                // printf("nb_v = %d\n", nb_v);
                                 upsampler((uint8_t*)idct, nb_blocks_h, nb_blocks_v, upsampled, mcu_h_dim, mcu_v_dim);
                         }
 
@@ -404,11 +371,6 @@ void process_image(struct bitstream *stream, struct jpeg_data *jpeg, bool *error
                                 Y_to_ARGB(mcu_YCbCr[0], mcu_RGB, mcu_h_dim, mcu_v_dim);
                         else
                                 *error = true;
-
-                        // printf("tfd = %x\n", tfd);
-                        // printf("mcu_RGB = %x\n", mcu_RGB);
-                        // printf("nb_blocks_h = %d\n", mcu_h_dim);
-                        // printf("nb_blocks_v = %d\n", mcu_v_dim);
 
                         write_tiff_file(file, mcu_RGB, mcu_h_dim, mcu_v_dim);
                 }

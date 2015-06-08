@@ -1,6 +1,7 @@
 
 #include "library.h"
 #include "decode.h"
+#include "tiff.h"
 #include <unistd.h>
 #include <getopt.h>
 
@@ -158,6 +159,7 @@ uint8_t affect_mcu(uint32_t val, bool *error)
 bool parse_args(int argc, char **argv, struct options *options)
 {
         bool error = false;
+        bool encode = true;
 
         char *input = NULL;
         char *output = NULL;
@@ -176,7 +178,7 @@ bool parse_args(int argc, char **argv, struct options *options)
         /* Disable default warnings */
         opterr = 0;
 
-        while ( (opt = getopt(argc, argv, "o:c:m:gh")) != -1) {
+        while ( (opt = getopt(argc, argv, "o:c:m:ghd")) != -1) {
 
                 switch (opt) {
                         case 'o':
@@ -197,6 +199,10 @@ bool parse_args(int argc, char **argv, struct options *options)
 
                         case 'h':
                                 error = true;
+                                break;
+
+                        case 'd':
+                                encode = false;
                                 break;
                 }
         }
@@ -255,7 +261,6 @@ bool parse_args(int argc, char **argv, struct options *options)
         }
 
 
-
         options->input = input;
         options->output = output;
 
@@ -264,6 +269,7 @@ bool parse_args(int argc, char **argv, struct options *options)
 
         options->compression = quality;
         options->gray = gray;
+        options->encode = encode;
 
 
         return error;
@@ -346,10 +352,13 @@ void process_options(struct options *options, struct jpeg_data *jpeg, bool *erro
 
 
         if (options->gray) {
-                jpeg->nb_comps = 1;
+                if (options->encode) {
+                        jpeg->nb_comps = 1;
 
-                options->mcu_h = BLOCK_DIM;
-                options->mcu_v = BLOCK_DIM;
+                        options->mcu_h = BLOCK_DIM;
+                        options->mcu_v = BLOCK_DIM;
+                } else
+                        compute_gray(jpeg);
         }
 
 
@@ -386,4 +395,60 @@ void process_options(struct options *options, struct jpeg_data *jpeg, bool *erro
         }
 }
 
+void export_tiff(struct jpeg_data *jpeg, bool *error)
+{
+        if (*error || jpeg == NULL) {
+                *error = true;
+                return;
+        }
+
+        struct tiff_file_desc *file = NULL;
+
+        file = init_tiff_file(jpeg->path, jpeg->width, jpeg->height, jpeg->mcu.v);
+
+        if (file != NULL) {
+                uint32_t *mcu_RGB;
+
+                for (uint32_t i = 0; i < jpeg->mcu.nb; i++) {
+                        mcu_RGB = &jpeg->raw_data[i * jpeg->mcu.size];
+                        write_tiff_file(file, mcu_RGB, jpeg->mcu.h_dim, jpeg->mcu.v_dim);
+                }
+
+                close_tiff_file(file);
+
+        } else
+                *error = true;
+}
+
+void compute_gray(struct jpeg_data *jpeg)
+{
+        if (jpeg == NULL || jpeg->raw_data == NULL)
+                return;
+
+
+        uint32_t nb_pixels, pixel;
+        uint32_t *image = jpeg->raw_data;
+        uint32_t R, G, B, gray;
+
+        if (jpeg->is_plain_image)
+                nb_pixels = jpeg->width * jpeg->height;
+
+        else
+                nb_pixels = jpeg->mcu.size * jpeg->mcu.nb;
+
+
+        for (uint32_t i = 0; i < nb_pixels; i++) {
+
+                pixel = image[i];
+
+                R = RED(pixel);
+                G = GREEN(pixel);
+                B = BLUE(pixel);
+
+                gray = (R + G + B) / 3;
+
+
+                image[i] = gray << 16 | gray << 8 | gray;
+        }
+}
 

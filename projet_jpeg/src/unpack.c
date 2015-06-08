@@ -48,7 +48,6 @@ void unpack_block(struct bitstream *stream,
         int16_t diff;
 
         if (table_AC == NULL || table_DC == NULL || pred_DC == NULL)
-                // Error
                 return;
 
 	/* Retrieve the DC coefficient */

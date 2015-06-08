@@ -27,7 +27,7 @@ struct bitstream *create_bitstream(const char *filename, enum stream_mode mode)
                 else
                         open_mode = "r+";
 
-                // printf("open_mode == %s\n", open_mode);
+
                 FILE *file = fopen(filename, open_mode);
 
                 if (file != NULL) {

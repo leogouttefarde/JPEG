@@ -4,12 +4,6 @@
 #include "library.h"
 
 
-#define BYTE(c, i)      ((c >> 8*i) & 0xFF)
-#define RED(c)          BYTE(c, 2)
-#define GREEN(c)        BYTE(c, 1)
-#define BLUE(c)         BYTE(c, 0)
-
-
 void YCbCr_to_ARGB(uint8_t  *mcu_YCbCr[3], uint32_t *mcu_RGB,
                 uint32_t nb_blocks_h, uint32_t nb_blocks_v)
 {
@@ -99,7 +93,7 @@ void ARGB_to_Y(uint32_t *mcu_RGB, uint8_t  *mcu_Y,
 {
         const uint32_t NB_PIXELS = BLOCK_SIZE * nb_blocks_h * nb_blocks_v;
 
-        int32_t R, G, B;
+        uint32_t R, G, B;
         uint32_t pixel;
 
         if (mcu_Y == NULL) {

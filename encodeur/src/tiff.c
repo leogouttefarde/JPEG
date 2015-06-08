@@ -34,14 +34,6 @@
 #define RESOLUTION_UNIT   0x0128
 #define SOFTWARE          0x0131
 
-
-/* Macros */
-#define _BYTE(c, i)       ((c >> 8*i) & 0xFF)
-#define GET_BYTE(c)       _BYTE(c, 0)
-#define RED(c)            _BYTE(c, 2)
-#define GREEN(c)          _BYTE(c, 1)
-#define BLUE(c)           _BYTE(c, 0)
-
 #define bytes2long_be(b)    (GET_BYTE(b[0]) << 24 | GET_BYTE(b[1]) << 16 | GET_BYTE(b[2]) << 8 | GET_BYTE(b[3]))
 #define bytes2long_le(b)    (GET_BYTE(b[3]) << 24 | GET_BYTE(b[2]) << 16 | GET_BYTE(b[1]) << 8 | GET_BYTE(b[0]))
 #define bytes2long(b, le)   (le ? bytes2long_le(b) : bytes2long_be(b))

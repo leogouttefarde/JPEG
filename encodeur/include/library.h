@@ -35,5 +35,9 @@ uint32_t *image_to_mcu(
 
 void process_options(struct options *options, struct jpeg_data *jpeg, bool *error);
 
+void export_tiff(struct jpeg_data *jpeg, bool *error);
+
+void compute_gray(struct jpeg_data *jpeg);
+
 
 #endif
