@@ -1,5 +1,5 @@
 
-#include "idct.h"
+#include "dct.h"
 #include "common.h"
 #include "library.h"
 

@@ -1,5 +1,5 @@
 
-#include "iqzz.h"
+#include "qzz.h"
 #include "common.h"
 #include "library.h"
 
