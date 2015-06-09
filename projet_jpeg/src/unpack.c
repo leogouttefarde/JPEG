@@ -4,7 +4,7 @@
 
 
 /*
- * RLE codes
+ * RLE compression codes
  */
 enum RLE {
         ZRL = 0xF0,
@@ -79,7 +79,6 @@ void unpack_block(struct bitstream *stream,
 
         /* Update the last value field */
         *pred_DC = bloc[n++];
-
 
 
         /* Retrieve the 63 AC coefficients */

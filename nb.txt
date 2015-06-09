@@ -1,17 +1,6 @@
 
 
 
-todo :
-
-
-commentaires
-
-- loeffler
-- unpack
-
-
-
-
 info :
 
 - gestion DRI non demandée, marqueur RSTm = indicateur de correction d'erreurs entre blocks (gestion non demandée non plus)

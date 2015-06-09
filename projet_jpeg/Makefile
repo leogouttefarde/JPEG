@@ -15,8 +15,7 @@ CFLAGS = $(INC) -Werror -Wall -std=c99 -O3 -Wextra -s
 #CFLAGS = $(INC) -Wall -Wextra -std=c99 -g
 LDFLAGS = -lm
 
-# Liste des objets encadrants
-
+# Liste des objets à compiler
 OBJ_FILES = $(OBJ_DIR)/main.o $(OBJ_DIR)/conv.o $(OBJ_DIR)/iqzz.o
 OBJ_FILES += $(OBJ_DIR)/upsampler.o $(OBJ_DIR)/huffman.o $(OBJ_DIR)/unpack.o
 OBJ_FILES += $(OBJ_DIR)/tiff.o $(OBJ_DIR)/library.o $(OBJ_DIR)/bitstream.o

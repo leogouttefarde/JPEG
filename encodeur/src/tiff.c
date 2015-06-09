@@ -87,10 +87,13 @@ struct tiff_file_desc {
 };
 
 
+/* Reads a short from the file */
 static uint16_t read_short(struct tiff_file_desc *tfd, bool *error);
 
+/* Reads a long from the file */
 static uint32_t read_long(struct tiff_file_desc *tfd, bool *error);
 
+/* Reads an IFD entry from the file */
 static void read_ifd_entry(struct tiff_file_desc *tfd, bool *error);
 
 
@@ -148,6 +151,8 @@ struct tiff_file_desc *init_tiff_read (const char *path, uint32_t *width, uint32
         /* Default compression to none */
         tfd->compression = 1;
 
+
+        /* Read all IFD entries */
         for(uint32_t i = 0; i < tfd->ifd_count; i++)
                 read_ifd_entry(tfd, &error);
 
@@ -192,24 +197,29 @@ struct tiff_file_desc *init_tiff_read (const char *path, uint32_t *width, uint32
  * Renvoie true si une erreur est survenue, false si pas d'erreur. */
 bool read_tiff_line(struct tiff_file_desc *tfd, uint32_t *line_rgb)
 {
+        size_t ret;
         bool error = false;
+        char buf[4];
+        uint32_t i = 0;
+        uint32_t *cur_line = &tfd->current_line;
 
+        memset(buf, 0, sizeof(buf));
+
+
+        /*
+         * If rows_per_strip is zero,
+         * there are no multiple strips.
+         * Else go to the next strip when required.
+         */
         if (tfd->rows_per_strip > 0)
         if (tfd->read_lines >= tfd->rows_per_strip) {
 
-                if (++tfd->current_line < tfd->nb_strips) {
-                        fseek(tfd->file, tfd->strip_offsets[tfd->current_line], SEEK_SET);
-
+                /* If a next strip exists */
+                if (++*cur_line < tfd->nb_strips) {
+                        fseek(tfd->file, tfd->strip_offsets[*cur_line], SEEK_SET);
                         tfd->read_lines = 0;
                 }
         }
-
-
-        char buf[4];
-        size_t ret;
-        uint32_t i = 0;
-
-        memset(buf, 0, sizeof(buf));
 
 
         for (uint32_t w = 0; w < tfd->width; w++) {
