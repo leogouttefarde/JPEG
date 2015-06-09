@@ -8,7 +8,10 @@
 #define MAX_COMPS 3
 #define MAX_HTABLES 4
 
-/* Quantification index on 4 bits => 16 Quantification tables */
+/*
+ * Quantification index on 4 bits :
+ * => max 16 quantification tables
+ */
 #define MAX_QTABLES 0x10 
 
 #define SECTION_HEAD 0xFF
