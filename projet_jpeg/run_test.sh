@@ -34,5 +34,5 @@ then
 	echo "Input file not founded."
     fi
 else
-	echo "Usage : ./run_test <jpeg file>"
+    echo "Usage : ./run_test <jpeg file>"
 fi

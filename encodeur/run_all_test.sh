@@ -9,10 +9,10 @@ then
 	    
 	    # Create all result directories
 	    mkdir -p "$3"
-	    res_jpeg2tiff="$3""jpeg2tiff"
-	    res_tiff2jpeg="$3""tiff2jpeg"
-	    res_tiff2tiff="$3""tiff2tiff"
-	    res_jpeg2jpeg="$3""jpeg2jpeg"
+	    res_jpeg2tiff="$3/jpeg2tiff"
+	    res_tiff2jpeg="$3/tiff2jpeg"
+	    res_tiff2tiff="$3/tiff2tiff"
+	    res_jpeg2jpeg="$3/jpeg2jpeg"
 	    mkdir -p "$res_jpeg2tiff"
 	    mkdir -p "$res_tiff2jpeg"
 	    mkdir -p "$res_tiff2tiff"
@@ -21,9 +21,9 @@ then
 	    # Compile encoder project 
 	    make
 
-	    # Decode all jpeg file in <jpeg repository> 
+	    # Decode all jpeg file in <jpeg directory> 
 	    # Result in "$3"/res_jpeg2tiff
-	    for file in "$1"*
+	    for file in "$1"/*
 	    do
 		if [[ "$file" == *".jpeg"* ]]
 		then
@@ -41,10 +41,10 @@ then
 		echo -e "\n"
 	    done
 	    
-	    # Encode all tiff file in <tiff repository> 
+	    # Encode all tiff file in <tiff directory> 
 	    # Result in "$3"/res_tiff2jpeg
 	    c_max=25
-	    for file in "$2"*
+	    for file in "$2"/*
 	    do	
 		if [[ "$file" == *".tiff"* ]]
 		then
@@ -70,7 +70,7 @@ then
 
 	    # Compute tiff to tiff transformation
 	    # Result in "$3"/res_tiff2tiff
-	    for file in "$2"*
+	    for file in "$2"/*
 	    do	
 		if [[ "$file" == *".tiff"* ]]
 		then
@@ -88,7 +88,7 @@ then
 	    # Compute jpeg to jpeg transformation
 	    # Result in "$3"/res_jpeg2jpeg
 	    c_max=25
-	    for file in "$1"*
+	    for file in "$1"/*
 	    do	
 		if [[ "$file" == *".jpeg"* ]]
 		then
