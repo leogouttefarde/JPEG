@@ -393,15 +393,25 @@ void process_options(struct options *options, struct jpeg_data *jpeg, bool *erro
         if (options == NULL || jpeg == NULL || error == NULL || *error)
                 return;
 
+
         /* Turn the image to gray if required */
         if (options->gray) {
+
+                /* Prepare for gray JPEG encoding  */
                 if (options->encode) {
                         jpeg->nb_comps = 1;
 
                         options->mcu_h = BLOCK_DIM;
                         options->mcu_v = BLOCK_DIM;
                 } else
+                        /* Turn all pixels to gray for TIFF decoding */
                         compute_gray(jpeg);
+
+        } else if (jpeg->nb_comps == 1) {
+
+                /* Enforce the right MCU for input gray images */
+                options->mcu_h = BLOCK_DIM;
+                options->mcu_v = BLOCK_DIM;
         }
 
 
@@ -456,8 +466,8 @@ void export_tiff(struct jpeg_data *jpeg, bool *error)
 
         struct tiff_file_desc *file = NULL;
 
-        file = init_tiff_file(jpeg->path, jpeg->width, jpeg->height, 
-                              jpeg->mcu.v);
+        file = init_tiff_file(jpeg->path, jpeg->width, jpeg->height,
+                                jpeg->mcu.v);
 
         if (file != NULL) {
                 uint32_t *mcu_RGB;
