@@ -5,8 +5,9 @@
 #include <unistd.h>
 #include <getopt.h>
 
+
 /*
- * Reads a short from stream encoded in Big Endian
+ * Reads a short from stream as Big Endian
  */
 bool read_short_BE(struct bitstream *stream, uint16_t *value)
 {
@@ -50,7 +51,7 @@ bool read_byte(struct bitstream *stream, uint8_t *value)
 }
 
 /*
- * Prints a block of BLOCK_DIMxBLOCK_DIM of int32_t for debug puposes.
+ * Prints a BLOCK_DIMxBLOCK_DIM block of int32_t for debug purposes.
  */
 bool print_block(int32_t *block)
 {
@@ -69,7 +70,7 @@ bool print_block(int32_t *block)
 }
 
 /*
- * Prints a block of BLOCK_DIMxBLOCK_DIM of int8_t for debug puposes.
+ * Prints a BLOCK_DIMxBLOCK_DIM block of uint8_t for debug purposes.
  */
 bool print_byte_block(uint8_t *block)
 {
@@ -88,7 +89,7 @@ bool print_byte_block(uint8_t *block)
 }
 
 /*
- * Verifies that the filename extension is "jpg" or "jpeg"
+ * Checks that the filename extension is "jpg" or "jpeg"
  */
 bool is_valid_jpeg(char *path)
 {
@@ -107,7 +108,7 @@ bool is_valid_jpeg(char *path)
 }
 
 /*
- * Verifies that the filename extension is "tiff" or "tif"
+ * Checks that the filename extension is "tiff" or "tif"
  */
 bool is_valid_tiff(char *path)
 {
@@ -162,7 +163,7 @@ static int32_t get_value(char *str, bool *error)
 }
 
 /*
- * Verifies that MCU dimensions are 8 or 16
+ * Checks that MCU dimensions are 8 or 16
  */
 static uint8_t affect_mcu(uint32_t val, bool *error)
 {
@@ -407,9 +408,8 @@ void process_options(struct options *options, struct jpeg_data *jpeg, bool *erro
                         /* Turn all pixels to gray for TIFF decoding */
                         compute_gray(jpeg);
 
+        /* Enforce the right MCU for input gray images */
         } else if (jpeg->nb_comps == 1) {
-
-                /* Enforce the right MCU for input gray images */
                 options->mcu_h = BLOCK_DIM;
                 options->mcu_v = BLOCK_DIM;
         }
@@ -486,7 +486,7 @@ void export_tiff(struct jpeg_data *jpeg, bool *error)
 }
 
 /*
- * Converts all pixels to grayscales.
+ * Enforces all pixels to grayscale.
  */
 void compute_gray(struct jpeg_data *jpeg)
 {

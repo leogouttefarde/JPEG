@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <getopt.h>
 
+
 /*
  * Reads a short from stream as Big Endian
  */

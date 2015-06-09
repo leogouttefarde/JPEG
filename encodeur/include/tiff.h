@@ -8,6 +8,7 @@
  * la lecture ou l'écriture des données de l'image dans un fichier TIFF. */
 struct tiff_file_desc;
 
+
 /*
  * Initialisation de la lecture d'un fichier TIFF, avec les sorties suivantes :
  *  - width : la largeur de l'image lue

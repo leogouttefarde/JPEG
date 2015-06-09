@@ -3,6 +3,7 @@
 #include "common.h"
 #include "library.h"
 
+
 /* Computes the C(x) formula (subject p13) */
 double C(const uint8_t x)
 {

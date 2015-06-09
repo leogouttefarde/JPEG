@@ -5,7 +5,7 @@
 #include <stdint.h>
 
 /*
- * Computes the inverse zigzag quantification.
+ * Computes an inverse zigzag quantification.
  */
 extern void iqzz_block (int32_t in[64], int32_t out[64], uint8_t quantif[64]);
 

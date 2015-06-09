@@ -29,6 +29,7 @@ static inline void upsample_block(uint8_t *in, uint32_t in_index,
         const uint32_t LINE = nb_blocks_v * BLOCK_DIM * nb_blocks_out_h;
         uint32_t in_pos, out_pos;
 
+
         /* Upsample each pixel in the bloc */
         for (uint16_t j = 0; j < BLOCK_DIM; ++j) {
 
@@ -68,6 +69,7 @@ void upsampler(uint8_t *in,
 
         uint32_t in_pos, in_index = 0;
         uint32_t out_pos, out_index = 0;
+
 
         /* Upsample each bloc */
         for (uint16_t y = 0; y < nb_blocks_in_v; ++y) {

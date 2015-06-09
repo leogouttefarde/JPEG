@@ -3,27 +3,28 @@
 
 #include <stdint.h>
 
-/* Convert YCbCr MCU to RGB MCU */
+
+/* Convert YCbCr MCUs to RGB MCUs */
 extern void YCbCr_to_ARGB(uint8_t  *mcu_YCbCr[3], uint32_t *mcu_RGB,
-		uint32_t nb_blocks_h, uint32_t nb_blocks_v);
+                          uint32_t nb_blocks_h, uint32_t nb_blocks_v);
 
-/* Convert RGB MCU to YCbCr MCU */
-void ARGB_to_YCbCr(uint32_t *mcu_RGB, uint8_t  *mcu_YCbCr[3],
-                uint32_t nb_blocks_h, uint32_t nb_blocks_v);
-
-/* 
- * Convert Y MCU to RGB MCU
- * Use for Grayscale image
+/*
+ * Convert Y MCUs to RGB MCUs
+ * Used for grayscale images
  */
-void Y_to_ARGB(uint8_t *mcu_Y, uint32_t *mcu_RGB,
-                uint32_t nb_blocks_h, uint32_t nb_blocks_v);
+extern void Y_to_ARGB(uint8_t *mcu_Y, uint32_t *mcu_RGB,
+                      uint32_t nb_blocks_h, uint32_t nb_blocks_v);
 
-/* 
- * Convert RGB MCU to Y MCU
- * Use for Grayscale image
+/* Convert RGB MCUs to YCbCr MCUs */
+extern void ARGB_to_YCbCr(uint32_t *mcu_RGB, uint8_t  *mcu_YCbCr[3],
+                          uint32_t nb_blocks_h, uint32_t nb_blocks_v);
+
+/*
+ * Convert RGB MCUs to Y MCUs
+ * Used for grayscale images
  */
-void ARGB_to_Y(uint32_t *mcu_RGB, uint8_t  *mcu_Y,
-                uint32_t nb_blocks_h, uint32_t nb_blocks_v);
+extern void ARGB_to_Y(uint32_t *mcu_RGB, uint8_t  *mcu_Y,
+                      uint32_t nb_blocks_h, uint32_t nb_blocks_v);
 
 
 #endif

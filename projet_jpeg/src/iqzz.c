@@ -19,7 +19,7 @@ static const uint8_t zz[64] =
 };
 
 /*
- * Computes the inverse zigzag quantification.
+ * Computes an inverse zigzag quantification.
  */
 void iqzz_block (int32_t in[64], int32_t out[64], uint8_t quantif[64])
 {
