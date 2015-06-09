@@ -345,6 +345,7 @@ void process_image(struct bitstream *stream, struct jpeg_data *jpeg, bool *error
         /* Number of MCUs */
         uint32_t nb_mcu = nb_mcu_h * nb_mcu_v;
 
+
         /* Write TIFF header */
         file = init_tiff_file(jpeg->path, jpeg->width, jpeg->height, mcu_v);
 
@@ -366,6 +367,7 @@ void process_image(struct bitstream *stream, struct jpeg_data *jpeg, bool *error
                 };
 
                 uint8_t idct[mcu_h_dim * mcu_v_dim][BLOCK_SIZE];
+
 
                 /* Decode and write all MCUs */
                 for (uint32_t i = 0; i < nb_mcu; i++) {

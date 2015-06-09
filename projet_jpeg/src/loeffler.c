@@ -4,6 +4,9 @@
 #include "library.h"
 
 
+/*
+ * Performs an inverse DCT Loeffler rotation
+ */
 static inline void rotation_idct(double i0, double i1, double *out0, double *out1, double k, uint8_t n)
 {
         const double COS = cos((n * M_PI)/16);
@@ -13,6 +16,9 @@ static inline void rotation_idct(double i0, double i1, double *out0, double *out
         *out1 = k * (i1 * COS + i0 * SIN);
 }
 
+/*
+ * Exchanges too double pointers
+ */
 static inline void swap(double **a, double **b)
 {
         double *temp = *a;
@@ -21,12 +27,18 @@ static inline void swap(double **a, double **b)
         *b = temp;
 }
 
+/*
+ * Performs a Loeffler butterfly operation
+ */
 static inline void butterfly(double i0, double i1, double *out0, double *out1)
 {
         *out0 = i0 + i1;
         *out1 = i0 - i1;
 }
 
+/*
+ * Applies the 1D inverse DCT Loeffler algorithm
+ */
 static inline void loeffler_idct(double vect[BLOCK_DIM])
 {
         double next_buf[BLOCK_DIM];
@@ -80,6 +92,9 @@ static inline void loeffler_idct(double vect[BLOCK_DIM])
         //swap(&vect, &next);
 }
 
+/*
+ * Performs a Loeffler inverse discrete cosine transform
+ */
 void idct_block(int32_t in[64], uint8_t out[64])
 {
         double vector[BLOCK_DIM];

@@ -202,8 +202,16 @@ struct huff_table *get_huffman_code(int8_t value, struct huff_table *table)
 }
 
 bool write_huffman_value(int8_t value, struct huff_table *table,
-                         struct bitstream *stream)
+                         struct bitstream *stream,
+                         uint32_t **freqs, uint8_t freq_type)
 {
+        /* Compute value frequencies if required */
+        if (freqs != NULL) {
+                freqs[freq_type][(uint8_t)value]++;
+                return true;
+        }
+
+
         int8_t bit;
         bool success = false;
 

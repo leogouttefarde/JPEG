@@ -202,6 +202,7 @@ struct tiff_file_desc *init_tiff_file (const char *file_name,
         uint32_t line_offset = strips_pos;
 
 
+        /* One row handling */
         if (tfd->nb_strips > 1) {
                 line_offset += 8 * tfd->nb_strips;
                 write_long(tfd, strips_pos);
@@ -238,6 +239,7 @@ struct tiff_file_desc *init_tiff_file (const char *file_name,
                 line_height = tfd->rows_per_strip;
 
 
+        /* One row handling */
         if (tfd->nb_strips > 1) {
                 line_size = tfd->rows_per_strip * tfd->width * 3;
                 write_long(tfd, strips_pos + 4 * tfd->nb_strips);

@@ -32,7 +32,7 @@ uint8_t S(const uint8_t x, const uint8_t y, int32_t *in)
         sum /= SQRT_16;
         sum += 128.;
 
-        return double2uint8(sum);
+        return TRUNCATE(sum);
 }
 
 /* Computes the inverse discrete cosine transform */
