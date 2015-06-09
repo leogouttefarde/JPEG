@@ -104,7 +104,7 @@ static void read_jpeg(struct jpeg_data *ojpeg, bool *error)
                         ojpeg->mcu.v = jpeg.mcu.v;
                         ojpeg->height = jpeg.height;
                         ojpeg->width = jpeg.width;
-
+			
                         /* 
                          * Compute MCU informations :
                          * number of MCUs, size, Y Cb Cr dimensions
@@ -275,7 +275,6 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                         read_short_BE(stream, &jpeg->width);
 
                         read_byte(stream, &jpeg->nb_comps);
-
 
                         /* Only RGB & Gray JPEG images are possible */
                         if (jpeg->nb_comps != 3 && jpeg->nb_comps != 1)
