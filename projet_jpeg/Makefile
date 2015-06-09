@@ -66,3 +66,6 @@ run: all
 prof:
 	gprof jpeg2tiff gmon.out > analysis.txt
 
+indent:
+	indent -nut -linux src/*.c
+

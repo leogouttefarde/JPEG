@@ -40,7 +40,7 @@ void YCbCr_to_ARGB(uint8_t  *mcu_YCbCr[3], uint32_t *mcu_RGB,
         }
 }
 
-/* 
+/*
  * Convert Y MCUs to RGB MCUs
  * Used for grayscale images
  */

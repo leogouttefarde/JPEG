@@ -32,6 +32,6 @@ extern void close_tiff_file(struct tiff_file_desc *tfd);
 extern void write_tiff_file (struct tiff_file_desc *tfd,
                                 uint32_t *mcu_rgb,
                                 uint8_t nb_blocks_h,
-                                uint8_t nb_blocks_v) ;
+                                uint8_t nb_blocks_v);
 
 #endif

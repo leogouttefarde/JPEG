@@ -94,12 +94,11 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
 
                                 if (accuracy) {
                                         printf("ERROR : this baseline JPEG decoder"\
-                                               "only supports 8 bits accuracy\n");
+                                               " only supports 8 bits accuracy\n");
                                         *error = true;
                                 } else {
-                                        
                                         uint8_t i_q = byte & 0xF;
-                                        
+
                                         /*
                                          * Read one quantification table
                                          */
@@ -107,14 +106,13 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                                                 uint8_t *qtable = (uint8_t*)&jpeg->qtables[i_q];
 
                                                 for (uint8_t i = 0; i < BLOCK_SIZE; i++) {
-                                                        *error |= read_byte(stream, 
-                                                                            &qtable[i]);
+                                                        *error |= read_byte(stream, &qtable[i]);
                                                         unread--;
                                                 }
                                         } else
                                                 *error = true;
 
-                                        /* Update the jpeg status */
+                                        /* Update jpeg status */
                                         jpeg->state |= DQT_OK;
                                 }
 
@@ -130,8 +128,8 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                         read_byte(stream, &accuracy);
 
                         if (accuracy != 8) {
-                                printf("ERROR : this baseline JPEG decoder "\
-                                       "only supports 8 bits accuracy\n");
+                                printf("ERROR : this baseline JPEG decoder"\
+                                       " only supports 8 bits accuracy\n");
                                 *error = true;
                         }
 
@@ -140,6 +138,7 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                         read_short_BE(stream, &jpeg->width);
 
                         read_byte(stream, &jpeg->nb_comps);
+
 
                         /* Only RGB & Gray JPEG images are possible */
                         if (jpeg->nb_comps != 3 && jpeg->nb_comps != 1)
@@ -177,7 +176,7 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                                                 jpeg->comps[i_c].i_q = i_q;
                                         }
 
-                                        /* Update the jpeg status */
+                                        /* Update jpeg status */
                                         jpeg->state |= SOF0_OK;
                                 }
                         }
@@ -233,7 +232,7 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
 
                                 unread -= nb_byte_read;
 
-                                /* Update the jpeg status */
+                                /* Update jpeg status */
                                 jpeg->state |= DHT_OK;
                         }
                 } else
@@ -248,10 +247,9 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
 
                         read_byte(stream, &nb_comps);
 
-
                         /* 
                          * Check that the number of component is 
-                         * the same than in the SOF Section
+                         * the same as in the SOF Section
                          */
                         if (nb_comps != jpeg->nb_comps) {
                                 *error = true;
@@ -271,7 +269,7 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                                 jpeg->comps[i_c].i_ac = byte & 0xF;
                         }
 
-			/* Skip unused SOS data */
+                        /* Skip unused SOS data */
                         read_byte(stream, &byte);
                         read_byte(stream, &byte);
                         read_byte(stream, &byte);
@@ -293,7 +291,7 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
         return marker;
 }
 
-/* Reads a whole jpeg header */
+/* Read a whole jpeg header */
 void read_header(struct bitstream *stream, struct jpeg_data *jpeg, bool *error)
 {
         uint8_t marker = ANY;
@@ -314,7 +312,7 @@ void read_header(struct bitstream *stream, struct jpeg_data *jpeg, bool *error)
         }
 }
 
-/* Extract then write image data to TIFF file */
+/* Extract, decode jpeg data and write image data to tiff file */
 void process_image(struct bitstream *stream, struct jpeg_data *jpeg, bool *error)
 {
         if (stream == NULL || *error || jpeg == NULL || jpeg->state != ALL_OK) {
@@ -369,9 +367,10 @@ void process_image(struct bitstream *stream, struct jpeg_data *jpeg, bool *error
 
                 uint8_t idct[mcu_h_dim * mcu_v_dim][BLOCK_SIZE];
 
-                /* Decode and write all MCUs from JPEG to TIFF file */
+                /* Decode and write all MCUs */
                 for (uint32_t i = 0; i < nb_mcu; i++) {
-			/* Retrieve one component from jpeg file */
+
+                        /* Retrieve each component */
                         for (uint8_t j = 0; j < jpeg->nb_comps; j++) {
                                 
                                 /* Retrieve component informations */
@@ -401,18 +400,19 @@ void process_image(struct bitstream *stream, struct jpeg_data *jpeg, bool *error
                                 upsampler((uint8_t*)idct, nb_blocks_h, nb_blocks_v,
                                           upsampled, mcu_h_dim, mcu_v_dim);
                         }
-			
-			/* Convert YCbCr to RGB for color image */
+
+                        /* Convert YCbCr to RGB for color images */
                         if (jpeg->nb_comps == 3)
                                 YCbCr_to_ARGB(mcu_YCbCr, mcu_RGB, mcu_h_dim, mcu_v_dim);
-			/* Convert Y to RGB for grayscale image */
+
+                        /* Convert Y to RGB for grayscale images */
                         else if (jpeg->nb_comps == 1)
                                 Y_to_ARGB(mcu_YCbCr[0], mcu_RGB, mcu_h_dim, mcu_v_dim);
 
                         else
                                 *error = true;
 
-                        /* Write each RGB MCU to the TIFF file */
+                        /* Write each RGB MCU */
                         write_tiff_file(file, mcu_RGB, mcu_h_dim, mcu_v_dim);
                 }
 

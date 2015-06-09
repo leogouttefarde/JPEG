@@ -1,7 +1,7 @@
 
 #include "encode.h"
 #include "huffman.h"
-#include "unpack.h"
+#include "pack.h"
 #include "qzz.h"
 #include "dct.h"
 #include "tiff.h"

@@ -36,17 +36,17 @@ enum jpeg_status {
         DHT_OK  = 1,
         DQT_OK  = 2,
         SOF0_OK = 4,
-        ALL_OK = 7
+        ALL_OK  = 7
 };
 
-/* Input and Output filename */
+/* Command line arguments */
 struct options {
 
         char *input;
         char *output;
 };
 
-/* Component information */
+/* Component informations */
 struct comp {
 
         /* SOF0 data */
@@ -62,8 +62,9 @@ struct comp {
         int32_t last_DC;
 };
 
-/* JPEG information */
+/* JPEG informations */
 struct jpeg_data {
+
 	/* Filename */
         char *path;
 
@@ -94,7 +95,7 @@ struct jpeg_data {
 extern uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                         struct jpeg_data *jpeg, bool *error);
 
-/* Read a jpeg header data */
+/* Read a whole jpeg header */
 extern void read_header(struct bitstream *stream, struct jpeg_data *jpeg, bool *error);
 
 /* Extract, decode jpeg data and write image data to tiff file */

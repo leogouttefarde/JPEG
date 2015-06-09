@@ -20,7 +20,6 @@ struct options {
         uint8_t compression;
 
         bool gray;
-
 };
 
 struct jpeg_data;

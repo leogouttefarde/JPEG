@@ -42,25 +42,42 @@
 #define BLUE(c)           _BYTE(c, 0)
 
 
+/*
+ * Internal TIFF structure informations
+ */
 struct tiff_file_desc {
+
+        /* This tiff file's pointer */
         FILE *file;
+
+        /* Indicates if this tiff uses little endian or not */
         bool is_le;
+
+        /* Dimensions */
         uint32_t width;
         uint32_t height;
+
+        /* Number of rows per strip */
         uint32_t rows_per_strip;
+
+        /* Strip informations */
         uint32_t nb_strips;
+        uint32_t *strip_offsets;
+        uint32_t *strip_bytes;
+
+        /* Internal informations */
         uint32_t next_pos_mcu;
         uint32_t current_line;
         uint32_t line_size;
         uint32_t row_size;
-        uint32_t *strip_offsets;
-        uint32_t *strip_bytes;
         uint8_t *write_buf;
 };
 
 
+/* Writes a short in the file */
 static void write_short(struct tiff_file_desc *tfd, uint16_t value);
 
+/* Writes a long in the file */
 static void write_long(struct tiff_file_desc *tfd, uint32_t value);
 
 
@@ -316,11 +333,13 @@ struct tiff_file_desc *init_tiff_file (const char *file_name,
 }
 
 
+/* Writes a short in the file */
 static void write_short(struct tiff_file_desc *tfd, uint16_t value)
 {
         if (tfd != NULL && tfd->file != NULL) {
                 uint8_t buf[2];
 
+                /* Endianness management */
                 if (tfd->is_le) {
                         buf[0] = value;
                         buf[1] = value >> 8;
@@ -333,11 +352,13 @@ static void write_short(struct tiff_file_desc *tfd, uint16_t value)
         }
 }
 
+/* Writes a long in the file */
 static void write_long(struct tiff_file_desc *tfd, uint32_t value)
 {
         if (tfd != NULL && tfd->file != NULL) {
                 uint8_t buf[4];
 
+                /* Endianness management */
                 if (tfd->is_le) {
                         buf[0] = value;
                         buf[1] = value >> 8;

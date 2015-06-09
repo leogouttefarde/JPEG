@@ -205,10 +205,12 @@ bool read_tiff_line(struct tiff_file_desc *tfd, uint32_t *line_rgb)
         }
 
 
-        uint32_t i = 0;
         char buf[4];
-        memset(buf, 0, sizeof(buf));
         size_t ret;
+        uint32_t i = 0;
+
+        memset(buf, 0, sizeof(buf));
+
 
         for (uint32_t w = 0; w < tfd->width; w++) {
 

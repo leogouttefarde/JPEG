@@ -48,7 +48,7 @@ bool read_byte(struct bitstream *stream, uint8_t *value)
 }
 
 /*
- * Prints a BLOCK_DIM x BLOCK_DIM block of int32_t for debug puposes.
+ * Prints a BLOCK_DIMxBLOCK_DIM block of int32_t for debug puposes.
  */
 bool print_block(int32_t *block)
 {
