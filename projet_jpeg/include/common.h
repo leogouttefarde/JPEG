@@ -24,7 +24,7 @@
               "    -h               : Display this help\n"
 
 
-
+/* Block dimensions */
 #define BLOCK_DIM 8
 #define BLOCK_SIZE 64
 

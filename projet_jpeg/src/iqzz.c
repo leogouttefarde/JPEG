@@ -4,7 +4,7 @@
 
 
 /*
- * Used to optimize zigzag navigation in 8x8 tables
+ * Used to optimize zigzag navigation in 8x8 blocks
  */
 static const uint8_t zz[64] = 
 {
