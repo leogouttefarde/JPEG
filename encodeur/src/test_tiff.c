@@ -36,16 +36,11 @@ int main(){
                 
 
                 close_tiff_file(in);
-
-
-
-                
 	
                 struct tiff_file_desc *out = NULL;
                 uint32_t rows_per_strip = 16;
-
-                out = init_tiff_file("tests/ice_age_version_profs_test_tiff.tiff", width,
-                                     height, rows_per_strip);
+                out = init_tiff_file("tests/ice_age_version_profs_test_tiff.tiff", 
+                                     width, height, rows_per_strip);
 
                 if (out != NULL) {
 
@@ -53,8 +48,8 @@ int main(){
                        
                         struct mcu_info mcu;
                         
-                        mcu.h = 16;
-                        mcu.v = 8;
+                        mcu.h = 8;
+                        mcu.v = 16;
                         mcu.h_dim = mcu.h/8;
                         mcu.v_dim = mcu.v/8;
                         mcu.nb_h = width/mcu.h+(width%mcu.h==0?0:1);
@@ -81,10 +76,5 @@ int main(){
         } else {
                 printf("ERROR : invalid input TIFF file\n");
         }
-
-        
-        
-	
-
 	return 0;
 }
