@@ -47,6 +47,11 @@ TEST_FILE_O= test_file $(OBJ_DIR)/test_file.o $(OBJ_DIR)/priority_queue.o
 test_file: $@ $(OBJ_DIR)/test_file.o $(OBJ_DIR)/priority_queue.o
 	$(LD) -o $@ $(OBJ_DIR)/test_file.o $(OBJ_DIR)/priority_queue.o $(LDFLAGS)
 
+TEST_TIFF_O= test_tiff $(OBJ_DIR)/test_tiff.o $(OBJ_DIR)/tiff.o $(OBJ_DIR)/qzz.o $(OBJ_DIR)/conv.o $(OBJ_DIR)/library.o $(OBJ_DIR)/huffman.o $(OBJ_DIR)/unpack.o $(OBJ_DIR)/upsampler.o $(OBJ_DIR)/bitstream.o $(OBJ_DIR)/encode.o $(OBJ_DIR)/decode.o $(OBJ_DIR)/downsampler.o $(OBJ_DIR)/loeffler.o $(OBJ_DIR)/pack.o $(OBJ_DIR)/priority_queue.o
+
+test_tiff: $@ $(OBJ_DIR)/test_tiff.o $(OBJ_DIR)/tiff.o $(OBJ_DIR)/qzz.o $(OBJ_DIR)/conv.o $(OBJ_DIR)/library.o $(OBJ_DIR)/huffman.o $(OBJ_DIR)/unpack.o $(OBJ_DIR)/upsampler.o $(OBJ_DIR)/bitstream.o $(OBJ_DIR)/encode.o $(OBJ_DIR)/decode.o $(OBJ_DIR)/downsampler.o $(OBJ_DIR)/loeffler.o $(OBJ_DIR)/pack.o $(OBJ_DIR)/priority_queue.o
+	$(LD) -o $@ $(OBJ_DIR)/test_tiff.o $(OBJ_DIR)/tiff.o $(OBJ_DIR)/qzz.o $(OBJ_DIR)/conv.o $(OBJ_DIR)/library.o $(OBJ_DIR)/huffman.o $(OBJ_DIR)/unpack.o $(OBJ_DIR)/upsampler.o $(OBJ_DIR)/bitstream.o $(OBJ_DIR)/encode.o $(OBJ_DIR)/decode.o $(OBJ_DIR)/downsampler.o $(OBJ_DIR)/loeffler.o $(OBJ_DIR)/pack.o $(OBJ_DIR)/priority_queue.o  $(LDFLAGS)
+
 
 # Edition de lien des executables
 
