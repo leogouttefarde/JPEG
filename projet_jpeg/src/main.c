@@ -14,26 +14,25 @@ int main(int argc, char **argv)
         if (parse_args(argc, argv, &options))
                 return EXIT_FAILURE;
 
-        /* Initializes the bitstream */
+
+        /* Open the input file */
         struct bitstream *stream = create_bitstream(options.input);
 
         if (stream != NULL) {
 
-                /* Used to track errors */
                 bool error = false; 
-
-                /* Used as a buffer for marker */
                 uint8_t marker;
 
-                /* Initializes the jpeg object with 0s */
+
+                /* Initializes the jpeg structure with 0s */
                 struct jpeg_data jpeg;
                 memset(&jpeg, 0, sizeof(struct jpeg_data));
 
-                /* Updates the path */
+                /* Specify the output tiff path */
                 jpeg.path = options.output;
 
 
-                /* Read header data */
+                /* Read JPEG header data */
                 read_header(stream, &jpeg, &error);
 
                 /* Extract then write image data to tiff file */
