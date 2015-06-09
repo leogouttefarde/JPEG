@@ -10,26 +10,26 @@ int main(int argc, char **argv)
 {
         struct options options;
 
-	/* Parse arguments and exit on failure */
+        /* Parse arguments and exit on failure */
         if (parse_args(argc, argv, &options))
                 return EXIT_FAILURE;
 
-	/* Initializes the bitstream */
+        /* Initializes the bitstream */
         struct bitstream *stream = create_bitstream(options.input);
 
         if (stream != NULL) {
 
-		/* Used to track errors */
+                /* Used to track errors */
                 bool error = false; 
 
-		/* Used as a buffer for marker */
+                /* Used as a buffer for marker */
                 uint8_t marker;
 
-		/* Initializes the jpeg object with 0s */
+                /* Initializes the jpeg object with 0s */
                 struct jpeg_data jpeg;
                 memset(&jpeg, 0, sizeof(struct jpeg_data));
 
-		/* Updates the path */
+                /* Updates the path */
                 jpeg.path = options.output;
 
 

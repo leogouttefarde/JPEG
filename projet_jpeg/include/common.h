@@ -44,7 +44,7 @@
 
 // Log
 #define LOG_LEVEL 3
-#define TRACE(__level, ...)	if ( __level >= LOG_LEVEL ) { printf(__VA_ARGS__); }
+#define TRACE(__level, ...)     if ( __level >= LOG_LEVEL ) { printf(__VA_ARGS__); }
 #define INFO(__message) printf("[%s: %s, l.%d] %s.\n", __FILE__, __func__, __LINE__, __message);
 
 // Other

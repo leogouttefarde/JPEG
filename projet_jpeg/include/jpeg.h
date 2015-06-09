@@ -65,7 +65,7 @@ struct comp {
 /* JPEG informations */
 struct jpeg_data {
 
-	/* Filename */
+        /* Filename */
         char *path;
 
         uint16_t height, width;
@@ -84,8 +84,8 @@ struct jpeg_data {
 
         /* Quantification tables */
         uint8_t qtables[MAX_QTABLES][BLOCK_SIZE];
-	
-	/* JPEG status check */
+        
+        /* JPEG status check */
         uint8_t state;
 };
 

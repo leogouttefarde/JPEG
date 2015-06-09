@@ -19,15 +19,15 @@ void YCbCr_to_ARGB(uint8_t  *mcu_YCbCr[3], uint32_t *mcu_RGB,
                 return;
         }
 
-	/* Convert MCUs to RGB using Y / Cb / Cr MCUs */
+        /* Convert MCUs to RGB using Y / Cb / Cr MCUs */
         for (uint32_t i = 0; i < NB_PIXELS; ++i) {
 
                 /* Least accurate version (subject p15) */
-		/*
-		 * R = Y[i] + 1.402 * (Cr[i] - 128);
+                /*
+                 * R = Y[i] + 1.402 * (Cr[i] - 128);
                  * G = Y[i] - 0.34414 * (Cb[i] - 128) - 0.71414 * (Cr[i] - 128);
-		 * B = Y[i] + 1.772 * (Cb[i] - 128);
-		 */
+                 * B = Y[i] + 1.772 * (Cb[i] - 128);
+                 */
 
                 /* Most accurate version (subject p15) */
                 R = Y[i] - 0.0009267 * (Cb[i] - 128) + 1.4016868 * (Cr[i] - 128);
@@ -55,11 +55,11 @@ void Y_to_ARGB(uint8_t *mcu_Y, uint32_t *mcu_RGB,
                 printf("ERROR : corrupt YCbCr data\n");
                 return;
         }
-	
-	/* Convert MCUs to RGB using Y MCUs */
+        
+        /* Convert MCUs to RGB using Y MCUs */
         for (uint32_t i = 0; i < NB_PIXELS; ++i) {
 
-		/* Extract RGB values from Y values */
+                /* Extract RGB values from Y values */
                 gray = mcu_Y[i];
                 mcu_RGB[i] = gray << 16 | gray << 8 | gray;
         }
