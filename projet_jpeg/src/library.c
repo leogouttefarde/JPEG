@@ -114,18 +114,23 @@ static char *create_tiff_name(char *path)
         uint32_t len_cpy;
         uint32_t len_tiff;
 
-
         dot = strrchr(path, '.');
 
+        /*
+         * Replace the previous extension if any,
+         * else add an extension.
+         */
         if (dot != NULL)
                 len_cpy = (uint32_t)(dot - path);
         else
                 len_cpy = strlen(path);
 
+        /* Compute the path size */
         len_tiff = len_cpy + 5 + 1;
 
         name = malloc(len_tiff);
 
+        /* Create the path */
         if (name != NULL) {
                 strncpy(name, path, len_cpy);
                 name[len_cpy] = 0;
@@ -152,6 +157,7 @@ bool parse_args(int argc, char **argv, struct options *options)
         /* Disable default warnings */
         opterr = 0;
 
+        /* Parse all arguments */
         while ( (opt = getopt(argc, argv, "o:h")) != -1) {
 
                 switch (opt) {
@@ -165,17 +171,17 @@ bool parse_args(int argc, char **argv, struct options *options)
                 }
         }
 
-
+        /* Input image file detection (first non-optional parameter) */
         if (optind < argc) {
                 input = argv[optind];
                 optind++;
         }
 
-
+        /* If no input file, error */
         if (input == NULL)
                 error = true;
 
-
+        /* Show the help on error */
         if (error)
                 printf(USAGE, argv[0]);
 
@@ -185,10 +191,9 @@ bool parse_args(int argc, char **argv, struct options *options)
         }
 
 
-
         options->input = input;
 
-
+        /* Compute the output TIFF path */
         if (!error) {
                 if (output == NULL)
                         options->output = create_tiff_name(input);

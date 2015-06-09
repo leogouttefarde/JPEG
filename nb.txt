@@ -4,11 +4,9 @@
 todo :
 
 
-nettoyage code
+commentaires
 
-- tiff
 - loeffler
-- huffman
 - unpack
 
 

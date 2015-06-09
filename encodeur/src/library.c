@@ -143,7 +143,7 @@ bool skip_bitstream(struct bitstream *stream, uint32_t nb_bytes)
 }
 
 /*
- * If it is possible converts str to an int32_t, else puts true in error
+ * If it is possible, converts str to an int32_t, else puts true in error
  */
 static int32_t get_value(char *str, bool *error)
 {
@@ -192,7 +192,7 @@ bool parse_args(int argc, char **argv, struct options *options)
         char *input = NULL;
         char *output = NULL;
 
-        uint8_t quality = DEFAULT_COMPRESSION;
+        uint8_t compression = DEFAULT_COMPRESSION;
         uint8_t mcu_h = DEFAULT_MCU_WIDTH;
         uint8_t mcu_v = DEFAULT_MCU_HEIGHT;
         bool gray = false;
@@ -206,6 +206,7 @@ bool parse_args(int argc, char **argv, struct options *options)
         /* Disable default warnings */
         opterr = 0;
 
+        /* Parse all arguments */
         while ( (opt = getopt(argc, argv, "o:c:m:ghd")) != -1) {
 
                 switch (opt) {
@@ -242,7 +243,7 @@ bool parse_args(int argc, char **argv, struct options *options)
 
                 if (!error) {
                         if (0 <= val && val <= 25)
-                                quality = val;
+                                compression = val;
                         else
                                 error = true;
                 }
@@ -276,10 +277,12 @@ bool parse_args(int argc, char **argv, struct options *options)
         }
 
 
+        /* If no input / output file, error */
         if (input == NULL || output == NULL)
                 error = true;
 
 
+        /* Show the help on error */
         if (error)
                 printf(USAGE, argv[0]);
 
@@ -289,13 +292,14 @@ bool parse_args(int argc, char **argv, struct options *options)
         }
 
 
+        /* Store all input informations */
         options->input = input;
         options->output = output;
 
         options->mcu_h = mcu_h;
         options->mcu_v = mcu_v;
 
-        options->compression = quality;
+        options->compression = compression;
         options->gray = gray;
         options->encode = encode;
 
@@ -304,7 +308,7 @@ bool parse_args(int argc, char **argv, struct options *options)
 }
 
 /*
- * Converts MCU to lines representation
+ * Converts an MCU image to a regular image.
  */
 uint32_t *mcu_to_image(
         uint32_t *data, struct mcu_info *mcu,
@@ -329,8 +333,8 @@ uint32_t *mcu_to_image(
                         /* Additionnal image buffer check */
                         if (pos < width * height) {
 
-                                index = (nb_v * mcu->nb_h + nb_h) 
-					* mcu->size + v * mcu->h + h;
+                                index = (nb_v * mcu->nb_h + nb_h)
+                                        * mcu->size + v * mcu->h + h;
                                 image[pos++] = data[index];
                         }
                 }
@@ -340,7 +344,7 @@ uint32_t *mcu_to_image(
 }
 
 /*
- * Converts lines to MCU representation
+ * Converts an image to an MCU image.
  */
 uint32_t *image_to_mcu(
         uint32_t *image, struct mcu_info *mcu,
@@ -373,8 +377,8 @@ uint32_t *image_to_mcu(
                                 pixel = image[pos++];
                 }
 
-                index = (nb_v * mcu->nb_h + nb_h) * mcu->size + v 
-			* mcu->h + h;
+                index = (nb_v * mcu->nb_h + nb_h)
+                        * mcu->size + v * mcu->h + h;
                 data[index] = pixel;
         }
 
@@ -382,14 +386,14 @@ uint32_t *image_to_mcu(
 }
 
 /*
- * Process options
+ * Process specific options.
  */
 void process_options(struct options *options, struct jpeg_data *jpeg, bool *error)
 {
         if (options == NULL || jpeg == NULL || error == NULL || *error)
                 return;
 
-
+        /* Turn the image to gray if required */
         if (options->gray) {
                 if (options->encode) {
                         jpeg->nb_comps = 1;
@@ -401,33 +405,39 @@ void process_options(struct options *options, struct jpeg_data *jpeg, bool *erro
         }
 
 
+        /* If we need to compute a new MCU representation */
         if (jpeg->mcu.h != options->mcu_h
                 || jpeg->mcu.v != options->mcu_v
                 || jpeg->is_plain_image) {
 
                 uint32_t *image = jpeg->raw_data;
 
+                /* Convert an MCU image to a regular image */
                 if (!jpeg->is_plain_image) {
                         image = mcu_to_image(jpeg->raw_data,
                                                 &jpeg->mcu,
                                                 jpeg->width,
                                                 jpeg->height);
 
+                        /* Free the previous image data */
                         SAFE_FREE(jpeg->raw_data);
                 }
 
 
+                /* Compute new MCU informations */
                 jpeg->mcu.h = options->mcu_h;
                 jpeg->mcu.v = options->mcu_v;
 
                 compute_mcu(jpeg, error);
 
 
+                /* Convert the image to the required MCU representation */
                 uint32_t *data = image_to_mcu(image,
                                                 &jpeg->mcu,
                                                 jpeg->width,
                                                 jpeg->height);
 
+                /* Free the plain image data */
                 SAFE_FREE(image);
 
                 jpeg->raw_data = data;
@@ -435,7 +445,7 @@ void process_options(struct options *options, struct jpeg_data *jpeg, bool *erro
 }
 
 /*
- * Exports the jpeg to the tiff file
+ * Exports raw MCU image data as TIFF.
  */
 void export_tiff(struct jpeg_data *jpeg, bool *error)
 {
@@ -447,15 +457,16 @@ void export_tiff(struct jpeg_data *jpeg, bool *error)
         struct tiff_file_desc *file = NULL;
 
         file = init_tiff_file(jpeg->path, jpeg->width, jpeg->height, 
-			      jpeg->mcu.v);
+                              jpeg->mcu.v);
 
         if (file != NULL) {
                 uint32_t *mcu_RGB;
 
+                /* Write all MCUs as TIFF */
                 for (uint32_t i = 0; i < jpeg->mcu.nb; i++) {
                         mcu_RGB = &jpeg->raw_data[i * jpeg->mcu.size];
-                        write_tiff_file(file, mcu_RGB, jpeg->mcu.h_dim, 
-					jpeg->mcu.v_dim);
+                        write_tiff_file(file, mcu_RGB, jpeg->mcu.h_dim,
+                                        jpeg->mcu.v_dim);
                 }
 
                 close_tiff_file(file);
@@ -465,7 +476,7 @@ void export_tiff(struct jpeg_data *jpeg, bool *error)
 }
 
 /*
- * Converts all pixels to grayscale
+ * Converts all pixels to grayscales.
  */
 void compute_gray(struct jpeg_data *jpeg)
 {
@@ -477,6 +488,7 @@ void compute_gray(struct jpeg_data *jpeg)
         uint32_t *image = jpeg->raw_data;
         uint32_t R, G, B, gray;
 
+        /* Compute the buffer size */
         if (jpeg->is_plain_image)
                 nb_pixels = jpeg->width * jpeg->height;
 
@@ -484,6 +496,7 @@ void compute_gray(struct jpeg_data *jpeg)
                 nb_pixels = jpeg->mcu.size * jpeg->mcu.nb;
 
 
+        /* Convert each pixel */
         for (uint32_t i = 0; i < nb_pixels; i++) {
 
                 pixel = image[i];
