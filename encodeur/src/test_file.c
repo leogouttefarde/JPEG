@@ -21,7 +21,7 @@ int main()
 
         while (best_queue(queue, &priority, &table)) {
 
-                printf("Table = %d\n", (int)table);
+                printf("Table = %ld\n", (uint64_t)table);
                 delete_queue(queue);
         }
 
