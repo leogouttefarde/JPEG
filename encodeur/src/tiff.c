@@ -304,7 +304,9 @@ static void read_ifd_entry(struct tiff_file_desc *tfd, bool *error)
         uint16_t tag;
         uint16_t type;
         uint32_t count;
-        uint32_t value, next_value;
+        uint32_t offset;
+        uint32_t value;
+        uint32_t next_value = 0;
         uint32_t cur_pos;
         uint8_t buf[4];
         size_t ret;
@@ -326,6 +328,9 @@ static void read_ifd_entry(struct tiff_file_desc *tfd, bool *error)
                 *error = true;
 
 
+        offset = bytes2long(buf, tfd->is_le);
+
+
         switch (type) {
         case BYTE:
                 value = buf[0];
@@ -339,7 +344,7 @@ static void read_ifd_entry(struct tiff_file_desc *tfd, bool *error)
                 break;
 
         case LONG:
-                value = bytes2long(buf, tfd->is_le);
+                value = offset;
                 break;
 
         /* Unused values */
@@ -364,12 +369,11 @@ static void read_ifd_entry(struct tiff_file_desc *tfd, bool *error)
 
         /* BitsPerSample */
         case 0x0102:
-
                 if (count <= 2)
                         tfd->bits_per_sample = value;
                 else {
                         cur_pos = ftell(tfd->file);
-                        fseek(tfd->file, value, SEEK_SET);
+                        fseek(tfd->file, offset, SEEK_SET);
 
                         tfd->bits_per_sample = read_short(tfd, error);
 
@@ -401,7 +405,7 @@ static void read_ifd_entry(struct tiff_file_desc *tfd, bool *error)
                 if ((count > 1 && type == LONG) || (count > 2 && type == SHORT)) {
 
                         cur_pos = ftell(tfd->file);
-                        fseek(tfd->file, value, SEEK_SET);
+                        fseek(tfd->file, offset, SEEK_SET);
 
                         for (uint32_t i = 0; i < count; ++i)
                                 tfd->strip_offsets[i] = read_long(tfd, error);
@@ -450,7 +454,7 @@ static void read_ifd_entry(struct tiff_file_desc *tfd, bool *error)
                 if ((count > 1 && type == LONG) || (count > 2 && type == SHORT)) {
 
                         cur_pos = ftell(tfd->file);
-                        fseek(tfd->file, value, SEEK_SET);
+                        fseek(tfd->file, offset, SEEK_SET);
 
                         for (uint32_t i = 0; i < count; ++i)
                                 tfd->strip_bytes[i] = read_long(tfd, error);

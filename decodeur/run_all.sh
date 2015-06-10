@@ -25,5 +25,5 @@ then
         echo "Input file not found."
     fi
 else
-    echo "Usage : ./run_all.sh <test directory>"
+    echo "Usage : $0 <test directory>"
 fi

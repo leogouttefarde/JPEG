@@ -34,5 +34,5 @@ then
         echo "Input file not found."
     fi
 else
-    echo "Usage : ./run_test.sh <jpeg file>"
+    echo "Usage : $0 <jpeg file>"
 fi

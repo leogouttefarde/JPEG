@@ -13,7 +13,7 @@ PROFILING =
 CC = gcc ${PROFILING}
 LD = gcc ${PROFILING}
 INC = -I$(INC_DIR)
-#CFLAGS = $(INC) -Werror -Wall -std=c99 -Wextra -g
+#CFLAGS = $(INC) -Wall -std=c99 -Wextra -g
 CFLAGS = $(INC) -Werror -Wall -std=c99 -O3 -Wextra -s
 LDFLAGS = -lm
 
@@ -69,8 +69,8 @@ clean:
 	rm -f ${EXEC} $(NEW_OBJ_FILES) gmon.out *.tiff out.jpg $(TEST_FILE_O) $(TEST_DCT_O) $(TEST_TIFF_O)
 
 
-# IMAGE=tests/shaun_the_sheep
-IMAGE=tests/ice_age
+# IMAGE=tests/jpeg/shaun_the_sheep
+IMAGE=tests/jpeg/ice_age
 JPEG=${IMAGE}.jpeg
 TIFF=${IMAGE}.tiff
 OUT=out.jpg
