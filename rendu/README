@@ -9,14 +9,15 @@
 Pas de leaks ni erreurs, vérifications réalisées avec valgrind tout au long du développement.
 
 
-
 Décodeur :
+===============================
 
 - Permet le décodage de fichiers JPEG en TIFF (selon l'API fournie)
 - Support des JPEG gris également réalisé
 
 
 Extensions :
+===============================
 
 - Implémentation de l'opération iDCT par l'algorithme de Loeffler (accélère le décodeur et l'encodeur)
 - Implémentation de l'opération DCT par l'algorithme de Loeffler (accélère l'encodeur)
@@ -25,6 +26,7 @@ Extensions :
 
 
 Fonctionnalités de l'encodeur :
+===============================
 
 - changement des tailles de MCU paramétrable (8x8 / 16x8 / 8x16 / 16x16)
 - écriture de la sortie en niveau de gris si demandé
@@ -37,5 +39,24 @@ Fonctionnalités de l'encodeur :
 
 
 Pour plus de précisions sur l'utilisation du décodeur / de l'encodeur, lancer l'exécution avec l'option -h et consulter l'aide
+
+
+
+Scripts de test:
+===============================
+
+- Décodeur: 
+	Pour décoder une seule image exécuter: 
+		./run_test.sh <jpeg file>
+	Pour décoder tous les images .jpg et .jpeg dans un répertoire exécuter:
+		./run_all.sh <test directory>
+- Encodeur
+	Pour tester toutes les fonctionalités de l'encodeur exécuter:
+		./run_all_test.sh <jpeg directory> <tiff directory> <res directory>
+	
+	<jpeg directory>: répertoire d'images test .jpeg et .jpg
+	<tiff directory>: répertoire d'images test .tiff et .tif
+	<res directory>: répertoire destination de tous les traitements possibles (jpeg2jpeg, tiff2jpeg, tiff2tiff, jpeg2tiff)
+		
 
 
