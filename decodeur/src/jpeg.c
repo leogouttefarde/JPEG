@@ -142,7 +142,7 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                         /* Only RGB & Gray JPEG images are possible */
                         if (jpeg->nb_comps != 3 && jpeg->nb_comps != 1)
                                 *error = true;
-
+			
                         else {
                                 /* Read all component informations */
                                 for (uint8_t i = 0; i < jpeg->nb_comps; i++) {
@@ -152,12 +152,18 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
 
                                         *error |= read_byte(stream, &i_c);
 
-                                        /* Component index must be between 1 and 3 */
-                                        if (i_c < 1 || i_c > 3)
+                                        /* 
+					 * Component index must be between 
+					 * 1 and 3 or 0 and 2
+					 */
+                                        if (i_c > 3)
                                                 *error = true;
-
-                                        else
-                                                --i_c;
+					/*
+					 * if index between 1 and 3
+					 * convert to between 0 and 2
+					 */
+					if (i_c != i)
+						--i_c;
 
                                         *error |= read_byte(stream, &byte);
                                         h_sampling_factor = byte >> 4;
@@ -167,7 +173,7 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
 
                                         if (i_q >= MAX_QTABLES)
                                                 *error = true;
-                                        
+
                                         /* Initialize component informations */
                                         if (!*error) {
                                                 jpeg->comps[i_c].nb_blocks_h = h_sampling_factor;
@@ -203,8 +209,7 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                                 type = (byte >> 4) & 1;
 
                                 i_h = byte & 0xF;
-
-
+				
                                 /*
                                  * Unused must always be zero
                                  * Never more than 4 tables for each AC/DC type
@@ -236,7 +241,7 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                         }
                 } else
                         *error = true;
-
+		
                 break;
 
         /* Start Of Scan */
@@ -258,8 +263,15 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                         /* Read component informations */
                         for (uint8_t i = 0; i < nb_comps; i++) {
                                 read_byte(stream, &byte);
-
-                                i_c = --byte;
+				
+				/*
+				 * if index between 1 and 3
+				 * convert to between 0 and 2
+				 */
+				i_c = byte;
+				if(i_c != i)
+					--i_c;
+				
                                 jpeg->comp_order[i] = i_c;
 
 
@@ -278,7 +290,27 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                         *error = true;
 
                 break;
-
+		
+	case APP1:
+	case APP2:
+	case APP3:
+	case APP4:
+	case APP5:
+	case APP6:
+	case APP7:
+	case APP8:
+	case APP9:
+	case APP10:
+	case APP11:
+	case APP12:
+	case APP13:
+	case APP14:
+	case APP15:
+		/* Skip the unsupported APP section */
+		printf("Unsupported APP section skipped : %02X\n", marker);
+                skip_bitstream(stream, unread);
+                break;
+		
         // case TEM:
         // case DNL:
         // case DHP:
