@@ -5,6 +5,6 @@ NOM=jpeg
 
 
 all:
-	tar -czvf $(NOM).tar.gz $(NOM)
+	tar -xzvf $(NOM).tar.gz
 
 
