@@ -25,8 +25,8 @@ then
             fi
 
             # Display input and decode file
-            display "$1" & 
-            display "$res_name" &
+            eog "$1" & 
+            eog "$res_name" &
         else
             echo "Input is not a file."
         fi

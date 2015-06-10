@@ -11,7 +11,7 @@ then
             make
 
             # Decode all JPEG files from <test directory> 
-            for file in "$1"/*
+            for file in "$1"/*.{jpeg,jpg}
             do
                 echo "############## Decoding $(basename "$file") ##############"
                 time ./jpeg2tiff "$file"
