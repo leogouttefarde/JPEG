@@ -63,34 +63,33 @@ Le programme test_tiff effectue la lecture puis la réécriture d'un fichier TIF
 Tests automatisés
 ===============================
 
-- Décodeur: 
+- Décodeur
+
         Pour décoder une seule image exécuter : 
                 ./run_test.sh <jpeg file>
 
-	Exemple: dans le répertoire /decodeur lancer:
-		./run_test.sh tests/shaun_the_sheep.jpeg 
+        Par exemple dans le dossier decodeur lancer :
+                ./run_test.sh tests/shaun_the_sheep.jpeg 
 
 
         Pour décoder toutes les images JPEG d'un répertoire exécuter :
                 ./run_all.sh <test directory>
 
-	Exemple: dans le répertoire /decodeur lancer:
-		./run_all.sh tests
+        Par exemple dans le dossier decodeur, lancer :
+                ./run_all.sh tests
 
 
 - Encodeur
+
         Pour tester toutes les fonctionnalités de l'encodeur exécuter :
                 ./run_all_test.sh <jpeg directory> <tiff directory> <res directory>
 
         <jpeg directory> : répertoire d'images JPEG en entrée
         <tiff directory> : répertoire d'images TIFF en entrée
         <res directory>  : répertoires des images de sorties (jpeg2jpeg, tiff2jpeg, tiff2tiff, jpeg2tiff)
-	
-	Exemple: dans le répertoire /encodeur lancer:
-		./run_all_test.sh tests/jpeg tests/tiff tests/results
 
-	
-
+        Par exemple dans le dossier encodeur, lancer :
+                ./run_all_test.sh tests/jpeg tests/tiff tests/out
 
 
 
