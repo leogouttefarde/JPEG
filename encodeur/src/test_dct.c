@@ -1,9 +1,16 @@
-#include <stdio.h>
-#include "idct.h"
+
+#include "common.h"
+#include "library.h"
+#include "dct.h"
+
+#define EPSILON 3
+
 
 int main(void)
 {
-        const uint8_t Y[64] = { 
+        bool success = true;
+
+        uint8_t Y[64] = { 
                 0xa6, 0xa1, 0x9b, 0x9a, 0x9b, 0x9c, 0x97, 0x92,
                 0x9f, 0xa3, 0x9d, 0x8e, 0x89, 0x8f, 0x95, 0x94,
                 0xa5, 0x97, 0x96, 0xa1, 0x9e, 0x90, 0x90, 0x9e,
@@ -28,19 +35,28 @@ int main(void)
 
 
         int32_t res[64];
+        uint8_t end[64];
 
         dct_block(Y, res);
-        idct_block(res, Y);
+        idct_block(res, end);
 
-        for(uint16_t i = 0; i < 64; i++) {
 
-                if(i % 8 == 0)
-                        printf("\n");
 
-                printf("%#08x ", Y[i]);
-        }
+        for(uint16_t i = 0; i < 64; i++)
+                if (abs(Y[i] - end[i]) > EPSILON)
+                        success = false;
 
-        printf("\n");
+        printf("DCT input :\n\n");
+        print_byte_block(Y);
+
+        printf("iDCT output :\n\n");
+        print_byte_block(end);
+
+        if (success)
+                printf("Result : SUCCESS\n");
+
+        else
+                printf("Result : FAILED\n");
 
 
         return 0;

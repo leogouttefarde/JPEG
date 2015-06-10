@@ -20,12 +20,14 @@ LDFLAGS = -lm
 
 # Liste des objets à compiler
 
-OBJ_FILES = $(OBJ_DIR)/main.o $(OBJ_DIR)/conv.o $(OBJ_DIR)/qzz.o
+OBJ_FILES = $(OBJ_DIR)/conv.o $(OBJ_DIR)/qzz.o
 OBJ_FILES += $(OBJ_DIR)/upsampler.o $(OBJ_DIR)/huffman.o $(OBJ_DIR)/unpack.o
 OBJ_FILES += $(OBJ_DIR)/tiff.o $(OBJ_DIR)/library.o $(OBJ_DIR)/bitstream.o
 OBJ_FILES += $(OBJ_DIR)/encode.o $(OBJ_DIR)/decode.o $(OBJ_DIR)/downsampler.o
 OBJ_FILES += $(OBJ_DIR)/loeffler.o $(OBJ_DIR)/pack.o $(OBJ_DIR)/priority_queue.o
 # OBJ_FILES += $(OBJ_DIR)/dct.o
+
+COMPILE_O = $(OBJ_DIR)/main.o $(OBJ_FILES)
 
 
 # Liste des objets realises
@@ -43,21 +45,27 @@ EXEC=jpeg_encode
 
 all : ${EXEC}
 
-TEST_FILE_O= test_file $(OBJ_DIR)/test_file.o $(OBJ_DIR)/priority_queue.o
+
+# Tests
 
 test_file: $@ $(OBJ_DIR)/test_file.o $(OBJ_DIR)/priority_queue.o
 	$(LD) -o $@ $(OBJ_DIR)/test_file.o $(OBJ_DIR)/priority_queue.o $(LDFLAGS)
 
-TEST_TIFF_O= test_tiff $(OBJ_DIR)/test_tiff.o $(OBJ_DIR)/tiff.o $(OBJ_DIR)/qzz.o $(OBJ_DIR)/conv.o $(OBJ_DIR)/library.o $(OBJ_DIR)/huffman.o $(OBJ_DIR)/unpack.o $(OBJ_DIR)/upsampler.o $(OBJ_DIR)/bitstream.o $(OBJ_DIR)/encode.o $(OBJ_DIR)/decode.o $(OBJ_DIR)/downsampler.o $(OBJ_DIR)/loeffler.o $(OBJ_DIR)/pack.o $(OBJ_DIR)/priority_queue.o
+test_tiff: $@ $(OBJ_DIR)/test_tiff.o $(OBJ_FILES)
+	$(LD) -o $@ $(OBJ_DIR)/test_tiff.o $(OBJ_FILES) $(LDFLAGS)
 
-test_tiff: $@ $(OBJ_DIR)/test_tiff.o $(OBJ_DIR)/tiff.o $(OBJ_DIR)/qzz.o $(OBJ_DIR)/conv.o $(OBJ_DIR)/library.o $(OBJ_DIR)/huffman.o $(OBJ_DIR)/unpack.o $(OBJ_DIR)/upsampler.o $(OBJ_DIR)/bitstream.o $(OBJ_DIR)/encode.o $(OBJ_DIR)/decode.o $(OBJ_DIR)/downsampler.o $(OBJ_DIR)/loeffler.o $(OBJ_DIR)/pack.o $(OBJ_DIR)/priority_queue.o
-	$(LD) -o $@ $(OBJ_DIR)/test_tiff.o $(OBJ_DIR)/tiff.o $(OBJ_DIR)/qzz.o $(OBJ_DIR)/conv.o $(OBJ_DIR)/library.o $(OBJ_DIR)/huffman.o $(OBJ_DIR)/unpack.o $(OBJ_DIR)/upsampler.o $(OBJ_DIR)/bitstream.o $(OBJ_DIR)/encode.o $(OBJ_DIR)/decode.o $(OBJ_DIR)/downsampler.o $(OBJ_DIR)/loeffler.o $(OBJ_DIR)/pack.o $(OBJ_DIR)/priority_queue.o  $(LDFLAGS)
+test_dct: $@ $(OBJ_DIR)/test_dct.o $(OBJ_FILES)
+	$(LD) -o $@ $(OBJ_DIR)/test_dct.o $(OBJ_FILES) $(LDFLAGS)
+
+TEST_FILE_O= test_file $(OBJ_DIR)/test_file.o $(OBJ_DIR)/priority_queue.o
+TEST_TIFF_O= test_tiff $(OBJ_DIR)/test_tiff.o
+TEST_DCT_O= test_dct $(OBJ_DIR)/test_dct.o
 
 
 # Edition de lien des executables
 
-${EXEC} : $(OBJ_FILES)
-	$(LD) -o $@ $(OBJ_FILES) $(LDFLAGS)
+${EXEC} : $(COMPILE_O)
+	$(LD) -o $@ $(COMPILE_O) $(LDFLAGS)
 
 
 # Compilation des sources

@@ -3,8 +3,8 @@
 #include "decode.h"
 #include "library.h"
 
-#define INPUT  "tests/ice_age.tiff"
-#define OUTPUT "tests/ice_age_out.tiff"
+#define INPUT  "tests/tiff/ice_age.tiff"
+#define OUTPUT "tests/tiff/ice_age_test_tiff.tiff"
 
 
 int main()
@@ -15,8 +15,10 @@ int main()
         /* Read TIFF header */
         in = init_tiff_read(INPUT, &width, &height);
 
-        if (in == NULL)
+        if (in == NULL) {
                 printf("ERROR : invalid input TIFF file\n");
+                return EXIT_FAILURE;
+        }
 
 
         /* Read all raw RGB data from the TIFF file */
