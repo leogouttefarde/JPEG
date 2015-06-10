@@ -25,11 +25,11 @@ then
             # Results in "$3"/res_jpeg2tiff
             for file in "$1"/*
             do
-                if [[ "$file" == *".jpeg"* ]]
+                if [[ "$file" == *".jpeg" ]]
                 then
                     res_name="$res_jpeg2tiff""/""$(basename "$file" .jpeg)"".tiff"
                     echo "############### Decode $(basename "$file") ###############"
-                elif [[ "$file" == *".jpg"* ]]
+                elif [[ "$file" == *".jpg" ]]
                 then
                     res_name="$res_jpeg2tiff""/""$(basename "$file" .jpg)"".tiff"
                     echo "############### Decode $(basename "$file") ###############"
@@ -46,9 +46,13 @@ then
             c_max=25
             for file in "$2"/*
             do  
-                if [[ "$file" == *".tif"* ]]
+                if [[ "$file" == *".tiff" ]]
                 then
                     res_name="$res_tiff2jpeg""/""$(basename "$file" .tiff)"".jpg"
+                    echo "############### Encode $(basename "$file") ###############"
+                elif [[ "$file" == *".tif" ]]
+                then
+                    res_name="$res_tiff2jpeg""/""$(basename "$file" .tif)"".jpg"
                     echo "############### Encode $(basename "$file") ###############"
                 else
                     echo "Input extension must be tif or tiff."
@@ -72,9 +76,9 @@ then
             # Results in "$3"/res_tiff2tiff
             for file in "$2"/*
             do  
-                if [[ "$file" == *".tif"* ]]
+                if [[ "$file" == *".tif" || "$file" == *".tiff" ]]
                 then
-                    res_name="$res_tiff2tiff""/""$(basename "$file" )"
+                    res_name="$res_tiff2tiff""/""$(basename "$file")"
                     echo "########### TIFF to TIFF transformation for $(basename "$file") ###########"
                 else
                     echo "Input extension must be tif or tiff."
@@ -90,11 +94,11 @@ then
             c_max=25
             for file in "$1"/*
             do  
-                if [[ "$file" == *".jpeg"* ]]
+                if [[ "$file" == *".jpeg" ]]
                 then
                     res_name="$res_jpeg2jpeg""/""$(basename "$file")"
                     echo "########### JPEG to JPEG transformation for $(basename "$file") ###########"
-                elif [[ "$file" == *".jpg"* ]]
+                elif [[ "$file" == *".jpg" ]]
                 then
                     res_name="$res_jpeg2jpeg""/""$(basename "$file")"
                     echo "########### JPEG to JPEG transformation for $(basename "$file") ###########"
