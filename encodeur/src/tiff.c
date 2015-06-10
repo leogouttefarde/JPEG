@@ -93,7 +93,7 @@ static uint16_t read_short(struct tiff_file_desc *tfd, bool *error);
 /* Reads a long from the file */
 static uint32_t read_long(struct tiff_file_desc *tfd, bool *error);
 
-/* Reads an IFD entry from the file */
+/* Reads an IFD entry and updates the right tiff fields */
 static void read_ifd_entry(struct tiff_file_desc *tfd, bool *error);
 
 
@@ -202,6 +202,7 @@ bool read_tiff_line(struct tiff_file_desc *tfd, uint32_t *line_rgb)
         char buf[4];
         uint32_t i = 0;
         uint32_t *cur_line = &tfd->current_line;
+        uint32_t *offsets = tfd->strip_offsets;
 
         memset(buf, 0, sizeof(buf));
 
@@ -216,16 +217,18 @@ bool read_tiff_line(struct tiff_file_desc *tfd, uint32_t *line_rgb)
 
                 /* If a next strip exists */
                 if (++*cur_line < tfd->nb_strips) {
-                        fseek(tfd->file, tfd->strip_offsets[*cur_line], SEEK_SET);
+                        fseek(tfd->file, offsets[*cur_line], SEEK_SET);
                         tfd->read_lines = 0;
                 }
         }
 
-
+        /* Read a whole line */
         for (uint32_t w = 0; w < tfd->width; w++) {
 
+                /* Read each pixel */
                 ret = fread(buf, 1, tfd->samples_per_pixels, tfd->file);
 
+                /* Error handling */
                 if (ret != tfd->samples_per_pixels) {
                         error = true;
                         break;
@@ -234,15 +237,18 @@ bool read_tiff_line(struct tiff_file_desc *tfd, uint32_t *line_rgb)
                 if (tfd->samples_per_pixels == 1)
                         buf[1] = buf[2] = buf[0];
 
-                line_rgb[i++] = ((buf[0] & 0xFF) << 16) | ((buf[1] & 0xFF) << 8) | (buf[2] & 0xFF);
+                /* Error handling */
+                line_rgb[i++] = GET_BYTE(buf[0]) << 16 | GET_BYTE(buf[1]) << 8 | GET_BYTE(buf[2]);
         }
 
+        /* Increment the line counter */
         tfd->read_lines++;
 
 
         return error;
 }
 
+/* Reads a short from the file */
 static uint16_t read_short(struct tiff_file_desc *tfd, bool *error)
 {
         uint16_t value = -1;
@@ -265,6 +271,7 @@ static uint16_t read_short(struct tiff_file_desc *tfd, bool *error)
         return value;
 }
 
+/* Reads a long from the file */
 static uint32_t read_long(struct tiff_file_desc *tfd, bool *error)
 {
         uint32_t value = -1;
@@ -297,7 +304,9 @@ static void read_ifd_entry(struct tiff_file_desc *tfd, bool *error)
         uint16_t tag;
         uint16_t type;
         uint32_t count;
-        uint32_t value, next_value;
+        uint32_t offset;
+        uint32_t value;
+        uint32_t next_value = 0;
         uint32_t cur_pos;
         uint8_t buf[4];
         size_t ret;
@@ -319,6 +328,9 @@ static void read_ifd_entry(struct tiff_file_desc *tfd, bool *error)
                 *error = true;
 
 
+        offset = bytes2long(buf, tfd->is_le);
+
+
         switch (type) {
         case BYTE:
                 value = buf[0];
@@ -332,7 +344,7 @@ static void read_ifd_entry(struct tiff_file_desc *tfd, bool *error)
                 break;
 
         case LONG:
-                value = bytes2long(buf, tfd->is_le);
+                value = offset;
                 break;
 
         /* Unused values */
@@ -357,12 +369,11 @@ static void read_ifd_entry(struct tiff_file_desc *tfd, bool *error)
 
         /* BitsPerSample */
         case 0x0102:
-
                 if (count <= 2)
                         tfd->bits_per_sample = value;
                 else {
                         cur_pos = ftell(tfd->file);
-                        fseek(tfd->file, value, SEEK_SET);
+                        fseek(tfd->file, offset, SEEK_SET);
 
                         tfd->bits_per_sample = read_short(tfd, error);
 
@@ -394,7 +405,7 @@ static void read_ifd_entry(struct tiff_file_desc *tfd, bool *error)
                 if ((count > 1 && type == LONG) || (count > 2 && type == SHORT)) {
 
                         cur_pos = ftell(tfd->file);
-                        fseek(tfd->file, value, SEEK_SET);
+                        fseek(tfd->file, offset, SEEK_SET);
 
                         for (uint32_t i = 0; i < count; ++i)
                                 tfd->strip_offsets[i] = read_long(tfd, error);
@@ -443,7 +454,7 @@ static void read_ifd_entry(struct tiff_file_desc *tfd, bool *error)
                 if ((count > 1 && type == LONG) || (count > 2 && type == SHORT)) {
 
                         cur_pos = ftell(tfd->file);
-                        fseek(tfd->file, value, SEEK_SET);
+                        fseek(tfd->file, offset, SEEK_SET);
 
                         for (uint32_t i = 0; i < count; ++i)
                                 tfd->strip_bytes[i] = read_long(tfd, error);

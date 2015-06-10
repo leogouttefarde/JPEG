@@ -4,7 +4,7 @@
 #include "library.h"
 
 /*
- * Used to optimize zigzag navigation in tables of 8x8
+ * Used to optimize zigzag navigation in 8x8 blocks
  */
 static const uint8_t zz[64] =
 {
@@ -18,9 +18,8 @@ static const uint8_t zz[64] =
         35, 36, 48, 49, 57, 58, 62, 63
 };
 
-/* 
- * Puts in out[64] the block in[64] of 8x8 pixels read in zigzag inverse 
- * multiplied by the quantification table
+/*
+ * Computes an inverse zigzag quantification.
  */
 void iqzz_block (int32_t in[64], int32_t out[64], uint8_t quantif[64])
 {
@@ -31,10 +30,8 @@ void iqzz_block (int32_t in[64], int32_t out[64], uint8_t quantif[64])
         }
 }
 
-/* 
- * Puts in out[64] the block in[64] of 8x8 pixels divided by the 
- * quantification table. 
- * out[64] is written in zigzag.
+/*
+ * Computes a zigzag quantification.
  */
 void qzz_block (int32_t in[64], int32_t out[64], uint8_t quantif[64])
 {
@@ -45,8 +42,8 @@ void qzz_block (int32_t in[64], int32_t out[64], uint8_t quantif[64])
         }
 }
 
-/* 
- * Puts in out[64] the new quantification table related to quality
+/*
+ * Adjusts a quantification table's compression quality.
  *
  * Quality range : 0 - 25
  *
@@ -61,9 +58,7 @@ void quantify_qtable(uint8_t out[64], const uint8_t in[64], uint8_t quality)
         int32_t q_value;
 
         for(uint8_t i = 0; i < 64; ++i) {
-
                 q_value = 1 + ((uint32_t)in[i] - 1) * (uint32_t)quality;
-
                 out[i] = TRUNCATE(q_value);
         }
 }

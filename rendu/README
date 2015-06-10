@@ -1,0 +1,41 @@
+/*
+ * Equipe 11 :
+ * DOUMA Nejmeddine - GOUTTEFARDE Léo - KACHER Ilyes
+ *
+ * Projet C - JPEG
+ */
+
+
+Pas de leaks ni erreurs, vérifications réalisées avec valgrind tout au long du développement.
+
+
+
+Décodeur :
+
+- Permet le décodage de fichiers JPEG en TIFF (selon l'API fournie)
+- Support des JPEG gris également réalisé
+
+
+Extensions :
+
+- Implémentation de l'opération iDCT par l'algorithme de Loeffler (accélère le décodeur et l'encodeur)
+- Implémentation de l'opération DCT par l'algorithme de Loeffler (accélère l'encodeur)
+- Encodeur : permet l'encodage / réencodage / décodage des fichiers TIFF / JPEG
+
+
+
+Fonctionnalités de l'encodeur :
+
+- changement des tailles de MCU paramétrable (8x8 / 16x8 / 8x16 / 16x16)
+- écriture de la sortie en niveau de gris si demandé
+- qualité de compression paramétrable (0 : lossless, 25 : max)
+- réencodage    JPEG => JPEG
+- encodage      TIFF => JPEG
+- réencodage    TIFF => TIFF
+- décodage      JPEG => TIFF
+
+
+
+Pour plus de précisions sur l'utilisation du décodeur / de l'encodeur, lancer l'exécution avec l'option -h et consulter l'aide
+
+

@@ -42,9 +42,8 @@ enum jpeg_status {
         ALL_OK  = 7
 };
 
-/* Command line arguments */
+/* Command line options */
 struct options {
-
         char *input;
         char *output;
 };
@@ -68,7 +67,7 @@ struct comp {
 /* JPEG informations */
 struct jpeg_data {
 
-        /* Filename */
+        /* File path */
         char *path;
 
         uint16_t height, width;
@@ -98,7 +97,7 @@ struct jpeg_data {
 extern uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                         struct jpeg_data *jpeg, bool *error);
 
-/* Read a whole jpeg header */
+/* Read a whole JPEG header */
 extern void read_header(struct bitstream *stream, struct jpeg_data *jpeg, bool *error);
 
 /* Extract, decode jpeg data and write image data to tiff file */

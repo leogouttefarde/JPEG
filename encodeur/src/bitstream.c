@@ -3,19 +3,30 @@
 #include "common.h"
 
 
+/*
+ * Internal bitstream structure
+ */
 struct bitstream {
+
+        /* Currently opened file */
         FILE *file;
+
+        /* Opened file's mode */
         enum stream_mode mode;
+
+        /* Current byte */
         uint8_t byte;
+
+        /* Next bit's index in byte */
         uint8_t index;
 };
 
-/* 
- * Initialize the bitstream structure with the file filename 
- * and mode (read or write)
+
+/*
+ * Opens the filename file as bitstream
+ * with the right mode (read / write)
  */
-struct bitstream *create_bitstream(const char *filename, 
-				   enum stream_mode mode)
+struct bitstream *create_bitstream(const char *filename, enum stream_mode mode)
 {
         struct bitstream *stream = NULL;
 
@@ -31,10 +42,10 @@ struct bitstream *create_bitstream(const char *filename,
                 else
                         open_mode = "r+";
 
-		/* Open the filename file in open_mode (read, write or both) */
+                /* Open the filename file in open_mode (read, write or both) */
                 FILE *file = fopen(filename, open_mode);
-		
-		/* Create and initialize the filename stream */
+
+                /* Create and initialize the stream */
                 if (file != NULL) {
                         stream = malloc(sizeof(struct bitstream));
 
@@ -52,7 +63,7 @@ struct bitstream *create_bitstream(const char *filename,
         return stream;
 }
 
-/* Return true if eof is reach */
+/* Returns true if eof is reached */
 bool end_of_bitstream(struct bitstream *stream)
 {
         bool end = true;
@@ -64,43 +75,43 @@ bool end_of_bitstream(struct bitstream *stream)
         return end;
 }
 
-/* Read the next bit in the stream */
+/* Read the next bit from the stream */
 int8_t next_bit(struct bitstream *stream, bool byte_stuffing)
 {
         uint32_t size = 0;
         int8_t bit;
         uint8_t *byte = &stream->byte;
-	
-	/* Reads a new byte */
+        
+        /* Reads a new byte */
         if (stream->index == 0) {
 
                 uint8_t last = *byte;
                 size = fread(byte, 1, 1, stream->file);
-		
-		/* Byte_stuffing */
+                
+                /* Byte_stuffing */
                 if (byte_stuffing && last == 0xFF) {
                         if (*byte != 0x00)
                                 return -1;
 
                         size = fread(byte, 1, 1, stream->file);
                 }
-		
-		/* Error handling */
+                
+                /* Error handling */
                 if (size == 0)
                         return -2;
 
                 stream->index = 8;
         }
-	
-	/* Compute the next bit */
+        
+        /* Compute the next bit */
         bit = 1 & (*byte >> --stream->index);
 
         return bit;
 }
 
-/* 
- * Read nb_bits in the stream and return those bits in dest 
- * byte_stuffing indicate if we have to take account of the byte_stuffing
+/*
+ * Read nb_bits from the stream and return those bits in dest.
+ * byte_stuffing indicates if we have to read using byte stuffing.
  */
 uint8_t read_bitstream(struct bitstream *stream,
                 uint8_t nb_bits, uint32_t *dest,
@@ -112,8 +123,8 @@ uint8_t read_bitstream(struct bitstream *stream,
 
         if (stream == NULL || stream->file == NULL || dest == NULL)
                 return 0;
-	
-	/* Read bit per bit */
+        
+        /* Read bit per bit */
         for (uint8_t i = 0; i < nb_bits; i++) {
                 bit = next_bit(stream, byte_stuffing);
 
@@ -133,15 +144,15 @@ bool skip_bitstream_until(struct bitstream *stream, uint8_t byte)
 {
         if (stream != NULL && stream->file != NULL) {
 
-		/* The current byte is our goal */
+                /* The current byte is our goal */
                 if (stream->index == 8 && stream->byte == byte) {
                         return true;
                 }
                 else {
                         uint8_t *cur_byte = &stream->byte;
                         uint32_t size = 1;
-			
-			/*
+
+                        /*
                          * Skips bytes until the value byte
                          * is found or the end of file
                          */
@@ -162,7 +173,7 @@ bool skip_bitstream_until(struct bitstream *stream, uint8_t byte)
         return false;
 }
 
-/* Close the stream and free the memory of the stream */
+/* Close the stream and free all memory */
 void free_bitstream(struct bitstream *stream)
 {
         if (stream != NULL) {
@@ -173,18 +184,16 @@ void free_bitstream(struct bitstream *stream)
         }
 }
 
-/* 
- * Save the bit "bit" in the stream buffer byte
- * And write the buffer if it contain 8 saved bits
- */
+/* Write a bit into the stream */
 int8_t write_bit(struct bitstream *stream, uint8_t bit, bool byte_stuffing)
 {
         uint32_t size = 0;
         uint8_t *byte = &stream->byte;
-	/* Save the bit "bit" in the stream buffer byte */
+
+        /* Save the bit in the stream buffer byte */
         *byte = *byte << 1 | (bit & 1);
 
-	/* write the buffer if it contain 8 saved bits */
+        /* Write the byte buffer once full */
         if (++stream->index == 8) {
 
                 uint8_t cur = *byte;
@@ -192,11 +201,11 @@ int8_t write_bit(struct bitstream *stream, uint8_t bit, bool byte_stuffing)
                 size = fwrite(byte, 1, 1, stream->file);
                 *byte = 0;
 
-		/* Byte Stuffing */
+                /* Byte Stuffing */
                 if (byte_stuffing && cur == 0xFF)
                         size = fwrite(byte, 1, 1, stream->file);
 
-		/* Error handling */
+                /* Error handling */
                 if (size == 0)
                         return -2;
 
@@ -206,27 +215,25 @@ int8_t write_bit(struct bitstream *stream, uint8_t bit, bool byte_stuffing)
         return 0;
 }
 
-/* Write the byte "byte" in the stream */
+/* Write a byte into the stream */
 void write_byte(struct bitstream *stream, uint8_t byte)
 {
-        uint8_t temp = byte;
-
-        fwrite(&temp, 1, 1, stream->file);
+        fwrite(&byte, 1, 1, stream->file);
 }
 
-/* Write the short val in big endian in the stream*/
+/* Write a short as big endian into the stream*/
 void write_short_BE(struct bitstream *stream, uint16_t val)
 {
-	/* Big endian conversion */
+        /* Convert to big endian */
         uint8_t temp[2];
 
         temp[0] = val >> 8;
         temp[1] = val;
-	
-        fwrite(temp, 2, 1, stream->file);
+        
+        fwrite(temp, 1, 2, stream->file);
 }
 
-/* Seek the position pos from the begining of the stream file */
+/* Seek the stream to a specific position */
 void seek_bitstream(struct bitstream *stream, uint32_t pos)
 {
         stream->byte = 0;
@@ -235,7 +242,7 @@ void seek_bitstream(struct bitstream *stream, uint32_t pos)
         fseek(stream->file, pos, SEEK_SET);
 }
 
-/* Return the current position of the stream file*/
+/* Returns the current stream position */
 uint32_t pos_bitstream(struct bitstream *stream)
 {
         uint32_t pos = 0;
@@ -246,10 +253,8 @@ uint32_t pos_bitstream(struct bitstream *stream)
         return pos;
 }
 
-/* 
- * Write the content of the buffer byte in the stream 
- * by adding 0 if byte doesn't contain 8 bits
- * Use to flush byte
+/*
+ * Writes all remaining bits to the stream if necessary
  */
 void flush_bitstream(struct bitstream *stream)
 {
@@ -258,13 +263,13 @@ void flush_bitstream(struct bitstream *stream)
 
         if (stream->index > 0) {
 
-		/* Add all 0 needed to have 8 bits in byte buffer */
+                /* Add the 0 required to reach 8 bits */
                 stream->byte <<= 8 - stream->index;
 
-		/* Write byte buffer */
-                fwrite(&stream->byte, 1, 1, stream->file);
+                /* Write the byte buffer */
+                write_byte(stream, stream->byte);
 
-		/* Flush byte buffer */
+                /* Reset the byte buffer */
                 stream->index = 0;
                 stream->byte = 0;
         }

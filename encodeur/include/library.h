@@ -7,12 +7,14 @@
 #include "encode.h"
 
 /*
- * Forces x value in [0,255]
+ * Truncation macro
+ * Enforces input value into [0,255]
  */
 #define TRUNCATE(x) ((uint8_t)((x > 255) ? 255 : ( (x < 0) ? 0 : (uint32_t)x )))
 
+
 /*
- * Reads a short from stream encoded in Big Endian
+ * Reads a short from stream as Big Endian
  */
 extern bool read_short_BE(struct bitstream *stream, uint16_t *value);
 
@@ -24,20 +26,15 @@ extern bool read_byte(struct bitstream *stream, uint8_t *value);
 /*
  * Skips nb_bytes bytes in the stream
  */
-bool skip_bitstream(struct bitstream *stream, uint32_t nb_bytes);
-
-
-uint32_t truncate(int32_t s);
-
-uint8_t double2uint8(double x);
+extern bool skip_bitstream(struct bitstream *stream, uint32_t nb_bytes);
 
 /*
- * Verifies that the filename extension is "jpg" or "jpeg"
+ * Checks that the filename extension is "jpg" or "jpeg"
  */
 extern bool is_valid_jpeg(char *path);
 
 /*
- * Verifies that the filename extension is "tiff" or "tif"
+ * Checks that the filename extension is "tiff" or "tif"
  */
 extern bool is_valid_tiff(char *path);
 
@@ -47,42 +44,43 @@ extern bool is_valid_tiff(char *path);
 extern bool parse_args(int argc, char **argv, struct options *options);
 
 /*
- * Converts MCU to lines representation
+ * Converts an MCU image to a regular image.
  */
 extern uint32_t *mcu_to_image(
         uint32_t *data, struct mcu_info *mcu,
         uint32_t width, uint32_t height);
 
 /*
- * Converts lines to MCU representation
+ * Converts an image to an MCU image.
  */
 extern uint32_t *image_to_mcu(
         uint32_t *image, struct mcu_info *mcu,
         uint32_t width, uint32_t height);
 
 /*
- * Process options
+ * Process specific options.
  */
 extern void process_options(struct options *options, struct jpeg_data *jpeg, bool *error);
 
 /*
- * Exports the jpeg to the tiff file
+ * Exports raw MCU image data as TIFF.
  */
 extern void export_tiff(struct jpeg_data *jpeg, bool *error);
 
 /*
- * Converts all pixels to grayscale
+ * Enforces all pixels to grayscale.
  */
 extern void compute_gray(struct jpeg_data *jpeg);
 
 /*
- * Prints a block of BLOCK_DIMxBLOCK_DIM of int32_t for debug puposes.
+ * Prints a BLOCK_DIMxBLOCK_DIM block of int32_t for debug purposes.
  */
 extern bool print_block(int32_t *block);
 
 /*
- * Prints a block of BLOCK_DIMxBLOCK_DIM of int8_t for debug puposes.
+ * Prints a BLOCK_DIMxBLOCK_DIM block of uint8_t for debug purposes.
  */
 extern bool print_byte_block(uint8_t *block);
+
 
 #endif

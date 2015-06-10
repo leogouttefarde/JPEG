@@ -5,6 +5,7 @@
 #include <stdint.h>
 
 
+/* Downsamples any input component's blocks */
 extern void downsampler(uint8_t *in,
                 uint8_t nb_blocks_out_h, uint8_t nb_blocks_out_v,
 		uint8_t *out,

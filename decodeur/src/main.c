@@ -24,7 +24,7 @@ int main(int argc, char **argv)
                 uint8_t marker;
 
 
-                /* Initializes the jpeg structure with 0s */
+                /* Initialize the jpeg structure with 0s */
                 struct jpeg_data jpeg;
                 memset(&jpeg, 0, sizeof(struct jpeg_data));
 

@@ -49,8 +49,8 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
         *error |= read_short_BE(stream, &size);
 
         /*
-         * Number of bits to skip (unused bits) 
-         * Update during reading
+         * Number of bytes to skip (unused bytes)
+         * Updated when reading
          */
         unread = size - sizeof(size);
 
@@ -133,10 +133,9 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                                 *error = true;
                         }
 
-                        /* Read jpeg information */
+                        /* Read jpeg informations */
                         read_short_BE(stream, &jpeg->height);
                         read_short_BE(stream, &jpeg->width);
-
                         read_byte(stream, &jpeg->nb_comps);
 
 
@@ -145,7 +144,7 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                                 *error = true;
 
                         else {
-                                /* Read all component information */
+                                /* Read all component informations */
                                 for (uint8_t i = 0; i < jpeg->nb_comps; i++) {
                                         uint8_t i_c, i_q;
                                         uint8_t h_sampling_factor;
@@ -226,7 +225,7 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                                 if (!*error)
                                         jpeg->htables[type][i_h] = table;
 
-                                else if (table != NULL)
+                                else
                                         free_huffman_table(table);
 
 
@@ -259,12 +258,14 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                         /* Read component informations */
                         for (uint8_t i = 0; i < nb_comps; i++) {
                                 read_byte(stream, &byte);
-                                i_c = --byte;
 
+                                i_c = --byte;
                                 jpeg->comp_order[i] = i_c;
-                                
+
+
                                 /* Read Huffman table indexes */
                                 read_byte(stream, &byte);
+
                                 jpeg->comps[i_c].i_dc = byte >> 4;
                                 jpeg->comps[i_c].i_ac = byte & 0xF;
                         }

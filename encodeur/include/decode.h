@@ -54,21 +54,37 @@ struct comp {
         int32_t last_DC;
 };
 
-/* MCU information */
+/* MCU informations */
 struct mcu_info {
+
+        /* Pixel dimensions */
         uint32_t h;
         uint32_t v;
+
+        /*
+         * Number of horizontal / vertical
+         * blocks per MCU
+         */
         uint8_t h_dim;
         uint8_t v_dim;
+
+        /* Number of MCUs along the width */
         uint32_t nb_h;
+
+        /* Number of MCUs along the height */
         uint32_t nb_v;
+
+        /* Total number of MCUs */
         uint32_t nb;
+
+        /* Number of pixels per MCU */
         uint32_t size;
 };
 
-/* JPEG information */
+/* JPEG informations */
 struct jpeg_data {
-	/* Filename */
+
+	/* File path */
         char *path;
 
         uint16_t height, width;
@@ -94,13 +110,19 @@ struct jpeg_data {
 	/* JPEG status check */
         uint8_t state;
 
+        /* Raw decoded data */
         uint32_t *raw_data;
 
+        /*
+         * Indicates if the raw_data
+         * is a plain image or an MCU image
+         */
         bool is_plain_image;
 
-	/* MCU information */
+	/* MCU informations */
         struct mcu_info mcu;
 
+        /* JPEG compressed MCU image data */
         int32_t *mcu_data;
 };
 
@@ -109,7 +131,7 @@ struct jpeg_data {
 extern uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
                         struct jpeg_data *jpeg, bool *error);
 
-/* Read a jpeg header data */
+/* Read a whole JPEG header */
 extern void read_header(struct bitstream *stream, 
 			struct jpeg_data *jpeg, bool *error);
 

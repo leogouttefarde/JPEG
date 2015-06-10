@@ -8,13 +8,10 @@
 
 int main(int argc, char **argv)
 {
-	/* Used to track errors */
         bool error = false;
-	
-	/* Used to stock options given by the user */
         struct options options;
 
-	/* Parse arguments and exit on failure */
+        /* Parse arguments and exit on failure */
         if (parse_args(argc, argv, &options))
                 return EXIT_FAILURE;
 
@@ -27,7 +24,7 @@ int main(int argc, char **argv)
 
                 if (stream != NULL) {
 
-			/* Initializes the jpeg object with 0s */
+                        /* Initializes the jpeg structure with 0s */
                         struct jpeg_data jpeg;
                         memset(&jpeg, 0, sizeof(jpeg));
 
@@ -61,7 +58,7 @@ int main(int argc, char **argv)
                         /* End JPEG file */
                         write_section(stream, EOI, NULL, &error);
 
-			/* Close output file */
+                        /* Close output file */
                         free_bitstream(stream);
 
 
@@ -87,10 +84,11 @@ int main(int argc, char **argv)
         /* JPEG Decoding / TIFF Reencoding */
         } else {
 
-		/* Initializes the jpeg object with 0s */
+                /* Initializes the jpeg structure with 0s */
                 struct jpeg_data jpeg;
                 memset(&jpeg, 0, sizeof(struct jpeg_data));
 
+                /* Retrieve options */
                 jpeg.path = options.input;
                 jpeg.mcu.h = options.mcu_h;
                 jpeg.mcu.v = options.mcu_v;
@@ -98,9 +96,11 @@ int main(int argc, char **argv)
                 /* Read input image */
                 read_image(&jpeg, &error);
 
+                /* Enable specific options */
                 process_options(&options, &jpeg, &error);
 
 
+                /* Specify output path */
                 jpeg.path = options.output;
 
                 /* Export as TIFF file */

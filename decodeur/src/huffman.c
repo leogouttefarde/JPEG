@@ -2,6 +2,7 @@
 #include "huffman.h"
 #include "common.h"
 
+
 /*
  * Internal node structure
  */
@@ -133,7 +134,7 @@ struct huff_table *load_huffman_table(
 
 
         /* Read the number of symbols per size */
-        for (uint8_t i = 0; i < 16; i++) {
+        for (uint8_t i = 0; i < sizeof(code_sizes); i++) {
                 size_read += read_bitstream(stream, 8, &dest, false);
                 code_sizes[i] = dest & 0xFF;
                 nb_codes += code_sizes[i];
@@ -196,8 +197,6 @@ int8_t next_huffman_value(struct huff_table *table,
 
         if (table != NULL)
                 result = table->u.val;
-        else
-                printf("FATAL ERROR : no Huffman value found\n");
 
         return result;
 }

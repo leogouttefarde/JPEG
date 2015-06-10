@@ -10,10 +10,11 @@
 #include "downsampler.h"
 #include "library.h"
 
+/* Computes how many MCUs are required to cover a given dimension */
 static inline uint16_t mcu_per_dim(uint8_t mcu, uint16_t dim);
 
 
-/* Compresses raw mcu data, and computes Huffman / Quantification tables */
+/* Compresses raw mcu data, and computes Huffman tables */
 void compute_jpeg(struct jpeg_data *jpeg, bool *error)
 {
         if (jpeg == NULL || *error) {
@@ -27,6 +28,7 @@ void compute_jpeg(struct jpeg_data *jpeg, bool *error)
         uint8_t mcu_h_dim = jpeg->mcu.h_dim;
         uint8_t mcu_v_dim = jpeg->mcu.v_dim;
         uint32_t nb_mcu = jpeg->mcu.nb;
+        uint32_t block_idx = 0;
 
         uint8_t nb_blocks_h, nb_blocks_v, nb_blocks;
         uint8_t i_q;
@@ -34,7 +36,8 @@ void compute_jpeg(struct jpeg_data *jpeg, bool *error)
 
         int32_t *block;
         int32_t qzz[BLOCK_SIZE];
-        uint8_t *mcu_data;
+        uint8_t *mcu_data, *qtable;
+        uint8_t dct[mcu_h_dim * mcu_v_dim][BLOCK_SIZE];
 
         uint32_t *mcu_RGB = NULL;
         uint8_t data_YCbCr[3][mcu_h * mcu_v];
@@ -44,15 +47,19 @@ void compute_jpeg(struct jpeg_data *jpeg, bool *error)
                 (uint8_t*)&data_YCbCr[2]
         };
 
+
         /* Use 1 table for each tree (AC/DC)
          * Allocate 0x100 values because Huffman values use 8 bits */
         uint32_t freq_data[MAX_COMPS][2][0x100];
+
+        /* Components's frequence tables */
         uint32_t *freqs[MAX_COMPS][2] = {
                 { (uint32_t*)&freq_data[0][0], (uint32_t*)&freq_data[0][1] },
                 { (uint32_t*)&freq_data[1][0], (uint32_t*)&freq_data[1][1] },
                 { (uint32_t*)&freq_data[2][0], (uint32_t*)&freq_data[2][1] }
         };
 
+        /* Set default frequencies to 0 */
         memset(freq_data, 0, sizeof(freq_data));
 
 
@@ -64,17 +71,16 @@ void compute_jpeg(struct jpeg_data *jpeg, bool *error)
                 return;
         }
 
-        uint8_t *qtable;
-        uint32_t block_idx = 0;
-        uint8_t dct[mcu_h_dim * mcu_v_dim][BLOCK_SIZE];
-
+        /* Encode all MCUs */
         for (uint32_t i = 0; i < nb_mcu; i++) {
 
                 mcu_RGB = &(jpeg->raw_data[i * jpeg->mcu.size]);
 
+                /* Convert RGB to YCbCr for color images */
                 if (jpeg->nb_comps == 3)
                         ARGB_to_YCbCr(mcu_RGB, mcu_YCbCr, mcu_h_dim, mcu_v_dim);
 
+                /* Convert RGB to Y for gray images */
                 else if (jpeg->nb_comps == 1)
                         ARGB_to_Y(mcu_RGB, mcu_YCbCr[0], mcu_h_dim, mcu_v_dim);
 
@@ -82,8 +88,10 @@ void compute_jpeg(struct jpeg_data *jpeg, bool *error)
                         *error = true;
 
 
+                /* Encode each component in the correct order */
                 for (uint8_t j = 0; j < jpeg->nb_comps; j++) {
 
+                        /* Retrieve component informations */
                         i_c = jpeg->comp_order[j];
                         i_q = jpeg->comps[i_c].i_q;
                         nb_blocks_h = jpeg->comps[i_c].nb_blocks_h;
@@ -91,9 +99,11 @@ void compute_jpeg(struct jpeg_data *jpeg, bool *error)
                         nb_blocks = nb_blocks_h * nb_blocks_v;
                         last_DC = &jpeg->comps[i_c].last_DC;
 
+                        /* Downsample current MCUs */
                         mcu_data = mcu_YCbCr[i_c];
                         downsampler(mcu_data, mcu_h_dim, mcu_v_dim, (uint8_t*)dct, nb_blocks_h, nb_blocks_v);
 
+                        /* Compress each MCU and compute data frequencies */
                         for (uint8_t n = 0; n < nb_blocks; n++) {
 
                                 dct_block((uint8_t*)&dct[n], qzz);
@@ -111,11 +121,9 @@ void compute_jpeg(struct jpeg_data *jpeg, bool *error)
                 }
         }
 
-
         /*  Reset last_DC fields so that write_blocks can work fine */
         for (uint8_t i = 0; i < jpeg->nb_comps; i++)
                 jpeg->comps[i].last_DC = 0;
-
 
         /*  Create all Huffman trees */
         for (uint8_t i = 0; i < jpeg->nb_comps; i++) {
@@ -124,6 +132,7 @@ void compute_jpeg(struct jpeg_data *jpeg, bool *error)
         }
 }
 
+/* Writes a whole JPEG header */
 void write_header(struct bitstream *stream, struct jpeg_data *jpeg, bool *error)
 {
         /* Write header data */
@@ -142,8 +151,9 @@ void write_header(struct bitstream *stream, struct jpeg_data *jpeg, bool *error)
         write_section(stream, SOS, jpeg, error);
 }
 
+/* Writes a specific JPEG section */
 void write_section(struct bitstream *stream, enum jpeg_section section,
-                        struct jpeg_data *jpeg, bool *error)
+                   struct jpeg_data *jpeg, bool *error)
 {
         uint8_t byte;
 
@@ -240,6 +250,9 @@ void write_section(struct bitstream *stream, enum jpeg_section section,
                                 }
 
 
+                                /*
+                                 * Write one quantification table
+                                 */
                                 if (i_q < MAX_QTABLES) {
                                         uint8_t *qtable = (uint8_t*)&jpeg->qtables[i_q];
 
@@ -249,6 +262,7 @@ void write_section(struct bitstream *stream, enum jpeg_section section,
                                 } else
                                         *error = true;
 
+                                /* Update jpeg status */
                                 jpeg->state |= DQT_OK;
                         }
                 } else
@@ -262,25 +276,32 @@ void write_section(struct bitstream *stream, enum jpeg_section section,
                         write_byte(stream, accuracy);
 
 
+                        /* Read jpeg informations */
                         write_short_BE(stream, jpeg->height);
                         write_short_BE(stream, jpeg->width);
-
                         write_byte(stream, jpeg->nb_comps);
 
 
+                        /* Write all component informations */
                         for (uint8_t i = 0; i < jpeg->nb_comps; i++) {
                                 uint8_t i_c = i + 1;
                                 uint8_t i_q = jpeg->comps[i].i_q;
                                 uint8_t h_sampling_factor = jpeg->comps[i].nb_blocks_h;
                                 uint8_t v_sampling_factor = jpeg->comps[i].nb_blocks_v;
 
+                                /* Write component index */
                                 write_byte(stream, i_c);
 
 
+                                /* Write sampling factors */
                                 byte = h_sampling_factor << 4;
                                 byte |= v_sampling_factor & 0xF;
                                 write_byte(stream, byte);
 
+                                /*
+                                 * Write the component's
+                                 * quantification table index
+                                 */
                                 write_byte(stream, i_q);
 
                                 jpeg->state |= SOF0_OK;
@@ -315,6 +336,7 @@ void write_section(struct bitstream *stream, enum jpeg_section section,
                                         byte |= i_h & 0xF;
                                         write_byte(stream, byte);
 
+                                        /* Write one Huffman table */
                                         write_huffman_table(stream, table);
                                 }
                         }
@@ -330,16 +352,16 @@ void write_section(struct bitstream *stream, enum jpeg_section section,
                 if (jpeg != NULL) {
                         uint8_t i_c;
 
-
                         write_byte(stream, jpeg->nb_comps);
 
-
+                        /* Write component informations */
                         for (uint8_t i = 0; i < jpeg->nb_comps; i++) {
 
                                 i_c = jpeg->comp_order[i];
                                 write_byte(stream, i_c + 1);
 
 
+                                /* Write Huffman table indexes */
                                 uint8_t i_dc = jpeg->comps[i_c].i_dc;
                                 uint8_t i_ac = jpeg->comps[i_c].i_ac;
 
@@ -348,6 +370,7 @@ void write_section(struct bitstream *stream, enum jpeg_section section,
                                 write_byte(stream, byte);
                         }
 
+                        /* Write remaining SOS data */
                         write_byte(stream, 0x00);
                         write_byte(stream, 0x3F);
                         write_byte(stream, 0x00);
@@ -372,7 +395,6 @@ void write_section(struct bitstream *stream, enum jpeg_section section,
 
         /* Write section size and then restore current position */
         seek_bitstream(stream, pos_size);
-
         write_short_BE(stream, size);
 
         seek_bitstream(stream, end_section);
@@ -394,15 +416,20 @@ void write_blocks(struct bitstream *stream, struct jpeg_data *jpeg, bool *error)
         uint32_t block_idx = 0;
 
 
+        /* Write all compressed MCUs */
         for (uint32_t i = 0; i < nb_mcu; i++) {
+
+                /* Write each component in the correct order */
                 for (uint8_t i = 0; i < jpeg->nb_comps; i++) {
 
+                        /* Retrieve component informations */
                         i_c = jpeg->comp_order[i];
                         nb_blocks_h = jpeg->comps[i_c].nb_blocks_h;
                         nb_blocks_v = jpeg->comps[i_c].nb_blocks_v;
                         nb_blocks = nb_blocks_h * nb_blocks_v;
                         last_DC = &jpeg->comps[i_c].last_DC;
 
+                        /* Write each MCU */
                         for (uint8_t n = 0; n < nb_blocks; n++) {
                                 block = &jpeg->mcu_data[block_idx];
 
@@ -415,9 +442,11 @@ void write_blocks(struct bitstream *stream, struct jpeg_data *jpeg, bool *error)
                 }
         }
 
+        /* Enforce last bits into the file */
         flush_bitstream(stream);
 }
 
+/* Detects MCU informations from header data */
 void detect_mcu(struct jpeg_data *jpeg, bool *error)
 {
         uint8_t mcu_h = BLOCK_DIM;
@@ -435,6 +464,7 @@ void detect_mcu(struct jpeg_data *jpeg, bool *error)
         compute_mcu(jpeg, error);
 }
 
+/* Computes MCU informations */
 void compute_mcu(struct jpeg_data *jpeg, bool *error)
 {
         uint8_t mcu_h = jpeg->mcu.h;
@@ -481,6 +511,7 @@ void compute_mcu(struct jpeg_data *jpeg, bool *error)
         }
 }
 
+/* Computes how many MCUs are required to cover a given dimension */
 static inline uint16_t mcu_per_dim(uint8_t mcu, uint16_t dim)
 {
         uint16_t nb = dim / mcu;
@@ -488,6 +519,7 @@ static inline uint16_t mcu_per_dim(uint8_t mcu, uint16_t dim)
         return (dim % mcu) ? ++nb : nb;
 }
 
+/* Frees all JPEG Huffman tables */
 void free_jpeg_data(struct jpeg_data *jpeg)
 {
         if (jpeg == NULL)

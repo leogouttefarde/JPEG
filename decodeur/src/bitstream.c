@@ -6,7 +6,7 @@
 
 
 /*
- * Bitstream internal structure
+ * Internal bitstream structure
  */
 struct bitstream {
 

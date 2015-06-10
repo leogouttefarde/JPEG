@@ -10,7 +10,8 @@
 #include "downsampler.h"
 #include "library.h"
 
-/* Extract and decode a JPEG file */
+
+/* Extract and decode a whole JPEG file */
 static void read_jpeg(struct jpeg_data *ojpeg, bool *error);
 
 /* Read a TIFF file's image data */
@@ -19,6 +20,10 @@ static void read_tiff(struct jpeg_data *ojpeg, bool *error);
 /* Extract and decode raw JPEG data */
 static void scan_jpeg(struct bitstream *stream, struct jpeg_data *jpeg, bool *error);
 
+/*
+ * Generic quantification table
+ * Source : http://www-ljk.imag.fr/membres/Valerie.Perrier/SiteWeb/node10.html
+ */
 static const uint8_t generic_qt[64];
 
 
@@ -43,14 +48,16 @@ void read_image(struct jpeg_data *jpeg, bool *error)
 
         /* 
          * Initialize jpeg quantification tables
-         * and initialize component informations
+         * and component informations
          */
         if (!*error) {
-
+                uint8_t i_q = 0;
                 uint8_t *qtable = (uint8_t*)&jpeg->qtables[0];
+
+                /* Gimp QTables codes (disabled) */
                 // uint8_t *Y_qtable = (uint8_t*)&jpeg->qtables[0];
                 // uint8_t *CbCr_qtable = (uint8_t*)&jpeg->qtables[1];
-                uint8_t i_q = 0;
+
 
                 /* Initialize table indexes */
                 for (uint8_t i = 0; i < jpeg->nb_comps; i++) {
@@ -60,6 +67,7 @@ void read_image(struct jpeg_data *jpeg, bool *error)
                         jpeg->comps[i].i_ac = i;
 
 
+                        /* Gimp QTables codes (disabled) */
                         //if (i > 0)
                         //        i_q = 1;
 
@@ -67,6 +75,8 @@ void read_image(struct jpeg_data *jpeg, bool *error)
                 }
 
                 quantify_qtable(qtable, generic_qt, jpeg->compression);
+
+                /* Gimp QTables codes (disabled) */
                 // quantify_qtable(Y_qtable, Y_gimp, jpeg->compression);
                 // quantify_qtable(CbCr_qtable, CbCr_gimp, jpeg->compression);
 
@@ -104,12 +114,13 @@ static void read_jpeg(struct jpeg_data *ojpeg, bool *error)
                         ojpeg->mcu.v = jpeg.mcu.v;
                         ojpeg->height = jpeg.height;
                         ojpeg->width = jpeg.width;
-			
-                        /* 
+
+                        /*
                          * Compute MCU informations :
-                         * number of MCUs, size, Y Cb Cr dimensions
+                         * Number of MCUs, size, Y / Cb / Cr dimensions
                          */
                         compute_mcu(ojpeg, error);
+
 
                         /* Extract and decode raw JPEG data */
                         scan_jpeg(stream, &jpeg, error);
@@ -129,7 +140,7 @@ static void read_jpeg(struct jpeg_data *ojpeg, bool *error)
         }
 }
 
-/* Read a jpeg header data */
+/* Read a whole JPEG header */
 void read_header(struct bitstream *stream, struct jpeg_data *jpeg, bool *error)
 {
         uint8_t marker = ANY;
@@ -186,8 +197,8 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
         *error |= read_short_BE(stream, &size);
 
         /*
-         * Number of bits to skip (unused bits) 
-         * Update during reading
+         * Number of bytes to skip (unused bytes)
+         * Updated when reading
          */
         unread = size - sizeof(size);
 
@@ -304,14 +315,14 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
 
                                         if (i_q >= MAX_QTABLES)
                                                 *error = true;
-                                        
+
                                         /* Initialize component informations */
                                         if (!*error) {
                                                 jpeg->comps[i_c].nb_blocks_h = h_sampling_factor;
                                                 jpeg->comps[i_c].nb_blocks_v = v_sampling_factor;
                                                 jpeg->comps[i_c].i_q = i_q;
                                         }
-                                        
+
                                         /* Update jpeg status */
                                         jpeg->state |= SOF0_OK;
                                 }
@@ -361,8 +372,10 @@ uint8_t read_section(struct bitstream *stream, enum jpeg_section section,
 
                                 if (!*error)
                                         jpeg->htables[type][i_h] = table;
+
                                 else
-                                        SAFE_FREE(table);
+                                        free_huffman_table(table);
+
 
                                 unread -= nb_byte_read;
                                 
@@ -446,7 +459,7 @@ static void read_tiff(struct jpeg_data *ojpeg, bool *error)
                         ojpeg->width = width;
                         ojpeg->height = height;
 
-                        /* Read all raw RGB data from the TIFF file */
+                        /* Read all raw image data */
                         if (!*error) {
                                 uint32_t *line = NULL;
 
@@ -484,19 +497,17 @@ static void scan_jpeg(struct bitstream *stream, struct jpeg_data *jpeg, bool *er
         if (stream == NULL || error == NULL || *error || jpeg == NULL)
                 return;
 
-        uint8_t i_c;
 
         /* Retrieve MCU data */
         uint8_t mcu_h = jpeg->mcu.h;
         uint8_t mcu_v = jpeg->mcu.v;
         uint8_t mcu_h_dim = jpeg->mcu.h_dim;
         uint8_t mcu_v_dim = jpeg->mcu.v_dim;
-
         uint32_t nb_mcu = jpeg->mcu.nb;
 
         /* Scan variables */
         uint8_t nb_blocks_h, nb_blocks_v, nb_blocks;
-        uint8_t i_dc, i_ac, i_q;
+        uint8_t i_c, i_q, i_dc, i_ac;
         int32_t *last_DC;
 
         uint8_t idct[mcu_h_dim * mcu_v_dim][BLOCK_SIZE];
@@ -525,10 +536,10 @@ static void scan_jpeg(struct bitstream *stream, struct jpeg_data *jpeg, bool *er
         /* Extract and decode all MCUs */
         for (uint32_t i = 0; i < nb_mcu; i++) {
                 mcu_RGB = &jpeg->raw_data[i * mcu_size];
-                
+
                 /* Retrieve each component */
                 for (uint8_t j = 0; j < jpeg->nb_comps; j++) {
-                        
+
                         /* Retrieve component informations */
                         i_c = jpeg->comp_order[j];
 
@@ -559,7 +570,7 @@ static void scan_jpeg(struct bitstream *stream, struct jpeg_data *jpeg, bool *er
                         upsampler((uint8_t*)idct, nb_blocks_h, nb_blocks_v, 
                                   upsampled, mcu_h_dim, mcu_v_dim);
                 }
-                
+
                 /* Convert YCbCr to RGB for color images */
                 if (jpeg->nb_comps == 3)
                         YCbCr_to_ARGB(mcu_YCbCr, mcu_RGB, mcu_h_dim, mcu_v_dim);
@@ -572,34 +583,6 @@ static void scan_jpeg(struct bitstream *stream, struct jpeg_data *jpeg, bool *er
                         *error = true;
         }
 }
-
-
-
-/* Luminance gimp sujet */
-// const uint8_t Y_gimp[64] =
-// {
-//         0x05, 0x03, 0x03, 0x05, 0x07, 0x0c, 0x0f, 0x12,
-//         0x04, 0x04, 0x04, 0x06, 0x08, 0x11, 0x12, 0x11,
-//         0x04, 0x04, 0x05, 0x07, 0x0c, 0x11, 0x15, 0x11,
-//         0x04, 0x05, 0x07, 0x09, 0x0f, 0x1a, 0x18, 0x13,
-//         0x05, 0x07, 0x0b, 0x11, 0x14, 0x21, 0x1f, 0x17,
-//         0x07, 0x0b, 0x11, 0x13, 0x18, 0x1f, 0x22, 0x1c,
-//         0x0f, 0x13, 0x17, 0x1a, 0x1f, 0x24, 0x24, 0x1e,
-//         0x16, 0x1c, 0x1d, 0x1d, 0x22, 0x1e, 0x1f, 0x1e
-// };
-
-/* Chrominance gimp sujet */
-// const uint8_t CbCr_gimp[64] =
-// {
-//         0x05, 0x05, 0x07, 0x0e, 0x1e, 0x1e, 0x1e, 0x1e,
-//         0x05, 0x06, 0x08, 0x14, 0x1e, 0x1e, 0x1e, 0x1e,
-//         0x07, 0x08, 0x11, 0x1e, 0x1e, 0x1e, 0x1e, 0x1e,
-//         0x0e, 0x14, 0x1e, 0x1e, 0x1e, 0x1e, 0x1e, 0x1e,
-//         0x1e, 0x1e, 0x1e, 0x1e, 0x1e, 0x1e, 0x1e, 0x1e,
-//         0x1e, 0x1e, 0x1e, 0x1e, 0x1e, 0x1e, 0x1e, 0x1e,
-//         0x1e, 0x1e, 0x1e, 0x1e, 0x1e, 0x1e, 0x1e, 0x1e,
-//         0x1e, 0x1e, 0x1e, 0x1e, 0x1e, 0x1e, 0x1e, 0x1e
-// };
 
 
 /* (1 + (x + y + 1)) QTable */
@@ -626,5 +609,32 @@ static const uint8_t generic_qt[64] =
 //          9,  9,  9, 10, 10, 10, 10, 10,
 //         10, 11, 11, 11, 11, 11, 12, 12,
 //         12, 12, 13, 13, 13, 14, 14, 15
+// };
+
+
+/* Subject's gimp Luminance table */
+// const uint8_t Y_gimp[64] =
+// {
+//         0x05, 0x03, 0x03, 0x05, 0x07, 0x0c, 0x0f, 0x12,
+//         0x04, 0x04, 0x04, 0x06, 0x08, 0x11, 0x12, 0x11,
+//         0x04, 0x04, 0x05, 0x07, 0x0c, 0x11, 0x15, 0x11,
+//         0x04, 0x05, 0x07, 0x09, 0x0f, 0x1a, 0x18, 0x13,
+//         0x05, 0x07, 0x0b, 0x11, 0x14, 0x21, 0x1f, 0x17,
+//         0x07, 0x0b, 0x11, 0x13, 0x18, 0x1f, 0x22, 0x1c,
+//         0x0f, 0x13, 0x17, 0x1a, 0x1f, 0x24, 0x24, 0x1e,
+//         0x16, 0x1c, 0x1d, 0x1d, 0x22, 0x1e, 0x1f, 0x1e
+// };
+
+/* Subject's gimp Chrominance table */
+// const uint8_t CbCr_gimp[64] =
+// {
+//         0x05, 0x05, 0x07, 0x0e, 0x1e, 0x1e, 0x1e, 0x1e,
+//         0x05, 0x06, 0x08, 0x14, 0x1e, 0x1e, 0x1e, 0x1e,
+//         0x07, 0x08, 0x11, 0x1e, 0x1e, 0x1e, 0x1e, 0x1e,
+//         0x0e, 0x14, 0x1e, 0x1e, 0x1e, 0x1e, 0x1e, 0x1e,
+//         0x1e, 0x1e, 0x1e, 0x1e, 0x1e, 0x1e, 0x1e, 0x1e,
+//         0x1e, 0x1e, 0x1e, 0x1e, 0x1e, 0x1e, 0x1e, 0x1e,
+//         0x1e, 0x1e, 0x1e, 0x1e, 0x1e, 0x1e, 0x1e, 0x1e,
+//         0x1e, 0x1e, 0x1e, 0x1e, 0x1e, 0x1e, 0x1e, 0x1e
 // };
 
