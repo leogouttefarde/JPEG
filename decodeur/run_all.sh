@@ -19,10 +19,10 @@ then
                 echo -e "\n"
             done
         else
-            echo "Input is not a file."
+            echo "Input is not a directory."
         fi
     else
-        echo "Input file not found."
+        echo "Input directory not found."
     fi
 else
     echo "Usage : $0 <test directory>"
