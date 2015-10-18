@@ -1,6 +1,6 @@
 # JPEG Decoder
 
-Usage : ./jpeg2tiff <jpeg_file> [options]
+Usage : ./jpeg2tiff &lt;jpeg_file&gt; [options]
 
 Options list :
 
