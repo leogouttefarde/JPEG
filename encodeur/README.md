@@ -1,6 +1,6 @@
 # JPEG Encoder / Decoder
 
-Usage : ./jpeg_encode <input_file> -o <output_file> [options]
+Usage : ./jpeg_encode &lt;input_file&gt; -o &lt;output_file&gt; [options]
 
 Options list :
 
